@@ -9,5 +9,4 @@ class TestforgeBackendApplicationTests {
 	@Test
 	void contextLoads() {
 	}
-
 }
