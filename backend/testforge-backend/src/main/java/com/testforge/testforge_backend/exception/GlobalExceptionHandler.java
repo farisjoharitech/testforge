@@ -3,6 +3,7 @@ package com.testforge.testforge_backend.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -57,8 +58,7 @@ public class GlobalExceptionHandler {
             MethodArgumentNotValidException exception,
             HttpServletRequest request) {
 
-        Map<String, String> validationErrors =
-                new LinkedHashMap<>();
+        Map<String, String> validationErrors = new LinkedHashMap<>();
 
         exception.getBindingResult()
                 .getFieldErrors()
@@ -76,6 +76,25 @@ public class GlobalExceptionHandler {
                 "Validation failed",
                 request.getRequestURI(),
                 validationErrors
+        );
+
+        return ResponseEntity
+                .badRequest()
+                .body(error);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException exception,
+            HttpServletRequest request) {
+
+        ApiError error = new ApiError(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                "Invalid request body or enum value",
+                request.getRequestURI(),
+                null
         );
 
         return ResponseEntity

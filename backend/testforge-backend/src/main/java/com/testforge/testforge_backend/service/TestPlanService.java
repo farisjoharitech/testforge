@@ -1,13 +1,12 @@
 package com.testforge.testforge_backend.service;
 
 import com.testforge.testforge_backend.domain.TestPlan;
-import com.testforge.testforge_backend.repository.TestPlanRepository;
-import org.springframework.stereotype.Service;
 import com.testforge.testforge_backend.dto.CreateTestPlanRequest;
-
+import com.testforge.testforge_backend.dto.UpdateTestPlanRequest;
 import com.testforge.testforge_backend.exception.DuplicateTestPlanException;
 import com.testforge.testforge_backend.exception.TestPlanNotFoundException;
-import com.testforge.testforge_backend.dto.UpdateTestPlanRequest;
+import com.testforge.testforge_backend.repository.TestPlanRepository;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -71,16 +70,6 @@ public class TestPlanService {
         return testPlanRepository.findAll();
     }
 
-    public void delete(Long id) {
-        if (!testPlanRepository.existsById(id)) {
-            throw new TestPlanNotFoundException(
-                    "Test Plan not found with id: " + id
-            );
-        }
-
-        testPlanRepository.deleteById(id);
-    }
-
     public TestPlan update(Long id, UpdateTestPlanRequest request) {
 
         TestPlan testPlan = testPlanRepository.findById(id)
@@ -98,9 +87,19 @@ public class TestPlanService {
         testPlan.setPreparedBy(request.getPreparedBy());
         testPlan.setStatus(request.getStatus());
         testPlan.setApprovalStatus(request.getApprovalStatus());
-
         testPlan.setUpdatedAt(LocalDateTime.now());
 
         return testPlanRepository.save(testPlan);
+    }
+
+    public void delete(Long id) {
+
+        if (!testPlanRepository.existsById(id)) {
+            throw new TestPlanNotFoundException(
+                    "Test Plan not found with id: " + id
+            );
+        }
+
+        testPlanRepository.deleteById(id);
     }
 }

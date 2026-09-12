@@ -1,5 +1,8 @@
 package com.testforge.testforge_backend.dto;
 
+import com.testforge.testforge_backend.domain.enums.ApprovalStatus;
+import com.testforge.testforge_backend.domain.enums.TestPlanStatus;
+
 import java.time.LocalDateTime;
 
 public class TestPlanResponse {
@@ -12,8 +15,8 @@ public class TestPlanResponse {
     private String application;
     private String environment;
     private String preparedBy;
-    private String status;
-    private String approvalStatus;
+    private TestPlanStatus status;
+    private ApprovalStatus approvalStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -81,19 +84,19 @@ public class TestPlanResponse {
         this.preparedBy = preparedBy;
     }
 
-    public String getStatus() {
+    public TestPlanStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(TestPlanStatus status) {
         this.status = status;
     }
 
-    public String getApprovalStatus() {
+    public ApprovalStatus getApprovalStatus() {
         return approvalStatus;
     }
 
-    public void setApprovalStatus(String approvalStatus) {
+    public void setApprovalStatus(ApprovalStatus approvalStatus) {
         this.approvalStatus = approvalStatus;
     }
 

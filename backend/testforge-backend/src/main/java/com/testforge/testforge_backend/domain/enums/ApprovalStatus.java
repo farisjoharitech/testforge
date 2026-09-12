@@ -1,4 +1,7 @@
 package com.testforge.testforge_backend.domain.enums;
 
-public class ApprovalStatus {
+public enum ApprovalStatus {
+    PENDING,
+    APPROVED,
+    REJECTED
 }

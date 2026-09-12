@@ -1,6 +1,9 @@
 package com.testforge.testforge_backend.dto;
 
+import com.testforge.testforge_backend.domain.enums.ApprovalStatus;
+import com.testforge.testforge_backend.domain.enums.TestPlanStatus;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class CreateTestPlanRequest {
@@ -28,13 +31,11 @@ public class CreateTestPlanRequest {
     @Size(max = 255, message = "Prepared By must not exceed 255 characters")
     private String preparedBy;
 
-    @NotBlank(message = "Status is required")
-    @Size(max = 50, message = "Status must not exceed 50 characters")
-    private String status;
+    @NotNull(message = "Status is required")
+    private TestPlanStatus status;
 
-    @NotBlank(message = "Approval Status is required")
-    @Size(max = 50, message = "Approval Status must not exceed 50 characters")
-    private String approvalStatus;
+    @NotNull(message = "Approval Status is required")
+    private ApprovalStatus approvalStatus;
 
     public String getTestPlanId() {
         return testPlanId;
@@ -92,19 +93,19 @@ public class CreateTestPlanRequest {
         this.preparedBy = preparedBy;
     }
 
-    public String getStatus() {
+    public TestPlanStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(TestPlanStatus status) {
         this.status = status;
     }
 
-    public String getApprovalStatus() {
+    public ApprovalStatus getApprovalStatus() {
         return approvalStatus;
     }
 
-    public void setApprovalStatus(String approvalStatus) {
+    public void setApprovalStatus(ApprovalStatus approvalStatus) {
         this.approvalStatus = approvalStatus;
     }
 }

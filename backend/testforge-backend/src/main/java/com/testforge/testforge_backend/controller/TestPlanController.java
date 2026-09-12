@@ -3,6 +3,7 @@ package com.testforge.testforge_backend.controller;
 import com.testforge.testforge_backend.domain.TestPlan;
 import com.testforge.testforge_backend.dto.CreateTestPlanRequest;
 import com.testforge.testforge_backend.dto.TestPlanResponse;
+import com.testforge.testforge_backend.dto.UpdateTestPlanRequest;
 import com.testforge.testforge_backend.service.TestPlanService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -11,11 +12,10 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.testforge.testforge_backend.dto.UpdateTestPlanRequest;
-import org.springframework.web.bind.annotation.PutMapping;
 
 import java.util.List;
 
@@ -85,11 +85,14 @@ public class TestPlanController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id) {
 
         testPlanService.delete(id);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 
     private TestPlanResponse toResponse(TestPlan testPlan) {

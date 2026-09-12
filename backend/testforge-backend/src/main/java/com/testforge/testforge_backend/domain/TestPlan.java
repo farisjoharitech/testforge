@@ -1,7 +1,11 @@
 package com.testforge.testforge_backend.domain;
 
+import com.testforge.testforge_backend.domain.enums.ApprovalStatus;
+import com.testforge.testforge_backend.domain.enums.TestPlanStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -38,11 +42,13 @@ public class TestPlan {
     @Column(name = "prepared_by", length = 255)
     private String preparedBy;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
-    private String status;
+    private TestPlanStatus status;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "approval_status", nullable = false, length = 50)
-    private String approvalStatus;
+    private ApprovalStatus approvalStatus;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -117,19 +123,19 @@ public class TestPlan {
         this.preparedBy = preparedBy;
     }
 
-    public String getStatus() {
+    public TestPlanStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(TestPlanStatus status) {
         this.status = status;
     }
 
-    public String getApprovalStatus() {
+    public ApprovalStatus getApprovalStatus() {
         return approvalStatus;
     }
 
-    public void setApprovalStatus(String approvalStatus) {
+    public void setApprovalStatus(ApprovalStatus approvalStatus) {
         this.approvalStatus = approvalStatus;
     }
 
