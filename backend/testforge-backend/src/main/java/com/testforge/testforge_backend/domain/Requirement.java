@@ -28,7 +28,10 @@ public class Requirement {
     )
     private String requirementId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(
+            fetch = FetchType.LAZY,
+            optional = false
+    )
     @JoinColumn(
             name = "test_plan_id",
             nullable = false
@@ -89,7 +92,9 @@ public class Requirement {
         return requirementId;
     }
 
-    public void setRequirementId(String requirementId) {
+    public void setRequirementId(
+            String requirementId
+    ) {
         this.requirementId = requirementId;
     }
 
@@ -105,7 +110,9 @@ public class Requirement {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(
+            String description
+    ) {
         this.description = description;
     }
 
@@ -113,7 +120,9 @@ public class Requirement {
         return priority;
     }
 
-    public void setPriority(String priority) {
+    public void setPriority(
+            String priority
+    ) {
         this.priority = priority;
     }
 
@@ -121,7 +130,9 @@ public class Requirement {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(
+            String status
+    ) {
         this.status = status;
     }
 
@@ -129,7 +140,9 @@ public class Requirement {
         return automatable;
     }
 
-    public void setAutomatable(boolean automatable) {
+    public void setAutomatable(
+            boolean automatable
+    ) {
         this.automatable = automatable;
     }
 
@@ -137,7 +150,9 @@ public class Requirement {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(
+            LocalDateTime createdAt
+    ) {
         this.createdAt = createdAt;
     }
 
@@ -145,7 +160,9 @@ public class Requirement {
         return updatedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
+    public void setUpdatedAt(
+            LocalDateTime updatedAt
+    ) {
         this.updatedAt = updatedAt;
     }
 }

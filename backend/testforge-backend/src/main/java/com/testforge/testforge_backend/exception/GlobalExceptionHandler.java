@@ -16,7 +16,8 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(TestPlanNotFoundException.class)
-    public ResponseEntity<ApiError> handleTestPlanNotFound(
+    public ResponseEntity<ApiError>
+    handleTestPlanNotFound(
             TestPlanNotFoundException exception,
             HttpServletRequest request) {
 
@@ -34,8 +35,29 @@ public class GlobalExceptionHandler {
                 .body(error);
     }
 
+    @ExceptionHandler(RequirementNotFoundException.class)
+    public ResponseEntity<ApiError>
+    handleRequirementNotFound(
+            RequirementNotFoundException exception,
+            HttpServletRequest request) {
+
+        ApiError error = new ApiError(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(error);
+    }
+
     @ExceptionHandler(DuplicateTestPlanException.class)
-    public ResponseEntity<ApiError> handleDuplicateTestPlan(
+    public ResponseEntity<ApiError>
+    handleDuplicateTestPlan(
             DuplicateTestPlanException exception,
             HttpServletRequest request) {
 
@@ -53,12 +75,34 @@ public class GlobalExceptionHandler {
                 .body(error);
     }
 
+    @ExceptionHandler(DuplicateRequirementException.class)
+    public ResponseEntity<ApiError>
+    handleDuplicateRequirement(
+            DuplicateRequirementException exception,
+            HttpServletRequest request) {
+
+        ApiError error = new ApiError(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(error);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiError> handleValidationErrors(
+    public ResponseEntity<ApiError>
+    handleValidationErrors(
             MethodArgumentNotValidException exception,
             HttpServletRequest request) {
 
-        Map<String, String> validationErrors = new LinkedHashMap<>();
+        Map<String, String> validationErrors =
+                new LinkedHashMap<>();
 
         exception.getBindingResult()
                 .getFieldErrors()
@@ -84,7 +128,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ApiError> handleHttpMessageNotReadable(
+    public ResponseEntity<ApiError>
+    handleHttpMessageNotReadable(
             HttpMessageNotReadableException exception,
             HttpServletRequest request) {
 
