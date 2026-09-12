@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.testforge.testforge_backend.dto.UpdateTestPlanRequest;
+import org.springframework.web.bind.annotation.PutMapping;
 
 import java.util.List;
 
@@ -66,6 +68,19 @@ public class TestPlanController {
                 toResponse(
                         testPlanService.getByTestPlanId(testPlanId)
                 )
+        );
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<TestPlanResponse> update(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateTestPlanRequest request) {
+
+        TestPlan updatedTestPlan =
+                testPlanService.update(id, request);
+
+        return ResponseEntity.ok(
+                toResponse(updatedTestPlan)
         );
     }
 
