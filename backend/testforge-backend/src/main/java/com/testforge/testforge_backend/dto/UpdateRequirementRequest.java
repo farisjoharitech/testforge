@@ -1,5 +1,7 @@
 package com.testforge.testforge_backend.dto;
 
+import com.testforge.testforge_backend.domain.enums.RequirementPriority;
+import com.testforge.testforge_backend.domain.enums.RequirementStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -13,19 +15,11 @@ public class UpdateRequirementRequest {
     )
     private String description;
 
-    @NotBlank(message = "Priority is required")
-    @Size(
-            max = 50,
-            message = "Priority must not exceed 50 characters"
-    )
-    private String priority;
+    @NotNull(message = "Priority is required")
+    private RequirementPriority priority;
 
-    @NotBlank(message = "Status is required")
-    @Size(
-            max = 50,
-            message = "Status must not exceed 50 characters"
-    )
-    private String status;
+    @NotNull(message = "Status is required")
+    private RequirementStatus status;
 
     @NotNull(message = "Automatable is required")
     private Boolean automatable;
@@ -34,23 +28,29 @@ public class UpdateRequirementRequest {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(
+            String description
+    ) {
         this.description = description;
     }
 
-    public String getPriority() {
+    public RequirementPriority getPriority() {
         return priority;
     }
 
-    public void setPriority(String priority) {
+    public void setPriority(
+            RequirementPriority priority
+    ) {
         this.priority = priority;
     }
 
-    public String getStatus() {
+    public RequirementStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(
+            RequirementStatus status
+    ) {
         this.status = status;
     }
 
@@ -58,7 +58,9 @@ public class UpdateRequirementRequest {
         return automatable;
     }
 
-    public void setAutomatable(Boolean automatable) {
+    public void setAutomatable(
+            Boolean automatable
+    ) {
         this.automatable = automatable;
     }
 }

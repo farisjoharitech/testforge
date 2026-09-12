@@ -1,7 +1,11 @@
 package com.testforge.testforge_backend.domain;
 
+import com.testforge.testforge_backend.domain.enums.RequirementPriority;
+import com.testforge.testforge_backend.domain.enums.RequirementStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -45,19 +49,21 @@ public class Requirement {
     )
     private String description;
 
+    @Enumerated(EnumType.STRING)
     @Column(
             name = "priority",
             nullable = false,
             length = 50
     )
-    private String priority;
+    private RequirementPriority priority;
 
+    @Enumerated(EnumType.STRING)
     @Column(
             name = "status",
             nullable = false,
             length = 50
     )
-    private String status;
+    private RequirementStatus status;
 
     @Column(
             name = "automatable",
@@ -116,22 +122,22 @@ public class Requirement {
         this.description = description;
     }
 
-    public String getPriority() {
+    public RequirementPriority getPriority() {
         return priority;
     }
 
     public void setPriority(
-            String priority
+            RequirementPriority priority
     ) {
         this.priority = priority;
     }
 
-    public String getStatus() {
+    public RequirementStatus getStatus() {
         return status;
     }
 
     public void setStatus(
-            String status
+            RequirementStatus status
     ) {
         this.status = status;
     }

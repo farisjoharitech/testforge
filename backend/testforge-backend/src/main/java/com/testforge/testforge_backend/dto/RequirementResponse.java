@@ -1,5 +1,8 @@
 package com.testforge.testforge_backend.dto;
 
+import com.testforge.testforge_backend.domain.enums.RequirementPriority;
+import com.testforge.testforge_backend.domain.enums.RequirementStatus;
+
 import java.time.LocalDateTime;
 
 public class RequirementResponse {
@@ -14,9 +17,9 @@ public class RequirementResponse {
 
     private String description;
 
-    private String priority;
+    private RequirementPriority priority;
 
-    private String status;
+    private RequirementStatus status;
 
     private boolean automatable;
 
@@ -36,7 +39,9 @@ public class RequirementResponse {
         return requirementId;
     }
 
-    public void setRequirementId(String requirementId) {
+    public void setRequirementId(
+            String requirementId
+    ) {
         this.requirementId = requirementId;
     }
 
@@ -44,7 +49,9 @@ public class RequirementResponse {
         return testPlanId;
     }
 
-    public void setTestPlanId(Long testPlanId) {
+    public void setTestPlanId(
+            Long testPlanId
+    ) {
         this.testPlanId = testPlanId;
     }
 
@@ -62,23 +69,29 @@ public class RequirementResponse {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(
+            String description
+    ) {
         this.description = description;
     }
 
-    public String getPriority() {
+    public RequirementPriority getPriority() {
         return priority;
     }
 
-    public void setPriority(String priority) {
+    public void setPriority(
+            RequirementPriority priority
+    ) {
         this.priority = priority;
     }
 
-    public String getStatus() {
+    public RequirementStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(
+            RequirementStatus status
+    ) {
         this.status = status;
     }
 
@@ -86,7 +99,9 @@ public class RequirementResponse {
         return automatable;
     }
 
-    public void setAutomatable(boolean automatable) {
+    public void setAutomatable(
+            boolean automatable
+    ) {
         this.automatable = automatable;
     }
 
@@ -94,7 +109,9 @@ public class RequirementResponse {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(
+            LocalDateTime createdAt
+    ) {
         this.createdAt = createdAt;
     }
 
@@ -102,7 +119,9 @@ public class RequirementResponse {
         return updatedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
+    public void setUpdatedAt(
+            LocalDateTime updatedAt
+    ) {
         this.updatedAt = updatedAt;
     }
 }
