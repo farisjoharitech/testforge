@@ -1,0 +1,157 @@
+package com.testforge.testforge_backend.dto;
+
+import com.testforge.testforge_backend.domain.enums.AutomationStatus;
+import com.testforge.testforge_backend.domain.enums.AutomationType;
+import com.testforge.testforge_backend.domain.enums.TestCasePriority;
+import com.testforge.testforge_backend.domain.enums.TestCaseStatus;
+import com.testforge.testforge_backend.domain.enums.TestType;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+public class UpdateTestCaseRequest {
+
+    @NotBlank(message = "Name is required")
+    @Size(
+            max = 255,
+            message = "Name must not exceed 255 characters"
+    )
+    private String name;
+
+    @Size(
+            max = 2000,
+            message = "Preconditions must not exceed 2000 characters"
+    )
+    private String preconditions;
+
+    @Size(
+            max = 2000,
+            message = "Test Data must not exceed 2000 characters"
+    )
+    private String testData;
+
+    @NotBlank(message = "Expected Result is required")
+    @Size(
+            max = 2000,
+            message = "Expected Result must not exceed 2000 characters"
+    )
+    private String expectedResult;
+
+    @NotNull(message = "Priority is required")
+    private TestCasePriority priority;
+
+    @NotNull(message = "Test Type is required")
+    private TestType testType;
+
+    @NotNull(message = "Automatable is required")
+    private Boolean automatable;
+
+    @NotNull(message = "Automation Type is required")
+    private AutomationType automationType;
+
+    @NotNull(message = "Automation Status is required")
+    private AutomationStatus automationStatus;
+
+    @NotNull(message = "Status is required")
+    private TestCaseStatus status;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(
+            String name
+    ) {
+        this.name = name;
+    }
+
+    public String getPreconditions() {
+        return preconditions;
+    }
+
+    public void setPreconditions(
+            String preconditions
+    ) {
+        this.preconditions = preconditions;
+    }
+
+    public String getTestData() {
+        return testData;
+    }
+
+    public void setTestData(
+            String testData
+    ) {
+        this.testData = testData;
+    }
+
+    public String getExpectedResult() {
+        return expectedResult;
+    }
+
+    public void setExpectedResult(
+            String expectedResult
+    ) {
+        this.expectedResult = expectedResult;
+    }
+
+    public TestCasePriority getPriority() {
+        return priority;
+    }
+
+    public void setPriority(
+            TestCasePriority priority
+    ) {
+        this.priority = priority;
+    }
+
+    public TestType getTestType() {
+        return testType;
+    }
+
+    public void setTestType(
+            TestType testType
+    ) {
+        this.testType = testType;
+    }
+
+    public Boolean getAutomatable() {
+        return automatable;
+    }
+
+    public void setAutomatable(
+            Boolean automatable
+    ) {
+        this.automatable = automatable;
+    }
+
+    public AutomationType getAutomationType() {
+        return automationType;
+    }
+
+    public void setAutomationType(
+            AutomationType automationType
+    ) {
+        this.automationType = automationType;
+    }
+
+    public AutomationStatus getAutomationStatus() {
+        return automationStatus;
+    }
+
+    public void setAutomationStatus(
+            AutomationStatus automationStatus
+    ) {
+        this.automationStatus = automationStatus;
+    }
+
+    public TestCaseStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(
+            TestCaseStatus status
+    ) {
+        this.status = status;
+    }
+}

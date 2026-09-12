@@ -23,18 +23,12 @@ public class GlobalExceptionHandler {
             TestPlanNotFoundException exception,
             HttpServletRequest request) {
 
-        ApiError error = new ApiError(
-                LocalDateTime.now(),
-                HttpStatus.NOT_FOUND.value(),
-                HttpStatus.NOT_FOUND.getReasonPhrase(),
+        return buildError(
+                HttpStatus.NOT_FOUND,
                 exception.getMessage(),
-                request.getRequestURI(),
+                request,
                 null
         );
-
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(error);
     }
 
     @ExceptionHandler(
@@ -45,18 +39,12 @@ public class GlobalExceptionHandler {
             RequirementNotFoundException exception,
             HttpServletRequest request) {
 
-        ApiError error = new ApiError(
-                LocalDateTime.now(),
-                HttpStatus.NOT_FOUND.value(),
-                HttpStatus.NOT_FOUND.getReasonPhrase(),
+        return buildError(
+                HttpStatus.NOT_FOUND,
                 exception.getMessage(),
-                request.getRequestURI(),
+                request,
                 null
         );
-
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(error);
     }
 
     @ExceptionHandler(
@@ -67,18 +55,28 @@ public class GlobalExceptionHandler {
             TestScenarioNotFoundException exception,
             HttpServletRequest request) {
 
-        ApiError error = new ApiError(
-                LocalDateTime.now(),
-                HttpStatus.NOT_FOUND.value(),
-                HttpStatus.NOT_FOUND.getReasonPhrase(),
+        return buildError(
+                HttpStatus.NOT_FOUND,
                 exception.getMessage(),
-                request.getRequestURI(),
+                request,
                 null
         );
+    }
 
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(error);
+    @ExceptionHandler(
+            TestCaseNotFoundException.class
+    )
+    public ResponseEntity<ApiError>
+    handleTestCaseNotFound(
+            TestCaseNotFoundException exception,
+            HttpServletRequest request) {
+
+        return buildError(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage(),
+                request,
+                null
+        );
     }
 
     @ExceptionHandler(
@@ -89,18 +87,12 @@ public class GlobalExceptionHandler {
             DuplicateTestPlanException exception,
             HttpServletRequest request) {
 
-        ApiError error = new ApiError(
-                LocalDateTime.now(),
-                HttpStatus.CONFLICT.value(),
-                HttpStatus.CONFLICT.getReasonPhrase(),
+        return buildError(
+                HttpStatus.CONFLICT,
                 exception.getMessage(),
-                request.getRequestURI(),
+                request,
                 null
         );
-
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(error);
     }
 
     @ExceptionHandler(
@@ -111,18 +103,12 @@ public class GlobalExceptionHandler {
             DuplicateRequirementException exception,
             HttpServletRequest request) {
 
-        ApiError error = new ApiError(
-                LocalDateTime.now(),
-                HttpStatus.CONFLICT.value(),
-                HttpStatus.CONFLICT.getReasonPhrase(),
+        return buildError(
+                HttpStatus.CONFLICT,
                 exception.getMessage(),
-                request.getRequestURI(),
+                request,
                 null
         );
-
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(error);
     }
 
     @ExceptionHandler(
@@ -133,18 +119,44 @@ public class GlobalExceptionHandler {
             DuplicateTestScenarioException exception,
             HttpServletRequest request) {
 
-        ApiError error = new ApiError(
-                LocalDateTime.now(),
-                HttpStatus.CONFLICT.value(),
-                HttpStatus.CONFLICT.getReasonPhrase(),
+        return buildError(
+                HttpStatus.CONFLICT,
                 exception.getMessage(),
-                request.getRequestURI(),
+                request,
                 null
         );
+    }
 
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(error);
+    @ExceptionHandler(
+            DuplicateTestCaseException.class
+    )
+    public ResponseEntity<ApiError>
+    handleDuplicateTestCase(
+            DuplicateTestCaseException exception,
+            HttpServletRequest request) {
+
+        return buildError(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request,
+                null
+        );
+    }
+
+    @ExceptionHandler(
+            InvalidTestCaseAutomationException.class
+    )
+    public ResponseEntity<ApiError>
+    handleInvalidTestCaseAutomation(
+            InvalidTestCaseAutomationException exception,
+            HttpServletRequest request) {
+
+        return buildError(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request,
+                null
+        );
     }
 
     @ExceptionHandler(
@@ -167,18 +179,12 @@ public class GlobalExceptionHandler {
                         )
                 );
 
-        ApiError error = new ApiError(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+        return buildError(
+                HttpStatus.BAD_REQUEST,
                 "Validation failed",
-                request.getRequestURI(),
+                request,
                 validationErrors
         );
-
-        return ResponseEntity
-                .badRequest()
-                .body(error);
     }
 
     @ExceptionHandler(
@@ -189,17 +195,32 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException exception,
             HttpServletRequest request) {
 
-        ApiError error = new ApiError(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+        return buildError(
+                HttpStatus.BAD_REQUEST,
                 "Invalid request body or enum value",
-                request.getRequestURI(),
+                request,
                 null
         );
+    }
+
+    private ResponseEntity<ApiError> buildError(
+            HttpStatus status,
+            String message,
+            HttpServletRequest request,
+            Map<String, String> validationErrors) {
+
+        ApiError error =
+                new ApiError(
+                        LocalDateTime.now(),
+                        status.value(),
+                        status.getReasonPhrase(),
+                        message,
+                        request.getRequestURI(),
+                        validationErrors
+                );
 
         return ResponseEntity
-                .badRequest()
+                .status(status)
                 .body(error);
     }
 }
