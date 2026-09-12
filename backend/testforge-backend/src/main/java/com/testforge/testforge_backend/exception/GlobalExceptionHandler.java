@@ -15,7 +15,9 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(TestPlanNotFoundException.class)
+    @ExceptionHandler(
+            TestPlanNotFoundException.class
+    )
     public ResponseEntity<ApiError>
     handleTestPlanNotFound(
             TestPlanNotFoundException exception,
@@ -35,7 +37,9 @@ public class GlobalExceptionHandler {
                 .body(error);
     }
 
-    @ExceptionHandler(RequirementNotFoundException.class)
+    @ExceptionHandler(
+            RequirementNotFoundException.class
+    )
     public ResponseEntity<ApiError>
     handleRequirementNotFound(
             RequirementNotFoundException exception,
@@ -55,7 +59,31 @@ public class GlobalExceptionHandler {
                 .body(error);
     }
 
-    @ExceptionHandler(DuplicateTestPlanException.class)
+    @ExceptionHandler(
+            TestScenarioNotFoundException.class
+    )
+    public ResponseEntity<ApiError>
+    handleTestScenarioNotFound(
+            TestScenarioNotFoundException exception,
+            HttpServletRequest request) {
+
+        ApiError error = new ApiError(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(error);
+    }
+
+    @ExceptionHandler(
+            DuplicateTestPlanException.class
+    )
     public ResponseEntity<ApiError>
     handleDuplicateTestPlan(
             DuplicateTestPlanException exception,
@@ -75,7 +103,9 @@ public class GlobalExceptionHandler {
                 .body(error);
     }
 
-    @ExceptionHandler(DuplicateRequirementException.class)
+    @ExceptionHandler(
+            DuplicateRequirementException.class
+    )
     public ResponseEntity<ApiError>
     handleDuplicateRequirement(
             DuplicateRequirementException exception,
@@ -95,7 +125,31 @@ public class GlobalExceptionHandler {
                 .body(error);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ExceptionHandler(
+            DuplicateTestScenarioException.class
+    )
+    public ResponseEntity<ApiError>
+    handleDuplicateTestScenario(
+            DuplicateTestScenarioException exception,
+            HttpServletRequest request) {
+
+        ApiError error = new ApiError(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(error);
+    }
+
+    @ExceptionHandler(
+            MethodArgumentNotValidException.class
+    )
     public ResponseEntity<ApiError>
     handleValidationErrors(
             MethodArgumentNotValidException exception,
@@ -127,7 +181,9 @@ public class GlobalExceptionHandler {
                 .body(error);
     }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ExceptionHandler(
+            HttpMessageNotReadableException.class
+    )
     public ResponseEntity<ApiError>
     handleHttpMessageNotReadable(
             HttpMessageNotReadableException exception,

@@ -1,0 +1,31 @@
+package com.testforge.testforge_backend.repository;
+
+import com.testforge.testforge_backend.domain.Requirement;
+import com.testforge.testforge_backend.domain.TestScenario;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface TestScenarioRepository
+        extends JpaRepository<TestScenario, Long> {
+
+    @EntityGraph(attributePaths = "requirement")
+    Optional<TestScenario> findByScenarioId(
+            String scenarioId
+    );
+
+    boolean existsByScenarioId(
+            String scenarioId
+    );
+
+    @EntityGraph(attributePaths = "requirement")
+    List<TestScenario> findByRequirementOrderByIdAsc(
+            Requirement requirement
+    );
+
+    @Override
+    @EntityGraph(attributePaths = "requirement")
+    Optional<TestScenario> findById(Long id);
+}
