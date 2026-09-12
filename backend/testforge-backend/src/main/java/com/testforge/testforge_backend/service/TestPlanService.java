@@ -5,6 +5,9 @@ import com.testforge.testforge_backend.repository.TestPlanRepository;
 import org.springframework.stereotype.Service;
 import com.testforge.testforge_backend.dto.CreateTestPlanRequest;
 
+import com.testforge.testforge_backend.exception.DuplicateTestPlanException;
+import com.testforge.testforge_backend.exception.TestPlanNotFoundException;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,7 +23,7 @@ public class TestPlanService {
     public TestPlan create(CreateTestPlanRequest request) {
 
         if (testPlanRepository.existsByTestPlanId(request.getTestPlanId())) {
-            throw new IllegalArgumentException(
+            throw new DuplicateTestPlanException(
                     "Test Plan ID already exists: " + request.getTestPlanId()
             );
         }
@@ -48,7 +51,7 @@ public class TestPlanService {
     public TestPlan getById(Long id) {
         return testPlanRepository.findById(id)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new TestPlanNotFoundException(
                                 "Test Plan not found with id: " + id
                         )
                 );
@@ -57,7 +60,7 @@ public class TestPlanService {
     public TestPlan getByTestPlanId(String testPlanId) {
         return testPlanRepository.findByTestPlanId(testPlanId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new TestPlanNotFoundException(
                                 "Test Plan not found with testPlanId: " + testPlanId
                         )
                 );
@@ -69,7 +72,7 @@ public class TestPlanService {
 
     public void delete(Long id) {
         if (!testPlanRepository.existsById(id)) {
-            throw new IllegalArgumentException(
+            throw new TestPlanNotFoundException(
                     "Test Plan not found with id: " + id
             );
         }
