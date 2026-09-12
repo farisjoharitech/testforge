@@ -1,5 +1,8 @@
 package com.testforge.testforge_backend.dto;
 
+import com.testforge.testforge_backend.domain.enums.TestScenarioPriority;
+import com.testforge.testforge_backend.domain.enums.TestScenarioStatus;
+import com.testforge.testforge_backend.domain.enums.TestType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -13,29 +16,17 @@ public class UpdateTestScenarioRequest {
     )
     private String description;
 
-    @NotBlank(message = "Test Type is required")
-    @Size(
-            max = 50,
-            message = "Test Type must not exceed 50 characters"
-    )
-    private String testType;
+    @NotNull(message = "Test Type is required")
+    private TestType testType;
 
     @NotNull(message = "Automatable is required")
     private Boolean automatable;
 
-    @NotBlank(message = "Priority is required")
-    @Size(
-            max = 50,
-            message = "Priority must not exceed 50 characters"
-    )
-    private String priority;
+    @NotNull(message = "Priority is required")
+    private TestScenarioPriority priority;
 
-    @NotBlank(message = "Status is required")
-    @Size(
-            max = 50,
-            message = "Status must not exceed 50 characters"
-    )
-    private String status;
+    @NotNull(message = "Status is required")
+    private TestScenarioStatus status;
 
     public String getDescription() {
         return description;
@@ -47,12 +38,12 @@ public class UpdateTestScenarioRequest {
         this.description = description;
     }
 
-    public String getTestType() {
+    public TestType getTestType() {
         return testType;
     }
 
     public void setTestType(
-            String testType
+            TestType testType
     ) {
         this.testType = testType;
     }
@@ -67,22 +58,22 @@ public class UpdateTestScenarioRequest {
         this.automatable = automatable;
     }
 
-    public String getPriority() {
+    public TestScenarioPriority getPriority() {
         return priority;
     }
 
     public void setPriority(
-            String priority
+            TestScenarioPriority priority
     ) {
         this.priority = priority;
     }
 
-    public String getStatus() {
+    public TestScenarioStatus getStatus() {
         return status;
     }
 
     public void setStatus(
-            String status
+            TestScenarioStatus status
     ) {
         this.status = status;
     }

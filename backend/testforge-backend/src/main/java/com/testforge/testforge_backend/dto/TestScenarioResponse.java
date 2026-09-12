@@ -1,5 +1,9 @@
 package com.testforge.testforge_backend.dto;
 
+import com.testforge.testforge_backend.domain.enums.TestScenarioPriority;
+import com.testforge.testforge_backend.domain.enums.TestScenarioStatus;
+import com.testforge.testforge_backend.domain.enums.TestType;
+
 import java.time.LocalDateTime;
 
 public class TestScenarioResponse {
@@ -14,13 +18,13 @@ public class TestScenarioResponse {
 
     private String description;
 
-    private String testType;
+    private TestType testType;
 
     private boolean automatable;
 
-    private String priority;
+    private TestScenarioPriority priority;
 
-    private String status;
+    private TestScenarioStatus status;
 
     private LocalDateTime createdAt;
 
@@ -75,12 +79,12 @@ public class TestScenarioResponse {
         this.description = description;
     }
 
-    public String getTestType() {
+    public TestType getTestType() {
         return testType;
     }
 
     public void setTestType(
-            String testType
+            TestType testType
     ) {
         this.testType = testType;
     }
@@ -95,22 +99,22 @@ public class TestScenarioResponse {
         this.automatable = automatable;
     }
 
-    public String getPriority() {
+    public TestScenarioPriority getPriority() {
         return priority;
     }
 
     public void setPriority(
-            String priority
+            TestScenarioPriority priority
     ) {
         this.priority = priority;
     }
 
-    public String getStatus() {
+    public TestScenarioStatus getStatus() {
         return status;
     }
 
     public void setStatus(
-            String status
+            TestScenarioStatus status
     ) {
         this.status = status;
     }

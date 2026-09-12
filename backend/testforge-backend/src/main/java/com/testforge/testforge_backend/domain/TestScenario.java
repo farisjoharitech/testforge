@@ -1,7 +1,12 @@
 package com.testforge.testforge_backend.domain;
 
+import com.testforge.testforge_backend.domain.enums.TestScenarioPriority;
+import com.testforge.testforge_backend.domain.enums.TestScenarioStatus;
+import com.testforge.testforge_backend.domain.enums.TestType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -45,12 +50,13 @@ public class TestScenario {
     )
     private String description;
 
+    @Enumerated(EnumType.STRING)
     @Column(
             name = "test_type",
             nullable = false,
             length = 50
     )
-    private String testType;
+    private TestType testType;
 
     @Column(
             name = "automatable",
@@ -58,19 +64,21 @@ public class TestScenario {
     )
     private boolean automatable;
 
+    @Enumerated(EnumType.STRING)
     @Column(
             name = "priority",
             nullable = false,
             length = 50
     )
-    private String priority;
+    private TestScenarioPriority priority;
 
+    @Enumerated(EnumType.STRING)
     @Column(
             name = "status",
             nullable = false,
             length = 50
     )
-    private String status;
+    private TestScenarioStatus status;
 
     @Column(
             name = "created_at",
@@ -115,15 +123,19 @@ public class TestScenario {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(
+            String description
+    ) {
         this.description = description;
     }
 
-    public String getTestType() {
+    public TestType getTestType() {
         return testType;
     }
 
-    public void setTestType(String testType) {
+    public void setTestType(
+            TestType testType
+    ) {
         this.testType = testType;
     }
 
@@ -131,23 +143,29 @@ public class TestScenario {
         return automatable;
     }
 
-    public void setAutomatable(boolean automatable) {
+    public void setAutomatable(
+            boolean automatable
+    ) {
         this.automatable = automatable;
     }
 
-    public String getPriority() {
+    public TestScenarioPriority getPriority() {
         return priority;
     }
 
-    public void setPriority(String priority) {
+    public void setPriority(
+            TestScenarioPriority priority
+    ) {
         this.priority = priority;
     }
 
-    public String getStatus() {
+    public TestScenarioStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(
+            TestScenarioStatus status
+    ) {
         this.status = status;
     }
 
@@ -155,7 +173,9 @@ public class TestScenario {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(
+            LocalDateTime createdAt
+    ) {
         this.createdAt = createdAt;
     }
 
@@ -163,7 +183,9 @@ public class TestScenario {
         return updatedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
+    public void setUpdatedAt(
+            LocalDateTime updatedAt
+    ) {
         this.updatedAt = updatedAt;
     }
 }
