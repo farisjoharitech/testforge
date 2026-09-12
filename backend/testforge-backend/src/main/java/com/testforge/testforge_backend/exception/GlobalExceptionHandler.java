@@ -80,6 +80,22 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(
+            TestStepNotFoundException.class
+    )
+    public ResponseEntity<ApiError>
+    handleTestStepNotFound(
+            TestStepNotFoundException exception,
+            HttpServletRequest request) {
+
+        return buildError(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage(),
+                request,
+                null
+        );
+    }
+
+    @ExceptionHandler(
             DuplicateTestPlanException.class
     )
     public ResponseEntity<ApiError>
@@ -133,6 +149,38 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError>
     handleDuplicateTestCase(
             DuplicateTestCaseException exception,
+            HttpServletRequest request) {
+
+        return buildError(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request,
+                null
+        );
+    }
+
+    @ExceptionHandler(
+            DuplicateTestStepException.class
+    )
+    public ResponseEntity<ApiError>
+    handleDuplicateTestStep(
+            DuplicateTestStepException exception,
+            HttpServletRequest request) {
+
+        return buildError(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request,
+                null
+        );
+    }
+
+    @ExceptionHandler(
+            DuplicateTestStepOrderException.class
+    )
+    public ResponseEntity<ApiError>
+    handleDuplicateTestStepOrder(
+            DuplicateTestStepOrderException exception,
             HttpServletRequest request) {
 
         return buildError(
