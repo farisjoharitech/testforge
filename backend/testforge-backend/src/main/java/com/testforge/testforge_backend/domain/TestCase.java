@@ -1,7 +1,14 @@
 package com.testforge.testforge_backend.domain;
 
+import com.testforge.testforge_backend.domain.enums.AutomationStatus;
+import com.testforge.testforge_backend.domain.enums.AutomationType;
+import com.testforge.testforge_backend.domain.enums.TestCasePriority;
+import com.testforge.testforge_backend.domain.enums.TestCaseStatus;
+import com.testforge.testforge_backend.domain.enums.TestType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -64,19 +71,21 @@ public class TestCase {
     )
     private String expectedResult;
 
+    @Enumerated(EnumType.STRING)
     @Column(
             name = "priority",
             nullable = false,
             length = 50
     )
-    private String priority;
+    private TestCasePriority priority;
 
+    @Enumerated(EnumType.STRING)
     @Column(
             name = "test_type",
             nullable = false,
             length = 50
     )
-    private String testType;
+    private TestType testType;
 
     @Column(
             name = "automatable",
@@ -84,26 +93,29 @@ public class TestCase {
     )
     private boolean automatable;
 
+    @Enumerated(EnumType.STRING)
     @Column(
             name = "automation_type",
             nullable = false,
             length = 50
     )
-    private String automationType;
+    private AutomationType automationType;
 
+    @Enumerated(EnumType.STRING)
     @Column(
             name = "automation_status",
             nullable = false,
             length = 50
     )
-    private String automationStatus;
+    private AutomationStatus automationStatus;
 
+    @Enumerated(EnumType.STRING)
     @Column(
             name = "status",
             nullable = false,
             length = 50
     )
-    private String status;
+    private TestCaseStatus status;
 
     @Column(
             name = "created_at",
@@ -188,22 +200,22 @@ public class TestCase {
         this.expectedResult = expectedResult;
     }
 
-    public String getPriority() {
+    public TestCasePriority getPriority() {
         return priority;
     }
 
     public void setPriority(
-            String priority
+            TestCasePriority priority
     ) {
         this.priority = priority;
     }
 
-    public String getTestType() {
+    public TestType getTestType() {
         return testType;
     }
 
     public void setTestType(
-            String testType
+            TestType testType
     ) {
         this.testType = testType;
     }
@@ -218,32 +230,32 @@ public class TestCase {
         this.automatable = automatable;
     }
 
-    public String getAutomationType() {
+    public AutomationType getAutomationType() {
         return automationType;
     }
 
     public void setAutomationType(
-            String automationType
+            AutomationType automationType
     ) {
         this.automationType = automationType;
     }
 
-    public String getAutomationStatus() {
+    public AutomationStatus getAutomationStatus() {
         return automationStatus;
     }
 
     public void setAutomationStatus(
-            String automationStatus
+            AutomationStatus automationStatus
     ) {
         this.automationStatus = automationStatus;
     }
 
-    public String getStatus() {
+    public TestCaseStatus getStatus() {
         return status;
     }
 
     public void setStatus(
-            String status
+            TestCaseStatus status
     ) {
         this.status = status;
     }
