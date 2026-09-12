@@ -1,7 +1,10 @@
 package com.testforge.testforge_backend.controller;
 
 import com.testforge.testforge_backend.domain.TestPlan;
+import com.testforge.testforge_backend.dto.CreateTestPlanRequest;
+import com.testforge.testforge_backend.dto.TestPlanResponse;
 import com.testforge.testforge_backend.service.TestPlanService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,37 +28,72 @@ public class TestPlanController {
     }
 
     @PostMapping
-    public ResponseEntity<TestPlan> create(@RequestBody TestPlan testPlan) {
-        TestPlan createdTestPlan = testPlanService.create(testPlan);
+    public ResponseEntity<TestPlanResponse> create(
+            @Valid @RequestBody CreateTestPlanRequest request) {
+
+        TestPlan createdTestPlan = testPlanService.create(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(createdTestPlan);
+                .body(toResponse(createdTestPlan));
     }
 
     @GetMapping
-    public ResponseEntity<List<TestPlan>> getAll() {
-        return ResponseEntity.ok(testPlanService.getAll());
+    public ResponseEntity<List<TestPlanResponse>> getAll() {
+
+        List<TestPlanResponse> response = testPlanService.getAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TestPlan> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(testPlanService.getById(id));
+    public ResponseEntity<TestPlanResponse> getById(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                toResponse(testPlanService.getById(id))
+        );
     }
 
     @GetMapping("/business/{testPlanId}")
-    public ResponseEntity<TestPlan> getByTestPlanId(
+    public ResponseEntity<TestPlanResponse> getByTestPlanId(
             @PathVariable String testPlanId) {
 
         return ResponseEntity.ok(
-                testPlanService.getByTestPlanId(testPlanId)
+                toResponse(
+                        testPlanService.getByTestPlanId(testPlanId)
+                )
         );
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
+
         testPlanService.delete(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    private TestPlanResponse toResponse(TestPlan testPlan) {
+
+        TestPlanResponse response = new TestPlanResponse();
+
+        response.setId(testPlan.getId());
+        response.setTestPlanId(testPlan.getTestPlanId());
+        response.setName(testPlan.getName());
+        response.setVersion(testPlan.getVersion());
+        response.setProject(testPlan.getProject());
+        response.setApplication(testPlan.getApplication());
+        response.setEnvironment(testPlan.getEnvironment());
+        response.setPreparedBy(testPlan.getPreparedBy());
+        response.setStatus(testPlan.getStatus());
+        response.setApprovalStatus(testPlan.getApprovalStatus());
+        response.setCreatedAt(testPlan.getCreatedAt());
+        response.setUpdatedAt(testPlan.getUpdatedAt());
+
+        return response;
     }
 }

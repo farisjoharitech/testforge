@@ -3,6 +3,7 @@ package com.testforge.testforge_backend.service;
 import com.testforge.testforge_backend.domain.TestPlan;
 import com.testforge.testforge_backend.repository.TestPlanRepository;
 import org.springframework.stereotype.Service;
+import com.testforge.testforge_backend.dto.CreateTestPlanRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,12 +17,25 @@ public class TestPlanService {
         this.testPlanRepository = testPlanRepository;
     }
 
-    public TestPlan create(TestPlan testPlan) {
-        if (testPlanRepository.existsByTestPlanId(testPlan.getTestPlanId())) {
+    public TestPlan create(CreateTestPlanRequest request) {
+
+        if (testPlanRepository.existsByTestPlanId(request.getTestPlanId())) {
             throw new IllegalArgumentException(
-                    "Test Plan ID already exists: " + testPlan.getTestPlanId()
+                    "Test Plan ID already exists: " + request.getTestPlanId()
             );
         }
+
+        TestPlan testPlan = new TestPlan();
+
+        testPlan.setTestPlanId(request.getTestPlanId());
+        testPlan.setName(request.getName());
+        testPlan.setVersion(request.getVersion());
+        testPlan.setProject(request.getProject());
+        testPlan.setApplication(request.getApplication());
+        testPlan.setEnvironment(request.getEnvironment());
+        testPlan.setPreparedBy(request.getPreparedBy());
+        testPlan.setStatus(request.getStatus());
+        testPlan.setApprovalStatus(request.getApprovalStatus());
 
         LocalDateTime now = LocalDateTime.now();
 

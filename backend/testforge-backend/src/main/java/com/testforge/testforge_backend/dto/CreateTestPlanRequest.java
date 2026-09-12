@@ -1,65 +1,40 @@
-package com.testforge.testforge_backend.domain;
+package com.testforge.testforge_backend.dto;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
-import java.time.LocalDateTime;
+public class CreateTestPlanRequest {
 
-@Entity
-@Table(name = "test_plan")
-public class TestPlan {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "test_plan_id", nullable = false, unique = true, length = 50)
+    @NotBlank(message = "Test Plan ID is required")
+    @Size(max = 50, message = "Test Plan ID must not exceed 50 characters")
     private String testPlanId;
 
-    @Column(name = "name", nullable = false, length = 255)
+    @NotBlank(message = "Name is required")
+    @Size(max = 255, message = "Name must not exceed 255 characters")
     private String name;
 
-    @Column(name = "version", length = 50)
+    @Size(max = 50, message = "Version must not exceed 50 characters")
     private String version;
 
-    @Column(name = "project", length = 255)
+    @Size(max = 255, message = "Project must not exceed 255 characters")
     private String project;
 
-    @Column(name = "application", length = 255)
+    @Size(max = 255, message = "Application must not exceed 255 characters")
     private String application;
 
-    @Column(name = "environment", length = 100)
+    @Size(max = 100, message = "Environment must not exceed 100 characters")
     private String environment;
 
-    @Column(name = "prepared_by", length = 255)
+    @Size(max = 255, message = "Prepared By must not exceed 255 characters")
     private String preparedBy;
 
-    @Column(name = "status", nullable = false, length = 50)
+    @NotBlank(message = "Status is required")
+    @Size(max = 50, message = "Status must not exceed 50 characters")
     private String status;
 
-    @Column(name = "approval_status", nullable = false, length = 50)
+    @NotBlank(message = "Approval Status is required")
+    @Size(max = 50, message = "Approval Status must not exceed 50 characters")
     private String approvalStatus;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    public TestPlan() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
 
     public String getTestPlanId() {
         return testPlanId;
@@ -131,21 +106,5 @@ public class TestPlan {
 
     public void setApprovalStatus(String approvalStatus) {
         this.approvalStatus = approvalStatus;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 }
