@@ -30,7 +30,8 @@ class NormalizedTestCaseTest {
                         1,
                         AutomationActionType.NAVIGATE,
                         "Login page",
-                        "https://example.test/login",
+                        null,
+                        "${BASE_URL}/login",
                         null
                 )
         );
@@ -41,6 +42,13 @@ class NormalizedTestCaseTest {
                         2,
                         AutomationActionType.FILL,
                         "Username field",
+                        new NormalizedSelector(
+                                SelectorStrategy.LABEL,
+                                "Username",
+                                null,
+                                null,
+                                true
+                        ),
                         "${TEST_USERNAME}",
                         null
                 )
@@ -52,6 +60,13 @@ class NormalizedTestCaseTest {
                         3,
                         AutomationActionType.CLICK,
                         "Login button",
+                        new NormalizedSelector(
+                                SelectorStrategy.ROLE,
+                                null,
+                                UiElementRole.BUTTON,
+                                "Login",
+                                true
+                        ),
                         null,
                         null
                 )
@@ -63,6 +78,13 @@ class NormalizedTestCaseTest {
                         4,
                         AutomationActionType.ASSERT_VISIBLE,
                         "Dashboard",
+                        new NormalizedSelector(
+                                SelectorStrategy.TEXT,
+                                "Dashboard",
+                                null,
+                                null,
+                                false
+                        ),
                         null,
                         "Dashboard is displayed"
                 )
@@ -91,14 +113,26 @@ class NormalizedTestCaseTest {
                 navigate.getActionType()
         );
 
-        assertEquals(
-                "STEP-001",
-                navigate.getSourceStepId()
+        assertNull(
+                navigate.getSelector()
         );
 
         assertEquals(
-                "https://example.test/login",
+                "${BASE_URL}/login",
                 navigate.getValue()
+        );
+
+        NormalizedAutomationAction fill =
+                testCase.getActions().get(1);
+
+        assertEquals(
+                SelectorStrategy.LABEL,
+                fill.getSelector().getStrategy()
+        );
+
+        assertEquals(
+                "Username",
+                fill.getSelector().getValue()
         );
 
         NormalizedAutomationAction click =
@@ -110,8 +144,18 @@ class NormalizedTestCaseTest {
         );
 
         assertEquals(
-                "Login button",
-                click.getTarget()
+                SelectorStrategy.ROLE,
+                click.getSelector().getStrategy()
+        );
+
+        assertEquals(
+                UiElementRole.BUTTON,
+                click.getSelector().getRole()
+        );
+
+        assertEquals(
+                "Login",
+                click.getSelector().getName()
         );
 
         assertNull(

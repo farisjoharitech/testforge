@@ -10,6 +10,8 @@ public class NormalizedAutomationAction {
 
     private String target;
 
+    private NormalizedSelector selector;
+
     private String value;
 
     private String expectedValue;
@@ -22,6 +24,7 @@ public class NormalizedAutomationAction {
             Integer stepOrder,
             AutomationActionType actionType,
             String target,
+            NormalizedSelector selector,
             String value,
             String expectedValue) {
 
@@ -29,6 +32,7 @@ public class NormalizedAutomationAction {
         this.stepOrder = stepOrder;
         this.actionType = actionType;
         this.target = target;
+        this.selector = selector;
         this.value = value;
         this.expectedValue = expectedValue;
     }
@@ -71,6 +75,16 @@ public class NormalizedAutomationAction {
             String target
     ) {
         this.target = target;
+    }
+
+    public NormalizedSelector getSelector() {
+        return selector;
+    }
+
+    public void setSelector(
+            NormalizedSelector selector
+    ) {
+        this.selector = selector;
     }
 
     public String getValue() {
