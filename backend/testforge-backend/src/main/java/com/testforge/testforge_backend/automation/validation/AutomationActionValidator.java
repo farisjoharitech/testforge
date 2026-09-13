@@ -19,12 +19,11 @@ public class AutomationActionValidator {
             );
         }
 
-        validateStepOrder(action);
+        validateStepOrder(
+                action
+        );
 
-        AutomationActionType actionType =
-                action.getActionType();
-
-        if (actionType == null) {
+        if (action.getActionType() == null) {
             throw new AutomationValidationException(
                     "Automation action type is required"
             );
@@ -116,15 +115,12 @@ public class AutomationActionValidator {
 
                 requireValue(
                         action,
-                        "WAIT requires a wait value or condition"
+                        "WAIT requires a wait value in milliseconds"
                 );
             }
 
-            case ASSERT_VISIBLE -> {
-                requireSelector(action);
-            }
-
-            case ASSERT_HIDDEN -> {
+            case ASSERT_VISIBLE,
+                 ASSERT_HIDDEN -> {
                 requireSelector(action);
             }
 
@@ -163,6 +159,41 @@ public class AutomationActionValidator {
                         "ASSERT_TITLE requires an expected title"
                 );
             }
+
+            case API_GET,
+                 API_POST,
+                 API_PUT,
+                 API_PATCH,
+                 API_DELETE -> {
+
+                requireNoSelector(action);
+
+                requireTarget(
+                        action,
+                        action.getActionType()
+                                + " requires a request URL"
+                );
+            }
+
+            case ASSERT_API_STATUS -> {
+
+                requireNoSelector(action);
+
+                requireExpectedValue(
+                        action,
+                        "ASSERT_API_STATUS requires an expected HTTP status"
+                );
+            }
+
+            case ASSERT_API_BODY_CONTAINS -> {
+
+                requireNoSelector(action);
+
+                requireExpectedValue(
+                        action,
+                        "ASSERT_API_BODY_CONTAINS requires an expected body value"
+                );
+            }
         }
     }
 
@@ -179,77 +210,27 @@ public class AutomationActionValidator {
             );
         }
 
-        switch (strategy) {
+        if (strategy == SelectorStrategy.ROLE) {
 
-            case ROLE -> validateRoleSelector(
-                    selector
-            );
+            if (selector.getRole() == null) {
+                throw new AutomationValidationException(
+                        "ROLE selector requires a UI element role"
+                );
+            }
 
-            case LABEL,
-                 PLACEHOLDER,
-                 TEXT,
-                 TEST_ID,
-                 CSS,
-                 XPATH ->
-                    validateValueSelector(
-                            selector
-                    );
-        }
-    }
+            if (isBlank(selector.getName())) {
+                throw new AutomationValidationException(
+                        "ROLE selector requires an accessible name"
+                );
+            }
 
-    private void validateRoleSelector(
-            NormalizedSelector selector
-    ) {
-
-        if (selector.getRole() == null) {
-            throw new AutomationValidationException(
-                    "ROLE selector requires an element role"
-            );
+            return;
         }
 
-        if (isBlank(
-                selector.getName()
-        )) {
+        if (isBlank(selector.getValue())) {
             throw new AutomationValidationException(
-                    "ROLE selector requires an accessible name"
-            );
-        }
-
-        if (!isBlank(
-                selector.getValue()
-        )) {
-            throw new AutomationValidationException(
-                    "ROLE selector must use role and name instead of selector value"
-            );
-        }
-    }
-
-    private void validateValueSelector(
-            NormalizedSelector selector
-    ) {
-
-        if (isBlank(
-                selector.getValue()
-        )) {
-            throw new AutomationValidationException(
-                    selector.getStrategy()
+                    strategy
                             + " selector requires a selector value"
-            );
-        }
-
-        if (selector.getRole() != null) {
-            throw new AutomationValidationException(
-                    selector.getStrategy()
-                            + " selector must not define an element role"
-            );
-        }
-
-        if (!isBlank(
-                selector.getName()
-        )) {
-            throw new AutomationValidationException(
-                    selector.getStrategy()
-                            + " selector must not define a role name"
             );
         }
     }
@@ -283,9 +264,7 @@ public class AutomationActionValidator {
             String message
     ) {
 
-        if (isBlank(
-                action.getValue()
-        )) {
+        if (isBlank(action.getValue())) {
             throw new AutomationValidationException(
                     message
             );
@@ -299,6 +278,20 @@ public class AutomationActionValidator {
 
         if (isBlank(
                 action.getExpectedValue()
+        )) {
+            throw new AutomationValidationException(
+                    message
+            );
+        }
+    }
+
+    private void requireTarget(
+            NormalizedAutomationAction action,
+            String message
+    ) {
+
+        if (isBlank(
+                action.getTarget()
         )) {
             throw new AutomationValidationException(
                     message

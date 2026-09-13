@@ -2,6 +2,9 @@ package com.testforge.testforge_backend.automation.model;
 
 public enum AutomationActionType {
 
+    /*
+     * UI / browser actions
+     */
     NAVIGATE,
 
     CLICK,
@@ -28,5 +31,22 @@ public enum AutomationActionType {
 
     ASSERT_URL,
 
-    ASSERT_TITLE
+    ASSERT_TITLE,
+
+    /*
+     * API actions
+     */
+    API_GET,
+
+    API_POST,
+
+    API_PUT,
+
+    API_PATCH,
+
+    API_DELETE,
+
+    ASSERT_API_STATUS,
+
+    ASSERT_API_BODY_CONTAINS
 }

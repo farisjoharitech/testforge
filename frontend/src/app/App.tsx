@@ -4,13 +4,17 @@ import {
   Routes,
 } from 'react-router-dom';
 
-import AppLayout from '../components/layout/AppLayout';
+import AppLayout
+  from '../components/layout/AppLayout';
 
 import AutomationBuilderPage
   from '../pages/automation/AutomationBuilderPage';
 
 import AutomationSelectionPage
   from '../pages/automation/AutomationSelectionPage';
+
+import ScriptGenerationPage
+  from '../pages/automation/ScriptGenerationPage';
 
 import RequirementDetailsPage
   from '../pages/requirements/RequirementDetailsPage';
@@ -101,6 +105,13 @@ export default function App() {
           path="/automation/:testCaseId"
           element={
             <AutomationBuilderPage />
+          }
+        />
+
+        <Route
+          path="/automation/:testCaseId/script"
+          element={
+            <ScriptGenerationPage />
           }
         />
       </Route>

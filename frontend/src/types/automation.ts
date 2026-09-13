@@ -12,7 +12,14 @@ export type AutomationActionType =
   | 'ASSERT_TEXT'
   | 'ASSERT_VALUE'
   | 'ASSERT_URL'
-  | 'ASSERT_TITLE';
+  | 'ASSERT_TITLE'
+  | 'API_GET'
+  | 'API_POST'
+  | 'API_PUT'
+  | 'API_PATCH'
+  | 'API_DELETE'
+  | 'ASSERT_API_STATUS'
+  | 'ASSERT_API_BODY_CONTAINS';
 
 export type SelectorStrategy =
   | 'ROLE'
@@ -103,4 +110,17 @@ export interface AutomationStep {
   expectedValue?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface GeneratedScript {
+  automationScriptId: number;
+  automationScriptBusinessId: string;
+  testCaseId: number;
+  className: string;
+  language: string;
+  framework: string;
+  source: string;
+  generatedStepCount: number;
+  generatedAt: string;
+  stale: boolean;
 }

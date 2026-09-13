@@ -4,7 +4,9 @@ import com.testforge.testforge_backend.automation.dto.AutomationScriptResponse;
 import com.testforge.testforge_backend.automation.dto.AutomationStepResponse;
 import com.testforge.testforge_backend.automation.dto.CreateAutomationScriptRequest;
 import com.testforge.testforge_backend.automation.dto.CreateAutomationStepRequest;
+import com.testforge.testforge_backend.automation.dto.GeneratedScriptResponse;
 import com.testforge.testforge_backend.automation.dto.UpdateAutomationStepRequest;
+import com.testforge.testforge_backend.automation.service.AutomationGenerationService;
 import com.testforge.testforge_backend.automation.service.AutomationService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -24,13 +26,22 @@ import java.util.List;
 @RequestMapping("/api")
 public class AutomationController {
 
-    private final AutomationService automationService;
+    private final AutomationService
+            automationService;
+
+    private final AutomationGenerationService
+            automationGenerationService;
 
     public AutomationController(
-            AutomationService automationService
+            AutomationService automationService,
+            AutomationGenerationService automationGenerationService
     ) {
+
         this.automationService =
                 automationService;
+
+        this.automationGenerationService =
+                automationGenerationService;
     }
 
     @PostMapping(
@@ -69,13 +80,11 @@ public class AutomationController {
             @PathVariable Long testCaseId
     ) {
 
-        AutomationScriptResponse response =
-                automationService.getScriptByTestCase(
-                        testCaseId
-                );
-
         return ResponseEntity.ok(
-                response
+                automationService
+                        .getScriptByTestCase(
+                                testCaseId
+                        )
         );
     }
 
@@ -87,13 +96,10 @@ public class AutomationController {
             @PathVariable Long scriptId
     ) {
 
-        AutomationScriptResponse response =
+        return ResponseEntity.ok(
                 automationService.getScript(
                         scriptId
-                );
-
-        return ResponseEntity.ok(
-                response
+                )
         );
     }
 
@@ -133,13 +139,10 @@ public class AutomationController {
             @PathVariable Long scriptId
     ) {
 
-        List<AutomationStepResponse> response =
+        return ResponseEntity.ok(
                 automationService.getSteps(
                         scriptId
-                );
-
-        return ResponseEntity.ok(
-                response
+                )
         );
     }
 
@@ -151,13 +154,10 @@ public class AutomationController {
             @PathVariable Long stepId
     ) {
 
-        AutomationStepResponse response =
+        return ResponseEntity.ok(
                 automationService.getStep(
                         stepId
-                );
-
-        return ResponseEntity.ok(
-                response
+                )
         );
     }
 
@@ -172,14 +172,11 @@ public class AutomationController {
             UpdateAutomationStepRequest request
     ) {
 
-        AutomationStepResponse response =
+        return ResponseEntity.ok(
                 automationService.updateStep(
                         stepId,
                         request
-                );
-
-        return ResponseEntity.ok(
-                response
+                )
         );
     }
 
@@ -198,5 +195,43 @@ public class AutomationController {
         return ResponseEntity
                 .noContent()
                 .build();
+    }
+
+    /*
+     * Task 36.10
+     */
+    @PostMapping(
+            "/automation-scripts/{scriptId}/generate"
+    )
+    public ResponseEntity<GeneratedScriptResponse>
+    generateAutomationScript(
+            @PathVariable Long scriptId
+    ) {
+
+        return ResponseEntity.ok(
+                automationGenerationService
+                        .generate(
+                                scriptId
+                        )
+        );
+    }
+
+    /*
+     * Task 36.10
+     */
+    @GetMapping(
+            "/automation-scripts/{scriptId}/generated-script"
+    )
+    public ResponseEntity<GeneratedScriptResponse>
+    getGeneratedAutomationScript(
+            @PathVariable Long scriptId
+    ) {
+
+        return ResponseEntity.ok(
+                automationGenerationService
+                        .getGenerated(
+                                scriptId
+                        )
+        );
     }
 }

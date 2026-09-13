@@ -7,6 +7,7 @@ import type {
   AutomationStep,
   CreateAutomationScriptRequest,
   CreateAutomationStepRequest,
+  GeneratedScript,
   UpdateAutomationStepRequest,
 } from '../types/automation';
 
@@ -87,6 +88,32 @@ export const automationApi = {
   ): Promise<void> {
     return apiClient.delete<void>(
       `/api/automation-steps/${stepId}`,
+    );
+  },
+
+  /*
+   * Task 36.10
+   */
+  generateScript(
+    scriptId: number,
+  ): Promise<GeneratedScript> {
+    return apiClient.post<
+      GeneratedScript,
+      Record<string, never>
+    >(
+      `/api/automation-scripts/${scriptId}/generate`,
+      {},
+    );
+  },
+
+  /*
+   * Task 36.10
+   */
+  getGeneratedScript(
+    scriptId: number,
+  ): Promise<GeneratedScript> {
+    return apiClient.get<GeneratedScript>(
+      `/api/automation-scripts/${scriptId}/generated-script`,
     );
   },
 };

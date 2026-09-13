@@ -67,6 +67,28 @@ public class AutomationScript {
     private String name;
 
     @Column(
+            name = "generated_class_name",
+            length = 255
+    )
+    private String generatedClassName;
+
+    @Column(
+            name = "generated_source",
+            columnDefinition = "TEXT"
+    )
+    private String generatedSource;
+
+    @Column(
+            name = "generated_step_count"
+    )
+    private Integer generatedStepCount;
+
+    @Column(
+            name = "generated_at"
+    )
+    private LocalDateTime generatedAt;
+
+    @Column(
             name = "created_at",
             nullable = false,
             updatable = false
@@ -152,6 +174,50 @@ public class AutomationScript {
     ) {
         this.name =
                 name;
+    }
+
+    public String getGeneratedClassName() {
+        return generatedClassName;
+    }
+
+    public void setGeneratedClassName(
+            String generatedClassName
+    ) {
+        this.generatedClassName =
+                generatedClassName;
+    }
+
+    public String getGeneratedSource() {
+        return generatedSource;
+    }
+
+    public void setGeneratedSource(
+            String generatedSource
+    ) {
+        this.generatedSource =
+                generatedSource;
+    }
+
+    public Integer getGeneratedStepCount() {
+        return generatedStepCount;
+    }
+
+    public void setGeneratedStepCount(
+            Integer generatedStepCount
+    ) {
+        this.generatedStepCount =
+                generatedStepCount;
+    }
+
+    public LocalDateTime getGeneratedAt() {
+        return generatedAt;
+    }
+
+    public void setGeneratedAt(
+            LocalDateTime generatedAt
+    ) {
+        this.generatedAt =
+                generatedAt;
     }
 
     public LocalDateTime getCreatedAt() {

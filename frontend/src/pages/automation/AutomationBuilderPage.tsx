@@ -9,6 +9,7 @@ import {
   Add,
   ArrowBack,
   AutoAwesome,
+  Code,
   Delete,
   Edit,
 } from '@mui/icons-material';
@@ -89,7 +90,9 @@ function getErrorMessage(
     return error.message;
   }
 
-  return 'Unexpected error occurred.';
+  return (
+    'Unexpected error occurred.'
+  );
 }
 
 function formatValue(
@@ -107,7 +110,9 @@ function formatValue(
     return '—';
   }
 
-  return String(value);
+  return String(
+    value,
+  );
 }
 
 function actionLabel(
@@ -125,6 +130,37 @@ function actionLabel(
     .join(' ');
 }
 
+function automationTypeLabel(
+  automationType:
+    TestCase['automationType'],
+): string {
+  if (
+    automationType ===
+    'UI_API'
+  ) {
+    return 'UI + API';
+  }
+
+  return automationType;
+}
+
+function isApiAction(
+  actionType:
+    AutomationStep['actionType'],
+): boolean {
+  return [
+    'API_GET',
+    'API_POST',
+    'API_PUT',
+    'API_PATCH',
+    'API_DELETE',
+    'ASSERT_API_STATUS',
+    'ASSERT_API_BODY_CONTAINS',
+  ].includes(
+    actionType,
+  );
+}
+
 export default function AutomationBuilderPage() {
   const navigate =
     useNavigate();
@@ -139,15 +175,17 @@ export default function AutomationBuilderPage() {
     testCase,
     setTestCase,
   ] =
-    useState<TestCase | null>(
-      null,
-    );
+    useState<
+      TestCase | null
+    >(null);
 
   const [
     testSteps,
     setTestSteps,
   ] =
-    useState<TestStep[]>([]);
+    useState<
+      TestStep[]
+    >([]);
 
   const [
     script,
@@ -161,53 +199,68 @@ export default function AutomationBuilderPage() {
     automationSteps,
     setAutomationSteps,
   ] =
-    useState<AutomationStep[]>(
-      [],
-    );
+    useState<
+      AutomationStep[]
+    >([]);
 
   const [
     loading,
     setLoading,
-  ] = useState(true);
+  ] =
+    useState(
+      true,
+    );
 
   const [
     error,
     setError,
   ] =
-    useState<string | null>(
-      null,
-    );
+    useState<
+      string | null
+    >(null);
 
   const [
     scriptDialogOpen,
     setScriptDialogOpen,
-  ] = useState(false);
+  ] =
+    useState(
+      false,
+    );
 
   const [
     creatingScript,
     setCreatingScript,
-  ] = useState(false);
+  ] =
+    useState(
+      false,
+    );
 
   const [
     scriptError,
     setScriptError,
   ] =
-    useState<string | null>(
-      null,
-    );
+    useState<
+      string | null
+    >(null);
 
   const [
     stepDialogOpen,
     setStepDialogOpen,
-  ] = useState(false);
+  ] =
+    useState(
+      false,
+    );
 
   const [
     stepDialogMode,
     setStepDialogMode,
   ] =
     useState<
-      'create' | 'edit'
-    >('create');
+      | 'create'
+      | 'edit'
+    >(
+      'create',
+    );
 
   const [
     selectedAutomationStep,
@@ -220,20 +273,26 @@ export default function AutomationBuilderPage() {
   const [
     savingStep,
     setSavingStep,
-  ] = useState(false);
+  ] =
+    useState(
+      false,
+    );
 
   const [
     stepError,
     setStepError,
   ] =
-    useState<string | null>(
-      null,
-    );
+    useState<
+      string | null
+    >(null);
 
   const [
     deletingStep,
     setDeletingStep,
-  ] = useState(false);
+  ] =
+    useState(
+      false,
+    );
 
   const [
     deleteTarget,
@@ -247,26 +306,35 @@ export default function AutomationBuilderPage() {
     deleteError,
     setDeleteError,
   ] =
-    useState<string | null>(
-      null,
-    );
+    useState<
+      string | null
+    >(null);
 
   const loadBuilder =
     useCallback(
       async () => {
-        if (!testCaseId) {
+        if (
+          !testCaseId
+        ) {
           setError(
             'Test Case ID is missing.',
           );
 
-          setLoading(false);
+          setLoading(
+            false,
+          );
 
           return;
         }
 
         try {
-          setLoading(true);
-          setError(null);
+          setLoading(
+            true,
+          );
+
+          setError(
+            null,
+          );
 
           const [
             loadedTestCase,
@@ -289,12 +357,16 @@ export default function AutomationBuilderPage() {
           );
 
           setTestSteps(
-            [...loadedTestSteps]
-              .sort(
-                (a, b) =>
-                  a.stepOrder -
-                  b.stepOrder,
-              ),
+            [
+              ...loadedTestSteps,
+            ].sort(
+              (
+                a,
+                b,
+              ) =>
+                a.stepOrder -
+                b.stepOrder,
+            ),
           );
 
           try {
@@ -318,7 +390,10 @@ export default function AutomationBuilderPage() {
               [
                 ...loadedAutomationSteps,
               ].sort(
-                (a, b) =>
+                (
+                  a,
+                  b,
+                ) =>
                   a.stepOrder -
                   b.stepOrder,
               ),
@@ -332,7 +407,10 @@ export default function AutomationBuilderPage() {
               scriptLoadError.status ===
                 404
             ) {
-              setScript(null);
+              setScript(
+                null,
+              );
+
               setAutomationSteps(
                 [],
               );
@@ -340,8 +418,12 @@ export default function AutomationBuilderPage() {
               throw scriptLoadError;
             }
           }
-        } catch (err) {
-          console.error(err);
+        } catch (
+          err
+        ) {
+          console.error(
+            err,
+          );
 
           setError(
             getErrorMessage(
@@ -349,7 +431,9 @@ export default function AutomationBuilderPage() {
             ),
           );
         } finally {
-          setLoading(false);
+          setLoading(
+            false,
+          );
         }
       },
       [
@@ -379,7 +463,9 @@ export default function AutomationBuilderPage() {
         return (
           Math.max(
             ...automationSteps.map(
-              (step) =>
+              (
+                step,
+              ) =>
                 step.stepOrder,
             ),
           ) + 1
@@ -395,7 +481,9 @@ export default function AutomationBuilderPage() {
       () =>
         new Map(
           testSteps.map(
-            (testStep) => [
+            (
+              testStep,
+            ) => [
               testStep.id,
               testStep,
             ],
@@ -411,10 +499,44 @@ export default function AutomationBuilderPage() {
       () =>
         new Set(
           automationSteps.map(
-            (step) =>
+            (
+              step,
+            ) =>
               step.sourceTestStepId,
           ),
         ).size,
+      [
+        automationSteps,
+      ],
+    );
+
+  const uiAutomationStepCount =
+    useMemo(
+      () =>
+        automationSteps.filter(
+          (
+            step,
+          ) =>
+            !isApiAction(
+              step.actionType,
+            ),
+        ).length,
+      [
+        automationSteps,
+      ],
+    );
+
+  const apiAutomationStepCount =
+    useMemo(
+      () =>
+        automationSteps.filter(
+          (
+            step,
+          ) =>
+            isApiAction(
+              step.actionType,
+            ),
+        ).length,
       [
         automationSteps,
       ],
@@ -430,7 +552,9 @@ export default function AutomationBuilderPage() {
           string;
       },
     ) => {
-      if (!testCase) {
+      if (
+        !testCase
+      ) {
         return;
       }
 
@@ -439,7 +563,9 @@ export default function AutomationBuilderPage() {
           true,
         );
 
-        setScriptError(null);
+        setScriptError(
+          null,
+        );
 
         const created =
           await automationApi
@@ -459,8 +585,12 @@ export default function AutomationBuilderPage() {
         setScriptDialogOpen(
           false,
         );
-      } catch (err) {
-        console.error(err);
+      } catch (
+        err
+      ) {
+        console.error(
+          err,
+        );
 
         setScriptError(
           getErrorMessage(
@@ -484,44 +614,56 @@ export default function AutomationBuilderPage() {
         'create',
       );
 
-      setStepError(null);
+      setStepError(
+        null,
+      );
 
       setStepDialogOpen(
         true,
       );
     };
 
-  const openEditStep = (
-    automationStep:
-      AutomationStep,
-  ) => {
-    setSelectedAutomationStep(
-      automationStep,
-    );
+  const openEditStep =
+    (
+      automationStep:
+        AutomationStep,
+    ) => {
+      setSelectedAutomationStep(
+        automationStep,
+      );
 
-    setStepDialogMode(
-      'edit',
-    );
+      setStepDialogMode(
+        'edit',
+      );
 
-    setStepError(null);
+      setStepError(
+        null,
+      );
 
-    setStepDialogOpen(
-      true,
-    );
-  };
+      setStepDialogOpen(
+        true,
+      );
+    };
 
   const handleStepSubmit =
     async (
       values:
         AutomationStepFormValues,
     ) => {
-      if (!script) {
+      if (
+        !script
+      ) {
         return;
       }
 
       try {
-        setSavingStep(true);
-        setStepError(null);
+        setSavingStep(
+          true,
+        );
+
+        setStepError(
+          null,
+        );
 
         if (
           stepDialogMode ===
@@ -582,12 +724,17 @@ export default function AutomationBuilderPage() {
               );
 
           setAutomationSteps(
-            (current) =>
+            (
+              current,
+            ) =>
               [
                 ...current,
                 created,
               ].sort(
-                (a, b) =>
+                (
+                  a,
+                  b,
+                ) =>
                   a.stepOrder -
                   b.stepOrder,
               ),
@@ -648,17 +795,24 @@ export default function AutomationBuilderPage() {
               );
 
           setAutomationSteps(
-            (current) =>
+            (
+              current,
+            ) =>
               current
                 .map(
-                  (step) =>
+                  (
+                    step,
+                  ) =>
                     step.id ===
                     updated.id
                       ? updated
                       : step,
                 )
                 .sort(
-                  (a, b) =>
+                  (
+                    a,
+                    b,
+                  ) =>
                     a.stepOrder -
                     b.stepOrder,
                 ),
@@ -672,8 +826,12 @@ export default function AutomationBuilderPage() {
         setSelectedAutomationStep(
           null,
         );
-      } catch (err) {
-        console.error(err);
+      } catch (
+        err
+      ) {
+        console.error(
+          err,
+        );
 
         setStepError(
           getErrorMessage(
@@ -681,13 +839,17 @@ export default function AutomationBuilderPage() {
           ),
         );
       } finally {
-        setSavingStep(false);
+        setSavingStep(
+          false,
+        );
       }
     };
 
   const handleDeleteStep =
     async () => {
-      if (!deleteTarget) {
+      if (
+        !deleteTarget
+      ) {
         return;
       }
 
@@ -696,7 +858,9 @@ export default function AutomationBuilderPage() {
           true,
         );
 
-        setDeleteError(null);
+        setDeleteError(
+          null,
+        );
 
         await automationApi
           .deleteStep(
@@ -704,9 +868,13 @@ export default function AutomationBuilderPage() {
           );
 
         setAutomationSteps(
-          (current) =>
+          (
+            current,
+          ) =>
             current.filter(
-              (step) =>
+              (
+                step,
+              ) =>
                 step.id !==
                 deleteTarget.id,
             ),
@@ -715,8 +883,12 @@ export default function AutomationBuilderPage() {
         setDeleteTarget(
           null,
         );
-      } catch (err) {
-        console.error(err);
+      } catch (
+        err
+      ) {
+        console.error(
+          err,
+        );
 
         setDeleteError(
           getErrorMessage(
@@ -730,14 +902,21 @@ export default function AutomationBuilderPage() {
       }
     };
 
-  if (loading) {
+  if (
+    loading
+  ) {
     return (
       <Box
         sx={{
-          minHeight: 320,
-          display: 'flex',
+          minHeight:
+            320,
+
+          display:
+            'flex',
+
           alignItems:
             'center',
+
           justifyContent:
             'center',
         }}
@@ -753,7 +932,9 @@ export default function AutomationBuilderPage() {
     !testCaseId
   ) {
     return (
-      <Stack spacing={3}>
+      <Stack
+        spacing={3}
+      >
         <PageHeader
           title="Automation Builder"
           description="Unable to load Automation Builder."
@@ -791,10 +972,12 @@ export default function AutomationBuilderPage() {
       'MANUAL';
 
   return (
-    <Stack spacing={3}>
+    <Stack
+      spacing={3}
+    >
       <PageHeader
         title="Automation Builder"
-        description={`Configure explicit Automation Steps for ${testCase.testCaseId}.`}
+        description={`Configure Automation Steps for ${testCase.testCaseId}.`}
         breadcrumbs={[
           {
             label:
@@ -832,26 +1015,8 @@ export default function AutomationBuilderPage() {
         >
           This Test Case is not currently
           eligible for automation. Set
-          Automatable to Yes and choose
-          UI, API, or UI + API first.
-        </Alert>
-      )}
-
-      {(testCase.automationType ===
-        'API' ||
-        testCase.automationType ===
-          'UI_API') && (
-        <Alert
-          severity="warning"
-          variant="outlined"
-        >
-          The current backend
-          AutomationActionType model
-          contains browser/UI actions only.
-          API-specific HTTP request actions
-          are not yet represented in the
-          backend model. Do not model API
-          requests as fake UI actions.
+          Automatable to Yes and choose UI,
+          API, or UI + API first.
         </Alert>
       )}
 
@@ -859,7 +1024,9 @@ export default function AutomationBuilderPage() {
         variant="outlined"
       >
         <CardContent>
-          <Stack spacing={2}>
+          <Stack
+            spacing={2}
+          >
             <Stack
               direction={{
                 xs:
@@ -874,11 +1041,17 @@ export default function AutomationBuilderPage() {
               <Box>
                 <Typography
                   variant="h6"
-                  fontWeight={700}
+                  fontWeight={
+                    700
+                  }
                 >
-                  {testCase.testCaseId}
+                  {
+                    testCase.testCaseId
+                  }
                   {' — '}
-                  {testCase.name}
+                  {
+                    testCase.name
+                  }
                 </Typography>
 
                 <Typography
@@ -903,10 +1076,9 @@ export default function AutomationBuilderPage() {
               >
                 <Chip
                   label={
-                    testCase.automationType ===
-                    'UI_API'
-                      ? 'UI + API'
-                      : testCase.automationType
+                    automationTypeLabel(
+                      testCase.automationType,
+                    )
                   }
                   color="primary"
                   variant="outlined"
@@ -939,8 +1111,11 @@ export default function AutomationBuilderPage() {
                   xs:
                     '1fr',
 
-                  md:
-                    'repeat(3, minmax(0, 1fr))',
+                  sm:
+                    'repeat(2, minmax(0, 1fr))',
+
+                  lg:
+                    'repeat(5, minmax(0, 1fr))',
                 },
 
                 gap: 2,
@@ -957,7 +1132,9 @@ export default function AutomationBuilderPage() {
                 <Typography
                   variant="h6"
                 >
-                  {testSteps.length}
+                  {
+                    testSteps.length
+                  }
                 </Typography>
               </Box>
 
@@ -972,7 +1149,9 @@ export default function AutomationBuilderPage() {
                 <Typography
                   variant="h6"
                 >
-                  {mappedSourceCount}
+                  {
+                    mappedSourceCount
+                  }
                 </Typography>
               </Box>
 
@@ -989,6 +1168,40 @@ export default function AutomationBuilderPage() {
                 >
                   {
                     automationSteps.length
+                  }
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  UI Actions
+                </Typography>
+
+                <Typography
+                  variant="h6"
+                >
+                  {
+                    uiAutomationStepCount
+                  }
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  API Actions
+                </Typography>
+
+                <Typography
+                  variant="h6"
+                >
+                  {
+                    apiAutomationStepCount
                   }
                 </Typography>
               </Box>
@@ -1012,13 +1225,16 @@ export default function AutomationBuilderPage() {
               <AutoAwesome
                 color="primary"
                 sx={{
-                  fontSize: 48,
+                  fontSize:
+                    48,
                 }}
               />
 
               <Typography
                 variant="h6"
-                fontWeight={700}
+                fontWeight={
+                  700
+                }
               >
                 No Automation Script
               </Typography>
@@ -1027,7 +1243,8 @@ export default function AutomationBuilderPage() {
                 color="text.secondary"
                 textAlign="center"
                 sx={{
-                  maxWidth: 650,
+                  maxWidth:
+                    650,
                 }}
               >
                 Create the Automation
@@ -1094,7 +1311,9 @@ export default function AutomationBuilderPage() {
 
                   <Typography
                     variant="h6"
-                    fontWeight={700}
+                    fontWeight={
+                      700
+                    }
                   >
                     {
                       script.automationScriptId
@@ -1102,25 +1321,58 @@ export default function AutomationBuilderPage() {
                   </Typography>
 
                   <Typography>
-                    {script.name}
+                    {
+                      script.name
+                    }
                   </Typography>
                 </Box>
 
-                <Button
-                  variant="contained"
-                  startIcon={
-                    <Add />
-                  }
-                  disabled={
-                    testSteps.length ===
-                    0
-                  }
-                  onClick={
-                    openCreateStep
-                  }
+                <Stack
+                  direction={{
+                    xs:
+                      'column',
+
+                    sm:
+                      'row',
+                  }}
+                  spacing={1}
                 >
-                  Add Automation Step
-                </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={
+                      <Code />
+                    }
+                    disabled={
+                      automationSteps.length ===
+                      0
+                    }
+                    onClick={() =>
+                      navigate(
+                        `/automation/${encodeURIComponent(
+                          testCase.testCaseId,
+                        )}/script`,
+                      )
+                    }
+                  >
+                    Script Generation
+                  </Button>
+
+                  <Button
+                    variant="contained"
+                    startIcon={
+                      <Add />
+                    }
+                    disabled={
+                      testSteps.length ===
+                      0
+                    }
+                    onClick={
+                      openCreateStep
+                    }
+                  >
+                    Add Automation Step
+                  </Button>
+                </Stack>
               </Stack>
             </CardContent>
           </Card>
@@ -1137,13 +1389,61 @@ export default function AutomationBuilderPage() {
             </Alert>
           )}
 
-          <Stack spacing={2}>
-            <Typography
-              variant="h6"
-              fontWeight={700}
+          {testCase.automationType ===
+            'UI_API' && (
+            <Alert
+              severity="info"
+              variant="outlined"
             >
-              Automation Steps
-            </Typography>
+              UI + API automation can mix
+              browser actions and API
+              request/assertion actions in
+              the same Automation Script.
+              Execution follows Automation
+              Step Order.
+            </Alert>
+          )}
+
+          <Stack
+            spacing={2}
+          >
+            <Stack
+              direction={{
+                xs:
+                  'column',
+
+                sm:
+                  'row',
+              }}
+              spacing={1}
+              justifyContent="space-between"
+              alignItems={{
+                xs:
+                  'flex-start',
+
+                sm:
+                  'center',
+              }}
+            >
+              <Typography
+                variant="h6"
+                fontWeight={
+                  700
+                }
+              >
+                Automation Steps
+              </Typography>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+              >
+                {
+                  automationSteps.length
+                }{' '}
+                configured
+              </Typography>
+            </Stack>
 
             {automationSteps.length ===
             0 ? (
@@ -1162,6 +1462,11 @@ export default function AutomationBuilderPage() {
                     sourceStepMap.get(
                       automationStep
                         .sourceTestStepId,
+                    );
+
+                  const apiAction =
+                    isApiAction(
+                      automationStep.actionType,
                     );
 
                   return (
@@ -1187,19 +1492,44 @@ export default function AutomationBuilderPage() {
                             justifyContent="space-between"
                           >
                             <Box>
-                              <Typography
-                                variant="h6"
-                                fontWeight={700}
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                                useFlexGap
+                                flexWrap="wrap"
                               >
-                                Step{' '}
-                                {
-                                  automationStep.stepOrder
-                                }
-                                {' — '}
-                                {actionLabel(
-                                  automationStep.actionType,
-                                )}
-                              </Typography>
+                                <Typography
+                                  variant="h6"
+                                  fontWeight={
+                                    700
+                                  }
+                                >
+                                  Step{' '}
+                                  {
+                                    automationStep.stepOrder
+                                  }
+                                  {' — '}
+                                  {actionLabel(
+                                    automationStep.actionType,
+                                  )}
+                                </Typography>
+
+                                <Chip
+                                  size="small"
+                                  label={
+                                    apiAction
+                                      ? 'API'
+                                      : 'UI'
+                                  }
+                                  color={
+                                    apiAction
+                                      ? 'secondary'
+                                      : 'primary'
+                                  }
+                                  variant="outlined"
+                                />
+                              </Stack>
 
                               <Typography
                                 variant="body2"
@@ -1283,7 +1613,9 @@ export default function AutomationBuilderPage() {
 
                               <Typography
                                 variant="body2"
-                                fontWeight={600}
+                                fontWeight={
+                                  600
+                                }
                               >
                                 {sourceStep
                                   ? `${sourceStep.testStepId} (#${sourceStep.stepOrder})`
@@ -1313,7 +1645,9 @@ export default function AutomationBuilderPage() {
                                 variant="caption"
                                 color="text.secondary"
                               >
-                                Target
+                                {apiAction
+                                  ? 'Request URL / Target'
+                                  : 'Target'}
                               </Typography>
 
                               <Typography
@@ -1321,6 +1655,9 @@ export default function AutomationBuilderPage() {
                                 sx={{
                                   whiteSpace:
                                     'pre-wrap',
+
+                                  overflowWrap:
+                                    'anywhere',
                                 }}
                               >
                                 {formatValue(
@@ -1358,7 +1695,9 @@ export default function AutomationBuilderPage() {
                                 variant="caption"
                                 color="text.secondary"
                               >
-                                Input
+                                {apiAction
+                                  ? 'Request Body / Input'
+                                  : 'Input'}
                               </Typography>
 
                               <Typography
@@ -1412,9 +1751,11 @@ export default function AutomationBuilderPage() {
                               <Typography
                                 variant="body2"
                               >
-                                {automationStep.selectorExact
-                                  ? 'Yes'
-                                  : 'No'}
+                                {
+                                  automationStep.selectorExact
+                                    ? 'Yes'
+                                    : 'No'
+                                }
                               </Typography>
                             </Box>
                           </Box>
@@ -1434,6 +1775,32 @@ export default function AutomationBuilderPage() {
                                   sourceStep.action
                                 }
                               </Typography>
+
+                              {sourceStep.target && (
+                                <Typography
+                                  variant="body2"
+                                >
+                                  <strong>
+                                    Target:
+                                  </strong>{' '}
+                                  {
+                                    sourceStep.target
+                                  }
+                                </Typography>
+                              )}
+
+                              {sourceStep.inputValue && (
+                                <Typography
+                                  variant="body2"
+                                >
+                                  <strong>
+                                    Input:
+                                  </strong>{' '}
+                                  {
+                                    sourceStep.inputValue
+                                  }
+                                </Typography>
+                              )}
 
                               {sourceStep.expectedResult && (
                                 <Typography
@@ -1497,6 +1864,9 @@ export default function AutomationBuilderPage() {
         testCaseId={
           testCase.testCaseId
         }
+        automationType={
+          testCase.automationType
+        }
         testSteps={
           testSteps
         }
@@ -1513,7 +1883,9 @@ export default function AutomationBuilderPage() {
           stepError
         }
         onClose={() => {
-          if (!savingStep) {
+          if (
+            !savingStep
+          ) {
             setStepDialogOpen(
               false,
             );

@@ -31,44 +31,76 @@ import type {
 } from '../../types/automation';
 
 import type {
+  AutomationType,
+} from '../../types/testCase';
+
+import type {
   TestStep,
 } from '../../types/testStep';
 
 export interface AutomationStepFormValues {
   automationStepId: string;
+
   sourceTestStepId: number;
+
   stepOrder: number;
+
   actionType: AutomationActionType;
+
   target: string;
+
   selectorStrategy:
     | SelectorStrategy
     | '';
+
   selectorValue: string;
+
   selectorRole:
     | UiElementRole
     | '';
+
   selectorName: string;
+
   selectorExact: boolean;
+
   inputValue: string;
+
   expectedValue: string;
 }
 
 interface AutomationStepDialogProps {
   open: boolean;
-  mode: 'create' | 'edit';
+
+  mode:
+    | 'create'
+    | 'edit';
+
   testCaseId: string;
+
+  automationType:
+    AutomationType;
+
   testSteps: TestStep[];
-  automationStep?: AutomationStep | null;
+
+  automationStep?:
+    | AutomationStep
+    | null;
+
   suggestedOrder: number;
+
   saving?: boolean;
+
   error?: string | null;
+
   onClose: () => void;
+
   onSubmit: (
-    values: AutomationStepFormValues,
+    values:
+      AutomationStepFormValues,
   ) => void;
 }
 
-const ACTION_TYPES:
+const UI_ACTION_TYPES:
 AutomationActionType[] = [
   'NAVIGATE',
   'CLICK',
@@ -84,6 +116,17 @@ AutomationActionType[] = [
   'ASSERT_VALUE',
   'ASSERT_URL',
   'ASSERT_TITLE',
+];
+
+const API_ACTION_TYPES:
+AutomationActionType[] = [
+  'API_GET',
+  'API_POST',
+  'API_PUT',
+  'API_PATCH',
+  'API_DELETE',
+  'ASSERT_API_STATUS',
+  'ASSERT_API_BODY_CONTAINS',
 ];
 
 const SELECTOR_STRATEGIES:
@@ -140,6 +183,13 @@ AutomationActionType[] = [
   'WAIT',
   'ASSERT_URL',
   'ASSERT_TITLE',
+  'API_GET',
+  'API_POST',
+  'API_PUT',
+  'API_PATCH',
+  'API_DELETE',
+  'ASSERT_API_STATUS',
+  'ASSERT_API_BODY_CONTAINS',
 ];
 
 const INPUT_REQUIRED_ACTIONS:
@@ -157,6 +207,24 @@ AutomationActionType[] = [
   'ASSERT_VALUE',
   'ASSERT_URL',
   'ASSERT_TITLE',
+  'ASSERT_API_STATUS',
+  'ASSERT_API_BODY_CONTAINS',
+];
+
+const API_REQUEST_ACTIONS:
+AutomationActionType[] = [
+  'API_GET',
+  'API_POST',
+  'API_PUT',
+  'API_PATCH',
+  'API_DELETE',
+];
+
+const API_BODY_ACTIONS:
+AutomationActionType[] = [
+  'API_POST',
+  'API_PUT',
+  'API_PATCH',
 ];
 
 function actionLabel(
@@ -195,6 +263,7 @@ export default function AutomationStepDialog({
   open,
   mode,
   testCaseId,
+  automationType,
   testSteps,
   automationStep,
   suggestedOrder,
@@ -212,7 +281,9 @@ export default function AutomationStepDialog({
     sourceTestStepId,
     setSourceTestStepId,
   ] =
-    useState<number | ''>('');
+    useState<number | ''>(
+      '',
+    );
 
   const [
     stepOrder,
@@ -284,13 +355,42 @@ export default function AutomationStepDialog({
       null,
     );
 
+  const availableActionTypes =
+    useMemo(
+      () => {
+        if (
+          automationType ===
+          'API'
+        ) {
+          return API_ACTION_TYPES;
+        }
+
+        if (
+          automationType ===
+          'UI_API'
+        ) {
+          return [
+            ...UI_ACTION_TYPES,
+            ...API_ACTION_TYPES,
+          ];
+        }
+
+        return UI_ACTION_TYPES;
+      },
+      [
+        automationType,
+      ],
+    );
+
   useEffect(
     () => {
       if (!open) {
         return;
       }
 
-      setValidationError(null);
+      setValidationError(
+        null,
+      );
 
       if (
         mode === 'edit' &&
@@ -307,15 +407,18 @@ export default function AutomationStepDialog({
         );
 
         setStepOrder(
-          automationStep.stepOrder,
+          automationStep
+            .stepOrder,
         );
 
         setActionType(
-          automationStep.actionType,
+          automationStep
+            .actionType,
         );
 
         setTarget(
-          automationStep.target ??
+          automationStep
+            .target ??
             '',
         );
 
@@ -370,19 +473,49 @@ export default function AutomationStepDialog({
         ),
       );
 
-      setSourceTestStepId('');
+      setSourceTestStepId(
+        '',
+      );
+
       setStepOrder(
         suggestedOrder,
       );
-      setActionType('');
-      setTarget('');
-      setSelectorStrategy('');
-      setSelectorValue('');
-      setSelectorRole('');
-      setSelectorName('');
-      setSelectorExact(false);
-      setInputValue('');
-      setExpectedValue('');
+
+      setActionType(
+        '',
+      );
+
+      setTarget(
+        '',
+      );
+
+      setSelectorStrategy(
+        '',
+      );
+
+      setSelectorValue(
+        '',
+      );
+
+      setSelectorRole(
+        '',
+      );
+
+      setSelectorName(
+        '',
+      );
+
+      setSelectorExact(
+        false,
+      );
+
+      setInputValue(
+        '',
+      );
+
+      setExpectedValue(
+        '',
+      );
     },
     [
       open,
@@ -422,12 +555,30 @@ export default function AutomationStepDialog({
   const requiresInput =
     actionType !== '' &&
     INPUT_REQUIRED_ACTIONS
-      .includes(actionType);
+      .includes(
+        actionType,
+      );
 
   const requiresExpected =
     actionType !== '' &&
     EXPECTED_REQUIRED_ACTIONS
-      .includes(actionType);
+      .includes(
+        actionType,
+      );
+
+  const requiresTarget =
+    actionType !== '' &&
+    API_REQUEST_ACTIONS
+      .includes(
+        actionType,
+      );
+
+  const showApiBody =
+    actionType !== '' &&
+    API_BODY_ACTIONS
+      .includes(
+        actionType,
+      );
 
   const selectedSourceStep =
     testSteps.find(
@@ -444,15 +595,72 @@ export default function AutomationStepDialog({
       nextAction,
     );
 
+    setValidationError(
+      null,
+    );
+
     if (
       NO_SELECTOR_ACTIONS
-        .includes(nextAction)
+        .includes(
+          nextAction,
+        )
     ) {
-      setSelectorStrategy('');
-      setSelectorValue('');
-      setSelectorRole('');
-      setSelectorName('');
-      setSelectorExact(false);
+      setSelectorStrategy(
+        '',
+      );
+
+      setSelectorValue(
+        '',
+      );
+
+      setSelectorRole(
+        '',
+      );
+
+      setSelectorName(
+        '',
+      );
+
+      setSelectorExact(
+        false,
+      );
+    }
+
+    if (
+      !API_REQUEST_ACTIONS
+        .includes(
+          nextAction,
+        )
+    ) {
+      setTarget(
+        '',
+      );
+    }
+
+    if (
+      !API_BODY_ACTIONS
+        .includes(
+          nextAction,
+        ) &&
+      !INPUT_REQUIRED_ACTIONS
+        .includes(
+          nextAction,
+        )
+    ) {
+      setInputValue(
+        '',
+      );
+    }
+
+    if (
+      !EXPECTED_REQUIRED_ACTIONS
+        .includes(
+          nextAction,
+        )
+    ) {
+      setExpectedValue(
+        '',
+      );
     }
   };
 
@@ -467,10 +675,17 @@ export default function AutomationStepDialog({
     if (
       strategy === 'ROLE'
     ) {
-      setSelectorValue('');
+      setSelectorValue(
+        '',
+      );
     } else {
-      setSelectorRole('');
-      setSelectorName('');
+      setSelectorRole(
+        '',
+      );
+
+      setSelectorName(
+        '',
+      );
     }
   };
 
@@ -490,7 +705,8 @@ export default function AutomationStepDialog({
     }
 
     if (
-      trimmedStepId.length > 50
+      trimmedStepId.length >
+      50
     ) {
       setValidationError(
         'Automation Step ID must not exceed 50 characters.',
@@ -500,7 +716,8 @@ export default function AutomationStepDialog({
     }
 
     if (
-      sourceTestStepId === ''
+      sourceTestStepId ===
+      ''
     ) {
       setValidationError(
         'Source Test Step is required.',
@@ -531,7 +748,8 @@ export default function AutomationStepDialog({
     }
 
     if (
-      target.length > 500
+      target.length >
+      500
     ) {
       setValidationError(
         'Target must not exceed 500 characters.',
@@ -552,7 +770,8 @@ export default function AutomationStepDialog({
     }
 
     if (
-      selectorName.length > 500
+      selectorName.length >
+      500
     ) {
       setValidationError(
         'Selector name must not exceed 500 characters.',
@@ -562,7 +781,8 @@ export default function AutomationStepDialog({
     }
 
     if (
-      inputValue.length > 4000
+      inputValue.length >
+      4000
     ) {
       setValidationError(
         'Input value must not exceed 4000 characters.',
@@ -577,6 +797,17 @@ export default function AutomationStepDialog({
     ) {
       setValidationError(
         'Expected value must not exceed 4000 characters.',
+      );
+
+      return;
+    }
+
+    if (
+      requiresTarget &&
+      !target.trim()
+    ) {
+      setValidationError(
+        `${actionType} requires a request URL.`,
       );
 
       return;
@@ -662,7 +893,56 @@ export default function AutomationStepDialog({
       return;
     }
 
-    setValidationError(null);
+    if (
+      actionType ===
+      'ASSERT_API_STATUS'
+    ) {
+      const status =
+        Number(
+          expectedValue,
+        );
+
+      if (
+        !Number.isInteger(
+          status,
+        ) ||
+        status < 100 ||
+        status > 599
+      ) {
+        setValidationError(
+          'Expected HTTP Status must be a valid status code between 100 and 599.',
+        );
+
+        return;
+      }
+    }
+
+    if (
+      actionType ===
+      'WAIT'
+    ) {
+      const milliseconds =
+        Number(
+          inputValue,
+        );
+
+      if (
+        Number.isNaN(
+          milliseconds,
+        ) ||
+        milliseconds < 0
+      ) {
+        setValidationError(
+          'WAIT requires a non-negative number of milliseconds.',
+        );
+
+        return;
+      }
+    }
+
+    setValidationError(
+      null,
+    );
 
     onSubmit({
       automationStepId:
@@ -733,8 +1013,11 @@ export default function AutomationStepDialog({
 
           <Stack
             direction={{
-              xs: 'column',
-              md: 'row',
+              xs:
+                'column',
+
+              md:
+                'row',
             }}
             spacing={2}
           >
@@ -758,6 +1041,12 @@ export default function AutomationStepDialog({
               inputProps={{
                 maxLength: 50,
               }}
+              helperText={
+                mode ===
+                'edit'
+                  ? 'Automation Step ID cannot be changed after creation.'
+                  : `${automationStepId.length}/50`
+              }
             />
 
             <TextField
@@ -810,7 +1099,9 @@ export default function AutomationStepDialog({
               }
             >
               {testSteps.map(
-                (testStep) => (
+                (
+                  testStep,
+                ) => (
                   <MenuItem
                     key={
                       testStep.id
@@ -819,11 +1110,17 @@ export default function AutomationStepDialog({
                       testStep.id
                     }
                   >
-                    {testStep.stepOrder}
+                    {
+                      testStep.stepOrder
+                    }
                     {' — '}
-                    {testStep.testStepId}
+                    {
+                      testStep.testStepId
+                    }
                     {' — '}
-                    {testStep.action}
+                    {
+                      testStep.action
+                    }
                   </MenuItem>
                 ),
               )}
@@ -837,7 +1134,9 @@ export default function AutomationStepDialog({
             >
               <Typography
                 variant="body2"
-                fontWeight={700}
+                fontWeight={
+                  700
+                }
               >
                 Source Test Step
               </Typography>
@@ -868,8 +1167,7 @@ export default function AutomationStepDialog({
                 >
                   Input:{' '}
                   {
-                    selectedSourceStep
-                      .inputValue
+                    selectedSourceStep.inputValue
                   }
                 </Typography>
               )}
@@ -880,8 +1178,7 @@ export default function AutomationStepDialog({
                 >
                   Expected:{' '}
                   {
-                    selectedSourceStep
-                      .expectedResult
+                    selectedSourceStep.expectedResult
                   }
                 </Typography>
               )}
@@ -905,16 +1202,23 @@ export default function AutomationStepDialog({
                 event,
               ) =>
                 handleActionChange(
-                  event.target
+                  event
+                    .target
                     .value as AutomationActionType,
                 )
               }
             >
-              {ACTION_TYPES.map(
-                (value) => (
+              {availableActionTypes.map(
+                (
+                  value,
+                ) => (
                   <MenuItem
-                    key={value}
-                    value={value}
+                    key={
+                      value
+                    }
+                    value={
+                      value
+                    }
                   >
                     {actionLabel(
                       value,
@@ -927,19 +1231,34 @@ export default function AutomationStepDialog({
 
           <TextField
             fullWidth
-            label="Target / Description"
-            value={target}
+            required={
+              requiresTarget
+            }
+            label={
+              requiresTarget
+                ? 'Request URL'
+                : 'Target / Description'
+            }
+            value={
+              target
+            }
             onChange={(
               event,
             ) =>
               setTarget(
-                event.target.value,
+                event
+                  .target
+                  .value,
               )
             }
             inputProps={{
               maxLength: 500,
             }}
-            helperText="Optional descriptive target. Selector fields below control element location."
+            helperText={
+              requiresTarget
+                ? 'Full API endpoint URL.'
+                : 'Optional descriptive target.'
+            }
           />
 
           {requiresSelector && (
@@ -961,16 +1280,23 @@ export default function AutomationStepDialog({
                     event,
                   ) =>
                     handleSelectorChange(
-                      event.target
+                      event
+                        .target
                         .value as SelectorStrategy,
                     )
                   }
                 >
                   {SELECTOR_STRATEGIES.map(
-                    (value) => (
+                    (
+                      value,
+                    ) => (
                       <MenuItem
-                        key={value}
-                        value={value}
+                        key={
+                          value
+                        }
+                        value={
+                          value
+                        }
                       >
                         {actionLabel(
                           value,
@@ -1010,13 +1336,16 @@ export default function AutomationStepDialog({
                         event,
                       ) =>
                         setSelectorRole(
-                          event.target
+                          event
+                            .target
                             .value as UiElementRole,
                         )
                       }
                     >
                       {UI_ROLES.map(
-                        (role) => (
+                        (
+                          role,
+                        ) => (
                           <MenuItem
                             key={
                               role
@@ -1045,12 +1374,14 @@ export default function AutomationStepDialog({
                       event,
                     ) =>
                       setSelectorName(
-                        event.target
+                        event
+                          .target
                           .value,
                       )
                     }
                     inputProps={{
-                      maxLength: 500,
+                      maxLength:
+                        500,
                     }}
                   />
                 </Stack>
@@ -1067,12 +1398,14 @@ export default function AutomationStepDialog({
                       event,
                     ) =>
                       setSelectorValue(
-                        event.target
+                        event
+                          .target
                           .value,
                       )
                     }
                     inputProps={{
-                      maxLength: 2000,
+                      maxLength:
+                        2000,
                     }}
                     helperText={
                       selectorStrategy ===
@@ -1100,7 +1433,8 @@ export default function AutomationStepDialog({
                       event,
                     ) =>
                       setSelectorExact(
-                        event.target
+                        event
+                          .target
                           .checked,
                       )
                     }
@@ -1138,7 +1472,7 @@ export default function AutomationStepDialog({
                       : actionType ===
                           'PRESS'
                         ? 'Keyboard Key'
-                        : 'Wait Value / Condition'
+                        : 'Wait Time (milliseconds)'
               }
               value={
                 inputValue
@@ -1147,12 +1481,41 @@ export default function AutomationStepDialog({
                 event,
               ) =>
                 setInputValue(
-                  event.target.value,
+                  event
+                    .target
+                    .value,
                 )
               }
               inputProps={{
-                maxLength: 4000,
+                maxLength:
+                  4000,
               }}
+            />
+          )}
+
+          {showApiBody && (
+            <TextField
+              fullWidth
+              multiline
+              minRows={4}
+              label="Request Body"
+              value={
+                inputValue
+              }
+              onChange={(
+                event,
+              ) =>
+                setInputValue(
+                  event
+                    .target
+                    .value,
+                )
+              }
+              inputProps={{
+                maxLength:
+                  4000,
+              }}
+              helperText="Optional request body. JSON text can be entered directly."
             />
           )}
 
@@ -1160,8 +1523,16 @@ export default function AutomationStepDialog({
             <TextField
               fullWidth
               required
-              multiline
-              minRows={2}
+              multiline={
+                actionType !==
+                'ASSERT_API_STATUS'
+              }
+              minRows={
+                actionType !==
+                'ASSERT_API_STATUS'
+                  ? 2
+                  : undefined
+              }
               label={
                 actionType ===
                 'ASSERT_URL'
@@ -1169,7 +1540,13 @@ export default function AutomationStepDialog({
                   : actionType ===
                       'ASSERT_TITLE'
                     ? 'Expected Title'
-                    : 'Expected Value'
+                    : actionType ===
+                        'ASSERT_API_STATUS'
+                      ? 'Expected HTTP Status'
+                      : actionType ===
+                          'ASSERT_API_BODY_CONTAINS'
+                        ? 'Expected Body Text'
+                        : 'Expected Value'
               }
               value={
                 expectedValue
@@ -1178,13 +1555,29 @@ export default function AutomationStepDialog({
                 event,
               ) =>
                 setExpectedValue(
-                  event.target.value,
+                  event
+                    .target
+                    .value,
                 )
               }
               inputProps={{
-                maxLength: 4000,
+                maxLength:
+                  4000,
               }}
             />
+          )}
+
+          {automationType ===
+            'UI_API' && (
+            <Alert
+              severity="info"
+              variant="outlined"
+            >
+              This Test Case supports both
+              UI and API automation actions.
+              Steps are executed according
+              to Automation Step Order.
+            </Alert>
           )}
         </Stack>
       </DialogContent>
@@ -1196,20 +1589,30 @@ export default function AutomationStepDialog({
         }}
       >
         <Button
-          disabled={saving}
-          onClick={onClose}
+          disabled={
+            saving
+          }
+          onClick={
+            onClose
+          }
         >
           Cancel
         </Button>
 
         <Button
           variant="contained"
-          disabled={saving}
-          onClick={handleSubmit}
+          disabled={
+            saving
+          }
+          onClick={
+            handleSubmit
+          }
           startIcon={
             saving ? (
               <CircularProgress
-                size={18}
+                size={
+                  18
+                }
                 color="inherit"
               />
             ) : undefined
@@ -1217,7 +1620,8 @@ export default function AutomationStepDialog({
         >
           {saving
             ? 'Saving...'
-            : mode === 'create'
+            : mode ===
+                'create'
               ? 'Add Step'
               : 'Save Changes'}
         </Button>
