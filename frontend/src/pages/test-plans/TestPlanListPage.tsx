@@ -6,6 +6,7 @@ import {
 
 import {
   Add,
+  ArrowForward,
   Refresh,
 } from '@mui/icons-material';
 
@@ -16,8 +17,8 @@ import {
   Card,
   CardContent,
   Chip,
-  CircularProgress,
   Divider,
+  CircularProgress,
   Stack,
   Typography,
 } from '@mui/material';
@@ -518,21 +519,31 @@ export default function TestPlanListPage() {
                           )}
                         </Typography>
                       </Box>
+                    </Box>
 
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          Prepared By
-                        </Typography>
+                    <Box
+                      sx={{
+                        display:
+                          'flex',
 
-                        <Typography>
-                          {displayValue(
-                            testPlan.preparedBy,
-                          )}
-                        </Typography>
-                      </Box>
+                        justifyContent:
+                          'flex-end',
+                      }}
+                    >
+                      <Button
+                        endIcon={
+                          <ArrowForward />
+                        }
+                        onClick={() =>
+                          navigate(
+                            `/test-plans/${encodeURIComponent(
+                              testPlan.testPlanId,
+                            )}`,
+                          )
+                        }
+                      >
+                        Open Test Plan
+                      </Button>
                     </Box>
                   </Stack>
                 </CardContent>

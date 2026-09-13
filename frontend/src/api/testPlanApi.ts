@@ -20,13 +20,28 @@ export const testPlanApi = {
   getTestPlan(
     id: number,
   ): Promise<TestPlan> {
-    return apiClient.get<TestPlan>(
+    return apiClient.get<
+      TestPlan
+    >(
       `/api/test-plans/${id}`,
     );
   },
 
+  getTestPlanByBusinessId(
+    testPlanId: string,
+  ): Promise<TestPlan> {
+    return apiClient.get<
+      TestPlan
+    >(
+      `/api/test-plans/business/${encodeURIComponent(
+        testPlanId,
+      )}`,
+    );
+  },
+
   createTestPlan(
-    request: CreateTestPlanRequest,
+    request:
+      CreateTestPlanRequest,
   ): Promise<TestPlan> {
     return apiClient.post<
       TestPlan,
