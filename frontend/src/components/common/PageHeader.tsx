@@ -1,108 +1,51 @@
-import {
-  Box,
-  Breadcrumbs,
-  Link,
-  Stack,
-  Typography,
-} from '@mui/material';
-
-import {
-  Link as RouterLink,
-} from 'react-router-dom';
-
 import type {
   ReactNode,
 } from 'react';
 
-export interface BreadcrumbItem {
-  label: string;
-  to?: string;
-}
+import {
+  Box,
+  Stack,
+  Typography,
+} from '@mui/material';
 
 interface PageHeaderProps {
   title: string;
-  description?: string;
-  breadcrumbs?: BreadcrumbItem[];
+  subtitle?: string;
   actions?: ReactNode;
 }
 
 export function PageHeader({
   title,
-  description,
-  breadcrumbs = [],
+  subtitle,
   actions,
 }: PageHeaderProps) {
   return (
-    <Stack spacing={2}>
-      {breadcrumbs.length > 0 && (
-        <Breadcrumbs>
-          {breadcrumbs.map(
-            (item, index) => {
-              const isLast =
-                index ===
-                breadcrumbs.length - 1;
+    <Stack
+      direction={{
+        xs: 'column',
+        sm: 'row',
+      }}
+      spacing={2}
+      sx={{
+        alignItems: {
+          xs: 'stretch',
+          sm: 'center',
+        },
+        justifyContent:
+          'space-between',
+      }}
+    >
+      <Box>
+        <Typography
+          variant="h4"
+          fontWeight={700}
+        >
+          {title}
+        </Typography>
 
-              if (
-                item.to &&
-                !isLast
-              ) {
-                return (
-                  <Link
-                    key={`${item.label}-${index}`}
-                    component={
-                      RouterLink
-                    }
-                    to={item.to}
-                    underline="hover"
-                    color="inherit"
-                  >
-                    {item.label}
-                  </Link>
-                );
-              }
-
-              return (
-                <Typography
-                  key={`${item.label}-${index}`}
-                  color={
-                    isLast
-                      ? 'text.primary'
-                      : 'text.secondary'
-                  }
-                >
-                  {item.label}
-                </Typography>
-              );
-            },
-          )}
-        </Breadcrumbs>
-      )}
-
-      <Stack
-        direction={{
-          xs: 'column',
-          sm: 'row',
-        }}
-        spacing={2}
-        sx={{
-          justifyContent:
-            'space-between',
-
-          alignItems: {
-            xs: 'flex-start',
-            sm: 'center',
-          },
-        }}
-      >
-        <Box>
-          <Typography
-            variant="h4"
-            component="h1"
-          >
-            {title}
-          </Typography>
-
-          {description && (
+        {
+          subtitle
+          && (
             <Typography
               variant="body1"
               color="text.secondary"
@@ -110,17 +53,20 @@ export function PageHeader({
                 mt: 0.5,
               }}
             >
-              {description}
+              {subtitle}
             </Typography>
-          )}
-        </Box>
+          )
+        }
+      </Box>
 
-        {actions && (
+      {
+        actions
+        && (
           <Box>
             {actions}
           </Box>
-        )}
-      </Stack>
+        )
+      }
     </Stack>
   );
 }
