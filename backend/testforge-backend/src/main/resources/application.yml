@@ -21,7 +21,7 @@ server:
 testforge:
   automation:
     execution:
-      timeout-seconds: 120
+      timeout-seconds: 300
       browser-install-timeout-seconds: 300
 
 

@@ -14,10 +14,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
 public class AutomationExecutionRunner {
@@ -33,6 +31,12 @@ public class AutomationExecutionRunner {
 
     private static final String JUNIT_VERSION =
             "5.12.2";
+
+    private static final long PROCESS_SHUTDOWN_TIMEOUT_SECONDS =
+            5;
+
+    private static final long OUTPUT_READER_JOIN_TIMEOUT_MILLIS =
+            10_000;
 
     @Value(
             "${testforge.automation.execution.timeout-seconds:120}"
@@ -82,10 +86,10 @@ public class AutomationExecutionRunner {
                     new StringBuilder();
 
             /*
-             * Only UI-generated scripts need Chromium.
+             * Only UI-generated scripts require Chromium.
              *
-             * Pure API automation through APIRequestContext
-             * does not require a browser process.
+             * Pure API tests using APIRequestContext do not
+             * require a browser installation.
              */
             if (
                     generatedSource.contains(
@@ -398,6 +402,8 @@ public class AutomationExecutionRunner {
 
         List<String> mavenArguments =
                 List.of(
+                        "-B",
+                        "-ntp",
                         "-q",
                         "-f",
                         projectDirectory
@@ -425,6 +431,8 @@ public class AutomationExecutionRunner {
 
         List<String> mavenArguments =
                 List.of(
+                        "-B",
+                        "-ntp",
                         "-f",
                         projectDirectory
                                 .resolve(
@@ -465,7 +473,9 @@ public class AutomationExecutionRunner {
         );
 
         /*
-         * Merge stderr into stdout so logs stay in execution order.
+         * Keep stderr and stdout in one stream so execution
+         * logs remain in approximately the same order Maven
+         * produced them.
          */
         processBuilder.redirectErrorStream(
                 true
@@ -474,84 +484,411 @@ public class AutomationExecutionRunner {
         Process process =
                 processBuilder.start();
 
-        ExecutorService outputExecutor =
-                Executors.newSingleThreadExecutor();
+        StringBuilder liveOutput =
+                new StringBuilder();
 
-        Future<String> outputFuture =
-                outputExecutor.submit(
-                        () ->
-                                readProcessOutput(
-                                        process
-                                )
+        AtomicBoolean outputTruncated =
+                new AtomicBoolean(
+                        false
                 );
 
-        boolean finished;
+        Thread outputReaderThread =
+                createOutputReaderThread(
+                        process,
+                        liveOutput,
+                        outputTruncated
+                );
+
+        outputReaderThread.start();
+
+        boolean finished =
+                process.waitFor(
+                        timeoutSeconds,
+                        TimeUnit.SECONDS
+                );
+
+        if (!finished) {
+
+            appendLiveOutput(
+                    liveOutput,
+                    System.lineSeparator()
+                            + "[TestForge] Execution timeout reached after "
+                            + timeoutSeconds
+                            + " seconds. Terminating Maven process tree."
+                            + System.lineSeparator(),
+                    outputTruncated
+            );
+
+            terminateProcessTree(
+                    process
+            );
+        }
+
+        waitForOutputReader(
+                outputReaderThread,
+                liveOutput,
+                outputTruncated
+        );
+
+        String output =
+                snapshotOutput(
+                        liveOutput,
+                        outputTruncated
+                );
+
+        if (!finished) {
+
+            return new ProcessResult(
+                    null,
+                    true,
+                    output
+            );
+        }
+
+        return new ProcessResult(
+                process.exitValue(),
+                false,
+                output
+        );
+    }
+
+    private Thread createOutputReaderThread(
+            Process process,
+            StringBuilder liveOutput,
+            AtomicBoolean outputTruncated
+    ) {
+
+        Thread thread =
+                new Thread(
+                        () -> {
+
+                            try (
+                                    BufferedReader reader =
+                                            process.inputReader(
+                                                    StandardCharsets.UTF_8
+                                            )
+                            ) {
+
+                                String line;
+
+                                while (
+                                        (line =
+                                                reader.readLine())
+                                                != null
+                                ) {
+
+                                    appendLiveOutput(
+                                            liveOutput,
+                                            line
+                                                    + System.lineSeparator(),
+                                            outputTruncated
+                                    );
+                                }
+
+                            } catch (
+                                    IOException exception
+                            ) {
+
+                                appendLiveOutput(
+                                        liveOutput,
+                                        System.lineSeparator()
+                                                + "[TestForge] Unable to continue reading process output: "
+                                                + safeMessage(
+                                                exception
+                                        )
+                                                + System.lineSeparator(),
+                                        outputTruncated
+                                );
+                            }
+                        },
+                        "testforge-automation-output-reader"
+                );
+
+        /*
+         * Never allow a stuck child-process stream to prevent
+         * the Spring Boot JVM from shutting down.
+         */
+        thread.setDaemon(
+                true
+        );
+
+        return thread;
+    }
+
+    private void appendLiveOutput(
+            StringBuilder output,
+            String value,
+            AtomicBoolean truncated
+    ) {
+
+        if (
+                value == null
+                        || value.isEmpty()
+        ) {
+            return;
+        }
+
+        synchronized (
+                output
+        ) {
+
+            if (
+                    output.length()
+                            >= MAX_LOG_LENGTH
+            ) {
+
+                truncated.set(
+                        true
+                );
+
+                return;
+            }
+
+            int remaining =
+                    MAX_LOG_LENGTH
+                            - output.length();
+
+            if (
+                    value.length()
+                            <= remaining
+            ) {
+
+                output.append(
+                        value
+                );
+
+            } else {
+
+                output.append(
+                        value,
+                        0,
+                        remaining
+                );
+
+                truncated.set(
+                        true
+                );
+            }
+        }
+    }
+
+    private String snapshotOutput(
+            StringBuilder liveOutput,
+            AtomicBoolean outputTruncated
+    ) {
+
+        String value;
+
+        synchronized (
+                liveOutput
+        ) {
+
+            value =
+                    liveOutput.toString();
+        }
+
+        if (
+                outputTruncated.get()
+        ) {
+
+            value =
+                    value
+                            + System.lineSeparator()
+                            + "[TestForge] Log output truncated after "
+                            + MAX_LOG_LENGTH
+                            + " characters."
+                            + System.lineSeparator();
+        }
+
+        return value;
+    }
+
+    private void waitForOutputReader(
+            Thread outputReaderThread,
+            StringBuilder liveOutput,
+            AtomicBoolean outputTruncated
+    ) {
 
         try {
 
-            finished =
-                    process.waitFor(
-                            timeoutSeconds,
-                            TimeUnit.SECONDS
-                    );
+            outputReaderThread.join(
+                    OUTPUT_READER_JOIN_TIMEOUT_MILLIS
+            );
 
-            if (!finished) {
-
-                process.destroy();
-
-                if (
-                        !process.waitFor(
-                                5,
-                                TimeUnit.SECONDS
-                        )
-                ) {
-
-                    process.destroyForcibly();
-
-                    process.waitFor(
-                            5,
-                            TimeUnit.SECONDS
-                    );
-                }
-            }
-
-            String output;
-
-            try {
-
-                output =
-                        outputFuture.get(
-                                10,
-                                TimeUnit.SECONDS
-                        );
-
-            } catch (
-                    Exception exception
+            if (
+                    outputReaderThread.isAlive()
             ) {
 
-                output =
-                        "Unable to read complete process output: "
-                                + exception.getMessage();
-            }
-
-            if (!finished) {
-
-                return new ProcessResult(
-                        null,
-                        true,
-                        output
+                appendLiveOutput(
+                        liveOutput,
+                        System.lineSeparator()
+                                + "[TestForge] Output reader did not finish within "
+                                + OUTPUT_READER_JOIN_TIMEOUT_MILLIS
+                                + " ms. Returning captured output so far."
+                                + System.lineSeparator(),
+                        outputTruncated
                 );
             }
 
-            return new ProcessResult(
-                    process.exitValue(),
-                    false,
-                    output
+        } catch (
+                InterruptedException exception
+        ) {
+
+            Thread.currentThread()
+                    .interrupt();
+
+            appendLiveOutput(
+                    liveOutput,
+                    System.lineSeparator()
+                            + "[TestForge] Interrupted while waiting for process output reader."
+                            + System.lineSeparator(),
+                    outputTruncated
             );
+        }
+    }
 
-        } finally {
+    private void terminateProcessTree(
+            Process process
+    ) {
 
-            outputExecutor.shutdownNow();
+        ProcessHandle root =
+                process.toHandle();
+
+        /*
+         * mvnw.cmd on Windows launches additional Java
+         * processes. Killing only cmd.exe can leave Maven
+         * running and holding stdout open.
+         *
+         * Capture descendants first because the descendants()
+         * stream may change once termination starts.
+         */
+        List<ProcessHandle> descendants =
+                root
+                        .descendants()
+                        .toList();
+
+        /*
+         * Graceful termination: children first, then root.
+         */
+        for (
+                ProcessHandle descendant
+                : descendants
+        ) {
+
+            if (
+                    descendant.isAlive()
+            ) {
+
+                descendant.destroy();
+            }
+        }
+
+        if (
+                root.isAlive()
+        ) {
+
+            root.destroy();
+        }
+
+        waitForProcessTreeToStop(
+                root,
+                descendants,
+                PROCESS_SHUTDOWN_TIMEOUT_SECONDS
+        );
+
+        /*
+         * Force-kill anything still alive.
+         */
+        for (
+                ProcessHandle descendant
+                : descendants
+        ) {
+
+            if (
+                    descendant.isAlive()
+            ) {
+
+                descendant.destroyForcibly();
+            }
+        }
+
+        if (
+                root.isAlive()
+        ) {
+
+            root.destroyForcibly();
+        }
+
+        waitForProcessTreeToStop(
+                root,
+                descendants,
+                PROCESS_SHUTDOWN_TIMEOUT_SECONDS
+        );
+    }
+
+    private void waitForProcessTreeToStop(
+            ProcessHandle root,
+            List<ProcessHandle> descendants,
+            long timeoutSeconds
+    ) {
+
+        long deadline =
+                System.nanoTime()
+                        + TimeUnit.SECONDS.toNanos(
+                        timeoutSeconds
+                );
+
+        while (
+                System.nanoTime()
+                        < deadline
+        ) {
+
+            boolean anyAlive =
+                    root.isAlive();
+
+            if (
+                    !anyAlive
+            ) {
+
+                for (
+                        ProcessHandle descendant
+                        : descendants
+                ) {
+
+                    if (
+                            descendant.isAlive()
+                    ) {
+
+                        anyAlive =
+                                true;
+
+                        break;
+                    }
+                }
+            }
+
+            if (
+                    !anyAlive
+            ) {
+
+                return;
+            }
+
+            try {
+
+                Thread.sleep(
+                        100
+                );
+
+            } catch (
+                    InterruptedException exception
+            ) {
+
+                Thread.currentThread()
+                        .interrupt();
+
+                return;
+            }
         }
     }
 
@@ -634,70 +971,6 @@ public class AutomationExecutionRunner {
         );
 
         return command;
-    }
-
-    private String readProcessOutput(
-            Process process
-    ) throws IOException {
-
-        StringBuilder output =
-                new StringBuilder();
-
-        boolean truncated =
-                false;
-
-        try (
-                BufferedReader reader =
-                        process.inputReader(
-                                StandardCharsets.UTF_8
-                        )
-        ) {
-
-            String line;
-
-            while (
-                    (line =
-                            reader.readLine())
-                            != null
-            ) {
-
-                if (
-                        output.length()
-                                < MAX_LOG_LENGTH
-                ) {
-
-                    output
-                            .append(
-                                    line
-                            )
-                            .append(
-                                    System.lineSeparator()
-                            );
-
-                } else {
-
-                    truncated =
-                            true;
-                }
-            }
-        }
-
-        if (
-                truncated
-        ) {
-
-            output.append(
-                    System.lineSeparator()
-            );
-
-            output.append(
-                    "[TestForge] Log output truncated after "
-                            + MAX_LOG_LENGTH
-                            + " characters."
-            );
-        }
-
-        return output.toString();
     }
 
     private void appendSection(
@@ -815,10 +1088,9 @@ public class AutomationExecutionRunner {
         );
 
         value.append(
-                exception.getMessage()
-                        == null
-                        ? "(no message)"
-                        : exception.getMessage()
+                safeMessage(
+                        exception
+                )
         );
 
         Throwable cause =
@@ -843,11 +1115,29 @@ public class AutomationExecutionRunner {
                             ": "
                     )
                     .append(
-                            cause.getMessage()
+                            safeMessage(
+                                    cause
+                            )
                     );
         }
 
         return value.toString();
+    }
+
+    private String safeMessage(
+            Throwable throwable
+    ) {
+
+        if (
+                throwable == null
+                        || throwable.getMessage() == null
+                        || throwable.getMessage().isBlank()
+        ) {
+
+            return "(no message)";
+        }
+
+        return throwable.getMessage();
     }
 
     private void deleteRecursively(
