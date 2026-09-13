@@ -8,8 +8,8 @@ import {
   ArrowBack,
   ContentCopy,
   Download,
+  PlayArrow,
   Refresh,
-  Terminal,
 } from '@mui/icons-material';
 
 import {
@@ -20,6 +20,7 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Divider,
   Stack,
   Typography,
 } from '@mui/material';
@@ -47,6 +48,7 @@ import {
 
 import type {
   AutomationScript,
+  AutomationStep,
   GeneratedScript,
 } from '../../types/automation';
 
@@ -72,15 +74,62 @@ function getErrorMessage(
   return 'Unexpected error occurred.';
 }
 
+function downloadTextFile(
+  fileName: string,
+  content: string,
+) {
+  const blob =
+    new Blob(
+      [
+        content,
+      ],
+      {
+        type:
+          'text/plain;charset=utf-8',
+      },
+    );
+
+  const url =
+    URL.createObjectURL(
+      blob,
+    );
+
+  const anchor =
+    document.createElement(
+      'a',
+    );
+
+  anchor.href =
+    url;
+
+  anchor.download =
+    fileName;
+
+  document.body.appendChild(
+    anchor,
+  );
+
+  anchor.click();
+
+  document.body.removeChild(
+    anchor,
+  );
+
+  URL.revokeObjectURL(
+    url,
+  );
+}
+
 export default function ScriptGenerationPage() {
   const navigate =
     useNavigate();
 
   const {
     testCaseId,
-  } = useParams<{
-    testCaseId: string;
-  }>();
+  } =
+    useParams<{
+      testCaseId: string;
+    }>();
 
   const [
     testCase,
@@ -99,6 +148,14 @@ export default function ScriptGenerationPage() {
     );
 
   const [
+    automationSteps,
+    setAutomationSteps,
+  ] =
+    useState<AutomationStep[]>(
+      [],
+    );
+
+  const [
     generated,
     setGenerated,
   ] =
@@ -109,12 +166,14 @@ export default function ScriptGenerationPage() {
   const [
     loading,
     setLoading,
-  ] = useState(true);
+  ] =
+    useState(true);
 
   const [
     generating,
     setGenerating,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     error,
@@ -125,29 +184,51 @@ export default function ScriptGenerationPage() {
     );
 
   const [
-    success,
-    setSuccess,
+    successMessage,
+    setSuccessMessage,
   ] =
     useState<string | null>(
       null,
     );
 
-  const loadData =
+  const loadPage =
     useCallback(
       async () => {
-        if (!testCaseId) {
+        if (
+          !testCaseId
+        ) {
           setError(
             'Test Case ID is missing.',
           );
 
-          setLoading(false);
+          setLoading(
+            false,
+          );
+
           return;
         }
 
         try {
-          setLoading(true);
-          setError(null);
+          setLoading(
+            true,
+          );
 
+          setError(
+            null,
+          );
+
+          setSuccessMessage(
+            null,
+          );
+
+          /*
+           * Route uses the Test Case
+           * business ID.
+           *
+           * Example:
+           *
+           * /automation/TC-LOGIN-001/script
+           */
           const loadedTestCase =
             await testCaseApi
               .getTestCaseByBusinessId(
@@ -158,6 +239,10 @@ export default function ScriptGenerationPage() {
             loadedTestCase,
           );
 
+          /*
+           * Automation API requires the
+           * numeric database Test Case ID.
+           */
           const loadedScript =
             await automationApi
               .getScriptByTestCase(
@@ -168,6 +253,34 @@ export default function ScriptGenerationPage() {
             loadedScript,
           );
 
+          const loadedSteps =
+            await automationApi
+              .getSteps(
+                loadedScript.id,
+              );
+
+          const sortedSteps =
+            [
+              ...loadedSteps,
+            ].sort(
+              (
+                first,
+                second,
+              ) =>
+                first.stepOrder -
+                second.stepOrder,
+            );
+
+          setAutomationSteps(
+            sortedSteps,
+          );
+
+          /*
+           * Generated source may not exist
+           * yet.
+           *
+           * A 404 here is normal.
+           */
           try {
             const loadedGenerated =
               await automationApi
@@ -187,13 +300,17 @@ export default function ScriptGenerationPage() {
               generatedError.status ===
                 404
             ) {
-              setGenerated(null);
+              setGenerated(
+                null,
+              );
             } else {
               throw generatedError;
             }
           }
         } catch (err) {
-          console.error(err);
+          console.error(
+            err,
+          );
 
           setError(
             getErrorMessage(
@@ -201,7 +318,9 @@ export default function ScriptGenerationPage() {
             ),
           );
         } finally {
-          setLoading(false);
+          setLoading(
+            false,
+          );
         }
       },
       [
@@ -211,39 +330,73 @@ export default function ScriptGenerationPage() {
 
   useEffect(
     () => {
-      void loadData();
+      void loadPage();
     },
     [
-      loadData,
+      loadPage,
     ],
   );
 
   const handleGenerate =
     async () => {
-      if (!script) {
+      if (
+        !script
+      ) {
         return;
       }
 
       try {
-        setGenerating(true);
-        setError(null);
-        setSuccess(null);
+        setGenerating(
+          true,
+        );
 
-        const result =
+        setError(
+          null,
+        );
+
+        setSuccessMessage(
+          null,
+        );
+
+        const generatedScript =
           await automationApi
             .generateScript(
               script.id,
             );
 
         setGenerated(
-          result,
+          generatedScript,
         );
 
-        setSuccess(
-          'Playwright Java script generated successfully.',
+        /*
+         * Reload Test Case because the
+         * backend may change:
+         *
+         * automationStatus
+         *      →
+         * SCRIPT_GENERATED
+         */
+        if (
+          testCaseId
+        ) {
+          const refreshedTestCase =
+            await testCaseApi
+              .getTestCaseByBusinessId(
+                testCaseId,
+              );
+
+          setTestCase(
+            refreshedTestCase,
+          );
+        }
+
+        setSuccessMessage(
+          'Automation script generated successfully.',
         );
       } catch (err) {
-        console.error(err);
+        console.error(
+          err,
+        );
 
         setError(
           getErrorMessage(
@@ -251,13 +404,17 @@ export default function ScriptGenerationPage() {
           ),
         );
       } finally {
-        setGenerating(false);
+        setGenerating(
+          false,
+        );
       }
     };
 
   const handleCopy =
     async () => {
-      if (!generated) {
+      if (
+        !generated
+      ) {
         return;
       }
 
@@ -267,64 +424,70 @@ export default function ScriptGenerationPage() {
             generated.source,
           );
 
-        setSuccess(
-          'Generated source copied to clipboard.',
-        );
-      } catch {
         setError(
-          'Unable to copy generated source.',
+          null,
+        );
+
+        setSuccessMessage(
+          'Generated Java source copied to clipboard.',
+        );
+      } catch (err) {
+        console.error(
+          err,
+        );
+
+        setSuccessMessage(
+          null,
+        );
+
+        setError(
+          'Unable to copy generated source to the clipboard.',
         );
       }
     };
 
   const handleDownload =
     () => {
-      if (!generated) {
+      if (
+        !generated
+      ) {
         return;
       }
 
-      const blob =
-        new Blob(
-          [
-            generated.source,
-          ],
-          {
-            type:
-              'text/x-java-source;charset=utf-8',
-          },
-        );
+      downloadTextFile(
+        `${generated.className}.java`,
+        generated.source,
+      );
 
-      const url =
-        URL.createObjectURL(
-          blob,
-        );
+      setError(
+        null,
+      );
 
-      const anchor =
-        document.createElement(
-          'a',
-        );
-
-      anchor.href =
-        url;
-
-      anchor.download =
-        `${generated.className}.java`;
-
-      document.body
-        .appendChild(
-          anchor,
-        );
-
-      anchor.click();
-
-      anchor.remove();
-
-      URL.revokeObjectURL(
-        url,
+      setSuccessMessage(
+        `${generated.className}.java downloaded.`,
       );
     };
 
-  if (loading) {
+  const handleRunAutomation =
+    () => {
+      if (
+        !testCase ||
+        !generated ||
+        generated.stale
+      ) {
+        return;
+      }
+
+      navigate(
+        `/automation/${encodeURIComponent(
+          testCase.testCaseId,
+        )}/execute`,
+      );
+    };
+
+  if (
+    loading
+  ) {
     return (
       <Box
         sx={{
@@ -341,49 +504,45 @@ export default function ScriptGenerationPage() {
   }
 
   if (
-    error &&
-    (!testCase ||
-      !script)
+    !testCase ||
+    !script ||
+    !testCaseId
   ) {
     return (
       <Stack spacing={3}>
         <PageHeader
           title="Script Generation"
-          description="Unable to load Script Generation."
+          description="Unable to load Automation Script."
         />
 
         <Alert
           severity="error"
         >
-          {error}
+          {error ??
+            'Automation Script could not be loaded.'}
         </Alert>
 
         <Box>
           <Button
+            variant="outlined"
             startIcon={
               <ArrowBack />
             }
-            variant="outlined"
             onClick={() =>
               navigate(
                 '/automation',
               )
             }
           >
-            Back
+            Back to Automation
           </Button>
         </Box>
       </Stack>
     );
   }
 
-  if (
-    !testCase ||
-    !script ||
-    !testCaseId
-  ) {
-    return null;
-  }
+  const canGenerate =
+    automationSteps.length > 0;
 
   return (
     <Stack spacing={3}>
@@ -437,22 +596,16 @@ export default function ScriptGenerationPage() {
         </Alert>
       )}
 
-      {success && (
+      {successMessage && (
         <Alert
           severity="success"
+          onClose={() =>
+            setSuccessMessage(
+              null,
+            )
+          }
         >
-          {success}
-        </Alert>
-      )}
-
-      {generated?.stale && (
-        <Alert
-          severity="warning"
-        >
-          The stored generated source is
-          stale because the Automation Steps
-          have changed. Generate the script
-          again before execution.
+          {successMessage}
         </Alert>
       )}
 
@@ -474,7 +627,7 @@ export default function ScriptGenerationPage() {
                   variant="overline"
                   color="text.secondary"
                 >
-                  Automation Script
+                  Test Case
                 </Typography>
 
                 <Typography
@@ -482,12 +635,12 @@ export default function ScriptGenerationPage() {
                   fontWeight={700}
                 >
                   {
-                    script.automationScriptId
+                    testCase.testCaseId
                   }
-                </Typography>
-
-                <Typography>
-                  {script.name}
+                  {' — '}
+                  {
+                    testCase.name
+                  }
                 </Typography>
               </Box>
 
@@ -498,13 +651,9 @@ export default function ScriptGenerationPage() {
                 flexWrap="wrap"
               >
                 <Chip
-                  label="Playwright"
-                  color="primary"
-                  variant="outlined"
-                />
-
-                <Chip
-                  label="Java 17"
+                  label={
+                    testCase.testType
+                  }
                   variant="outlined"
                 />
 
@@ -517,168 +666,456 @@ export default function ScriptGenerationPage() {
                   }
                   variant="outlined"
                 />
+
+                <Chip
+                  label={
+                    testCase.automationStatus
+                  }
+                  color={
+                    testCase.automationStatus ===
+                    'AUTOMATED'
+                      ? 'success'
+                      : testCase.automationStatus ===
+                          'RUNNING'
+                        ? 'primary'
+                        : 'default'
+                  }
+                  variant="outlined"
+                />
               </Stack>
             </Stack>
 
-            <Button
-              variant="contained"
-              startIcon={
-                generating
-                  ? (
-                    <CircularProgress
-                      color="inherit"
-                      size={18}
-                    />
-                  )
-                  : (
-                    <Terminal />
-                  )
-              }
-              disabled={
-                generating
-              }
-              onClick={() =>
-                void handleGenerate()
-              }
+            <Divider />
+
+            <Box
               sx={{
-                alignSelf:
-                  'flex-start',
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs:
+                    '1fr',
+                  sm:
+                    'repeat(2, minmax(0, 1fr))',
+                  md:
+                    'repeat(4, minmax(0, 1fr))',
+                },
+                gap: 2,
               }}
             >
-              {generating
-                ? 'Generating...'
-                : generated
-                  ? 'Regenerate Script'
-                  : 'Generate Script'}
-            </Button>
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  Automation Script
+                </Typography>
+
+                <Typography
+                  fontWeight={600}
+                >
+                  {
+                    script.automationScriptId
+                  }
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  Script Name
+                </Typography>
+
+                <Typography>
+                  {
+                    script.name
+                  }
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  Automation Steps
+                </Typography>
+
+                <Typography>
+                  {
+                    automationSteps.length
+                  }
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  Framework
+                </Typography>
+
+                <Typography>
+                  Playwright + Java
+                </Typography>
+              </Box>
+            </Box>
           </Stack>
         </CardContent>
       </Card>
 
-      {!generated ? (
+      {!canGenerate && (
         <Alert
-          severity="info"
+          severity="warning"
         >
-          No generated Java source exists
-          yet. Click Generate Script after
-          configuring the Automation Steps.
+          This Automation Script does not
+          contain any Automation Steps.
+          Return to the Automation Builder
+          and add at least one step before
+          generating Java source.
         </Alert>
-      ) : (
+      )}
+
+      {!generated ? (
         <Card
           variant="outlined"
         >
           <CardContent>
-            <Stack spacing={2}>
-              <Stack
-                direction={{
-                  xs: 'column',
-                  md: 'row',
-                }}
-                justifyContent="space-between"
-                spacing={2}
+            <Stack
+              spacing={3}
+              alignItems="flex-start"
+            >
+              <Box>
+                <Typography
+                  variant="h6"
+                  fontWeight={700}
+                  gutterBottom
+                >
+                  Generate Java Automation
+                </Typography>
+
+                <Typography
+                  color="text.secondary"
+                >
+                  TestForge will convert
+                  the configured Automation
+                  Steps into executable
+                  Playwright Java source.
+                </Typography>
+              </Box>
+
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={
+                  generating
+                    ? (
+                      <CircularProgress
+                        size={18}
+                        color="inherit"
+                      />
+                    )
+                    : (
+                      <Refresh />
+                    )
+                }
+                disabled={
+                  generating ||
+                  !canGenerate
+                }
+                onClick={() =>
+                  void handleGenerate()
+                }
               >
-                <Box>
-                  <Typography
-                    variant="h6"
-                    fontWeight={700}
-                  >
-                    {
-                      generated.className
-                    }
-                    .java
-                  </Typography>
+                {generating
+                  ? 'Generating...'
+                  : 'Generate Script'}
+              </Button>
+            </Stack>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {generated.stale && (
+            <Alert
+              severity="warning"
+            >
+              The generated source is
+              stale because the Automation
+              Script or its Automation
+              Steps changed after the last
+              generation. Regenerate the
+              script before execution.
+            </Alert>
+          )}
 
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                  >
-                    {
-                      generated.generatedStepCount
-                    }{' '}
-                    automation step(s)
-                  </Typography>
+          {!generated.stale && (
+            <Alert
+              severity="success"
+            >
+              The generated Java source is
+              current and ready for
+              execution.
+            </Alert>
+          )}
 
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
+          <Card
+            variant="outlined"
+          >
+            <CardContent>
+              <Stack spacing={2}>
+                <Stack
+                  direction={{
+                    xs: 'column',
+                    lg: 'row',
+                  }}
+                  justifyContent="space-between"
+                  alignItems={{
+                    xs:
+                      'stretch',
+                    lg:
+                      'flex-start',
+                  }}
+                  spacing={2}
+                >
+                  <Box>
+                    <Typography
+                      variant="overline"
+                      color="text.secondary"
+                    >
+                      Generated Class
+                    </Typography>
+
+                    <Typography
+                      variant="h6"
+                      fontFamily="monospace"
+                      fontWeight={700}
+                    >
+                      {
+                        generated.className
+                      }
+                    </Typography>
+                  </Box>
+
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    useFlexGap
+                    flexWrap="wrap"
                   >
-                    Generated:{' '}
-                    {new Date(
-                      generated.generatedAt,
-                    ).toLocaleString()}
-                  </Typography>
+                    <Button
+                      variant="outlined"
+                      startIcon={
+                        generating
+                          ? (
+                            <CircularProgress
+                              size={18}
+                            />
+                          )
+                          : (
+                            <Refresh />
+                          )
+                      }
+                      disabled={
+                        generating ||
+                        !canGenerate
+                      }
+                      onClick={() =>
+                        void handleGenerate()
+                      }
+                    >
+                      {generating
+                        ? 'Regenerating...'
+                        : 'Regenerate'}
+                    </Button>
+
+                    <Button
+                      variant="outlined"
+                      startIcon={
+                        <ContentCopy />
+                      }
+                      onClick={() =>
+                        void handleCopy()
+                      }
+                    >
+                      Copy
+                    </Button>
+
+                    <Button
+                      variant="outlined"
+                      startIcon={
+                        <Download />
+                      }
+                      onClick={
+                        handleDownload
+                      }
+                    >
+                      Download
+                    </Button>
+
+                    {/*
+                     * Task 36.11
+                     *
+                     * Only current generated
+                     * source may be executed.
+                     */}
+                    <Button
+                      variant="contained"
+                      startIcon={
+                        <PlayArrow />
+                      }
+                      disabled={
+                        generated.stale
+                      }
+                      onClick={
+                        handleRunAutomation
+                      }
+                    >
+                      Run Automation
+                    </Button>
+                  </Stack>
+                </Stack>
+
+                <Divider />
+
+                <Box
+                  sx={{
+                    display:
+                      'grid',
+                    gridTemplateColumns: {
+                      xs:
+                        '1fr',
+                      sm:
+                        'repeat(2, minmax(0, 1fr))',
+                      lg:
+                        'repeat(4, minmax(0, 1fr))',
+                    },
+                    gap: 2,
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                    >
+                      Language
+                    </Typography>
+
+                    <Typography>
+                      {
+                        generated.language
+                      }
+                    </Typography>
+                  </Box>
+
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                    >
+                      Framework
+                    </Typography>
+
+                    <Typography>
+                      {
+                        generated.framework
+                      }
+                    </Typography>
+                  </Box>
+
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                    >
+                      Generated Steps
+                    </Typography>
+
+                    <Typography>
+                      {
+                        generated.generatedStepCount
+                      }
+                    </Typography>
+                  </Box>
+
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                    >
+                      Generated At
+                    </Typography>
+
+                    <Typography>
+                      {new Date(
+                        generated.generatedAt,
+                      ).toLocaleString()}
+                    </Typography>
+                  </Box>
                 </Box>
+
+                <Divider />
 
                 <Stack
                   direction="row"
                   spacing={1}
+                  alignItems="center"
                 >
-                  <Button
-                    variant="outlined"
-                    startIcon={
-                      <Refresh />
-                    }
-                    onClick={() =>
-                      void handleGenerate()
-                    }
-                    disabled={
-                      generating
-                    }
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
                   >
-                    Regenerate
-                  </Button>
+                    Source Status
+                  </Typography>
 
-                  <Button
-                    variant="outlined"
-                    startIcon={
-                      <ContentCopy />
+                  <Chip
+                    size="small"
+                    label={
+                      generated.stale
+                        ? 'STALE'
+                        : 'CURRENT'
                     }
-                    onClick={() =>
-                      void handleCopy()
+                    color={
+                      generated.stale
+                        ? 'warning'
+                        : 'success'
                     }
-                  >
-                    Copy
-                  </Button>
-
-                  <Button
-                    variant="outlined"
-                    startIcon={
-                      <Download />
-                    }
-                    onClick={
-                      handleDownload
-                    }
-                  >
-                    Download
-                  </Button>
+                  />
                 </Stack>
-              </Stack>
 
-              <Box
-                component="pre"
-                sx={{
-                  m: 0,
-                  p: 2,
-                  bgcolor:
-                    'grey.950',
-                  color:
-                    'grey.100',
-                  borderRadius: 1,
-                  overflowX: 'auto',
-                  fontFamily:
-                    'monospace',
-                  fontSize: 13,
-                  lineHeight: 1.6,
-                  maxHeight: 700,
-                  overflowY:
-                    'auto',
-                }}
-              >
-                {generated.source}
-              </Box>
-            </Stack>
-          </CardContent>
-        </Card>
+                <Box
+                  component="pre"
+                  sx={{
+                    m: 0,
+                    p: 2,
+                    bgcolor:
+                      'grey.950',
+                    color:
+                      'grey.100',
+                    borderRadius: 1,
+                    border:
+                      '1px solid',
+                    borderColor:
+                      'divider',
+                    fontFamily:
+                      'monospace',
+                    fontSize: 12,
+                    lineHeight: 1.55,
+                    maxHeight: 700,
+                    overflow: 'auto',
+                    whiteSpace:
+                      'pre',
+                  }}
+                >
+                  {
+                    generated.source
+                  }
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </>
       )}
     </Stack>
   );

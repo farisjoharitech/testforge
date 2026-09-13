@@ -10,6 +10,9 @@ import AppLayout
 import AutomationBuilderPage
   from '../pages/automation/AutomationBuilderPage';
 
+import AutomationExecutionPage
+  from '../pages/automation/AutomationExecutionPage';
+
 import AutomationSelectionPage
   from '../pages/automation/AutomationSelectionPage';
 
@@ -112,6 +115,13 @@ export default function App() {
           path="/automation/:testCaseId/script"
           element={
             <ScriptGenerationPage />
+          }
+        />
+
+        <Route
+          path="/automation/:testCaseId/execute"
+          element={
+            <AutomationExecutionPage />
           }
         />
       </Route>

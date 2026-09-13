@@ -1,11 +1,13 @@
 package com.testforge.testforge_backend.automation.controller;
 
+import com.testforge.testforge_backend.automation.dto.AutomationExecutionResponse;
 import com.testforge.testforge_backend.automation.dto.AutomationScriptResponse;
 import com.testforge.testforge_backend.automation.dto.AutomationStepResponse;
 import com.testforge.testforge_backend.automation.dto.CreateAutomationScriptRequest;
 import com.testforge.testforge_backend.automation.dto.CreateAutomationStepRequest;
 import com.testforge.testforge_backend.automation.dto.GeneratedScriptResponse;
 import com.testforge.testforge_backend.automation.dto.UpdateAutomationStepRequest;
+import com.testforge.testforge_backend.automation.service.AutomationExecutionService;
 import com.testforge.testforge_backend.automation.service.AutomationGenerationService;
 import com.testforge.testforge_backend.automation.service.AutomationService;
 import jakarta.validation.Valid;
@@ -32,9 +34,13 @@ public class AutomationController {
     private final AutomationGenerationService
             automationGenerationService;
 
+    private final AutomationExecutionService
+            automationExecutionService;
+
     public AutomationController(
             AutomationService automationService,
-            AutomationGenerationService automationGenerationService
+            AutomationGenerationService automationGenerationService,
+            AutomationExecutionService automationExecutionService
     ) {
 
         this.automationService =
@@ -42,6 +48,9 @@ public class AutomationController {
 
         this.automationGenerationService =
                 automationGenerationService;
+
+        this.automationExecutionService =
+                automationExecutionService;
     }
 
     @PostMapping(
@@ -231,6 +240,63 @@ public class AutomationController {
                 automationGenerationService
                         .getGenerated(
                                 scriptId
+                        )
+        );
+    }
+
+    /*
+     * Task 36.11
+     */
+    @PostMapping(
+            "/automation-scripts/{scriptId}/execute"
+    )
+    public ResponseEntity<AutomationExecutionResponse>
+    executeAutomationScript(
+            @PathVariable Long scriptId
+    ) {
+
+        return ResponseEntity.ok(
+                automationExecutionService
+                        .execute(
+                                scriptId
+                        )
+        );
+    }
+
+    /*
+     * Task 36.11
+     */
+    @GetMapping(
+            "/automation-scripts/{scriptId}/executions/latest"
+    )
+    public ResponseEntity<AutomationExecutionResponse>
+    getLatestExecution(
+            @PathVariable Long scriptId
+    ) {
+
+        return ResponseEntity.ok(
+                automationExecutionService
+                        .getLatest(
+                                scriptId
+                        )
+        );
+    }
+
+    /*
+     * Task 36.11
+     */
+    @GetMapping(
+            "/automation-executions/{executionId}"
+    )
+    public ResponseEntity<AutomationExecutionResponse>
+    getExecution(
+            @PathVariable Long executionId
+    ) {
+
+        return ResponseEntity.ok(
+                automationExecutionService
+                        .getById(
+                                executionId
                         )
         );
     }

@@ -7,6 +7,8 @@ import com.testforge.testforge_backend.automation.exception.AutomationExceptionH
 import com.testforge.testforge_backend.automation.exception.AutomationNotFoundException;
 import com.testforge.testforge_backend.automation.model.AutomationActionType;
 import com.testforge.testforge_backend.automation.model.SelectorStrategy;
+import com.testforge.testforge_backend.automation.service.AutomationExecutionService;
+import com.testforge.testforge_backend.automation.service.AutomationGenerationService;
 import com.testforge.testforge_backend.automation.service.AutomationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +38,13 @@ class AutomationControllerTest {
 
     private MockMvc mockMvc;
 
+    private AutomationGenerationService automationGenerationService;
+
+    private AutomationExecutionService automationExecutionService;
+
+    private AutomationController automationController;
+
+
     @BeforeEach
     void setUp() {
 
@@ -44,15 +53,27 @@ class AutomationControllerTest {
                         AutomationService.class
                 );
 
-        AutomationController controller =
+        automationGenerationService =
+                mock(
+                        AutomationGenerationService.class
+                );
+
+        automationExecutionService =
+                mock(
+                        AutomationExecutionService.class
+                );
+
+        automationController =
                 new AutomationController(
-                        automationService
+                        automationService,
+                        automationGenerationService,
+                        automationExecutionService
                 );
 
         mockMvc =
                 MockMvcBuilders
                         .standaloneSetup(
-                                controller
+                                automationController
                         )
                         .setControllerAdvice(
                                 new AutomationExceptionHandler()

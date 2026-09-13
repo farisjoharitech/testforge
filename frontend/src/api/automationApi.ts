@@ -3,6 +3,7 @@ import {
 } from './apiClient';
 
 import type {
+  AutomationExecution,
   AutomationScript,
   AutomationStep,
   CreateAutomationScriptRequest,
@@ -114,6 +115,43 @@ export const automationApi = {
   ): Promise<GeneratedScript> {
     return apiClient.get<GeneratedScript>(
       `/api/automation-scripts/${scriptId}/generated-script`,
+    );
+  },
+
+  /*
+   * Task 36.11
+   */
+  executeScript(
+    scriptId: number,
+  ): Promise<AutomationExecution> {
+    return apiClient.post<
+      AutomationExecution,
+      Record<string, never>
+    >(
+      `/api/automation-scripts/${scriptId}/execute`,
+      {},
+    );
+  },
+
+  /*
+   * Task 36.11
+   */
+  getLatestExecution(
+    scriptId: number,
+  ): Promise<AutomationExecution> {
+    return apiClient.get<AutomationExecution>(
+      `/api/automation-scripts/${scriptId}/executions/latest`,
+    );
+  },
+
+  /*
+   * Task 36.11
+   */
+  getExecution(
+    executionId: number,
+  ): Promise<AutomationExecution> {
+    return apiClient.get<AutomationExecution>(
+      `/api/automation-executions/${executionId}`,
     );
   },
 };

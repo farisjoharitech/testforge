@@ -17,3 +17,11 @@ spring:
 
 server:
   port: 8080
+
+testforge:
+  automation:
+    execution:
+      timeout-seconds: 120
+      browser-install-timeout-seconds: 300
+
+

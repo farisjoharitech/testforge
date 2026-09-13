@@ -51,6 +51,13 @@ export type UiElementRole =
   | 'STATUS'
   | 'PROGRESSBAR';
 
+export type AutomationExecutionStatus =
+  | 'RUNNING'
+  | 'PASSED'
+  | 'FAILED'
+  | 'TIMED_OUT'
+  | 'ERROR';
+
 export interface CreateAutomationScriptRequest {
   automationScriptId: string;
   name: string;
@@ -123,4 +130,22 @@ export interface GeneratedScript {
   generatedStepCount: number;
   generatedAt: string;
   stale: boolean;
+}
+
+export interface AutomationExecution {
+  id: number;
+  executionId: string;
+  automationScriptId: number;
+  automationScriptBusinessId: string;
+  testCaseId: number;
+  testCaseBusinessId: string;
+  status: AutomationExecutionStatus;
+  generatedClassName: string;
+  generatedAt?: string | null;
+  exitCode?: number | null;
+  logOutput?: string | null;
+  errorMessage?: string | null;
+  startedAt: string;
+  finishedAt?: string | null;
+  durationMs?: number | null;
 }
