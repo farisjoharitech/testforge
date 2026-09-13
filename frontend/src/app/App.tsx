@@ -8,6 +8,8 @@ import AppLayout from '../components/layout/AppLayout';
 
 import RequirementDetailsPage from '../pages/requirements/RequirementDetailsPage';
 
+import ScenarioDetailsPage from '../pages/scenarios/ScenarioDetailsPage';
+
 import CreateTestPlanPage from '../pages/test-plans/CreateTestPlanPage';
 
 import TestPlanDetailsPage from '../pages/test-plans/TestPlanDetailsPage';
@@ -57,6 +59,13 @@ export default function App() {
           path="/requirements/:requirementId"
           element={
             <RequirementDetailsPage />
+          }
+        />
+
+        <Route
+          path="/scenarios/:scenarioId"
+          element={
+            <ScenarioDetailsPage />
           }
         />
       </Route>

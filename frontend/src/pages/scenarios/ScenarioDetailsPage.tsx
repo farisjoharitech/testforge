@@ -7,7 +7,6 @@ import {
 import {
   Add,
   ArrowBack,
-  ArrowForward,
   Refresh,
 } from '@mui/icons-material';
 
@@ -30,8 +29,8 @@ import {
 } from 'react-router-dom';
 
 import {
-  requirementApi,
-} from '../../api/requirementApi';
+  testCaseApi,
+} from '../../api/testCaseApi';
 
 import {
   testScenarioApi,
@@ -41,15 +40,25 @@ import {
   PageHeader,
 } from '../../components/common/PageHeader';
 
-import CreateTestScenarioDialog from '../../components/scenarios/CreateTestScenarioDialog';
+import CreateTestCaseDialog from '../../components/test-cases/CreateTestCaseDialog';
 
 import type {
-  Requirement,
-} from '../../types/requirement';
+  TestCase,
+} from '../../types/testCase';
 
 import type {
   TestScenario,
 } from '../../types/testScenario';
+
+function displayValue(
+  value:
+    | string
+    | null
+    | undefined,
+): string {
+  return value?.trim() ||
+    'Not specified';
+}
 
 function formatDate(
   value:
@@ -156,28 +165,76 @@ function getTestTypeLabel(
   }
 }
 
-export default function RequirementDetailsPage() {
+function getAutomationTypeLabel(
+  automationType: string,
+): string {
+  switch (automationType) {
+    case 'UI_API':
+      return 'UI + API';
+
+    case 'UI':
+      return 'UI';
+
+    case 'API':
+      return 'API';
+
+    case 'MANUAL':
+      return 'Manual';
+
+    default:
+      return automationType;
+  }
+}
+
+function getAutomationStatusLabel(
+  automationStatus: string,
+): string {
+  switch (automationStatus) {
+    case 'NOT_APPLICABLE':
+      return 'Not Applicable';
+
+    case 'NOT_AUTOMATED':
+      return 'Not Automated';
+
+    case 'SCRIPT_GENERATED':
+      return 'Script Generated';
+
+    case 'READY':
+      return 'Ready';
+
+    case 'RUNNING':
+      return 'Running';
+
+    case 'AUTOMATED':
+      return 'Automated';
+
+    default:
+      return automationStatus;
+  }
+}
+
+export default function ScenarioDetailsPage() {
   const navigate =
     useNavigate();
 
   const {
-    requirementId,
+    scenarioId,
   } = useParams<{
-    requirementId: string;
+    scenarioId: string;
   }>();
 
   const [
-    requirement,
-    setRequirement,
+    scenario,
+    setScenario,
   ] = useState<
-    Requirement | null
+    TestScenario | null
   >(null);
 
   const [
-    scenarios,
-    setScenarios,
+    testCases,
+    setTestCases,
   ] = useState<
-    TestScenario[]
+    TestCase[]
   >([]);
 
   const [
@@ -214,11 +271,9 @@ export default function RequirementDetailsPage() {
       async (
         isRefresh = false,
       ) => {
-        if (
-          !requirementId
-        ) {
+        if (!scenarioId) {
           setError(
-            'Requirement ID is missing.',
+            'Scenario ID is missing.',
           );
 
           setLoading(false);
@@ -227,9 +282,7 @@ export default function RequirementDetailsPage() {
         }
 
         try {
-          if (
-            isRefresh
-          ) {
+          if (isRefresh) {
             setRefreshing(
               true,
             );
@@ -242,48 +295,46 @@ export default function RequirementDetailsPage() {
           setError(null);
 
           const [
-            requirementResponse,
             scenarioResponse,
+            testCaseResponse,
           ] =
             await Promise.all([
-              requirementApi
-                .getRequirementByBusinessId(
-                  requirementId,
+              testScenarioApi
+                .getTestScenarioByBusinessId(
+                  scenarioId,
                 ),
 
-              testScenarioApi
-                .getByRequirement(
-                  requirementId,
+              testCaseApi
+                .getByScenario(
+                  scenarioId,
                 ),
             ]);
 
-          setRequirement(
-            requirementResponse,
+          setScenario(
+            scenarioResponse,
           );
 
-          setScenarios(
-            scenarioResponse,
+          setTestCases(
+            testCaseResponse,
           );
         } catch (err) {
           console.error(
-            'Failed to load Requirement details:',
+            'Failed to load Scenario details:',
             err,
           );
 
           setError(
-            'Unable to load the Requirement details or Test Scenarios.',
+            'Unable to load the Test Scenario details or Test Cases.',
           );
         } finally {
-          setLoading(
-            false,
-          );
+          setLoading(false);
 
           setRefreshing(
             false,
           );
         }
       },
-      [requirementId],
+      [scenarioId],
     );
 
   useEffect(
@@ -293,25 +344,25 @@ export default function RequirementDetailsPage() {
     [loadPage],
   );
 
-  const handleScenarioCreated =
+  const handleTestCaseCreated =
     (
-      scenario:
-        TestScenario,
+      testCase:
+        TestCase,
     ) => {
       setCreateDialogOpen(
         false,
       );
 
       setSuccessMessage(
-        `Test Scenario "${scenario.scenarioId}" created successfully.`,
+        `Test Case "${testCase.testCaseId}" created successfully.`,
       );
 
-      setScenarios(
+      setTestCases(
         (
-          currentScenarios,
+          current,
         ) => [
-          ...currentScenarios,
-          scenario,
+          ...current,
+          testCase,
         ],
       );
     };
@@ -342,8 +393,8 @@ export default function RequirementDetailsPage() {
             <Typography
               color="text.secondary"
             >
-              Loading
-              Requirement...
+              Loading Test
+              Scenario...
             </Typography>
           </Stack>
         </CardContent>
@@ -353,7 +404,7 @@ export default function RequirementDetailsPage() {
 
   if (
     error &&
-    !requirement
+    !scenario
   ) {
     return (
       <Stack
@@ -373,7 +424,7 @@ export default function RequirementDetailsPage() {
               'flex-start',
           }}
         >
-          Back to Test Plans
+          Back
         </Button>
 
         <Alert
@@ -398,7 +449,7 @@ export default function RequirementDetailsPage() {
     );
   }
 
-  if (!requirement) {
+  if (!scenario) {
     return null;
   }
 
@@ -408,10 +459,10 @@ export default function RequirementDetailsPage() {
     >
       <PageHeader
         title={
-          requirement.requirementId
+          scenario.scenarioId
         }
         description={
-          requirement.description
+          scenario.description
         }
         breadcrumbs={[
           {
@@ -424,20 +475,19 @@ export default function RequirementDetailsPage() {
 
           {
             label:
-              requirement
-                .testPlanBusinessId,
+              scenario
+                .requirementBusinessId,
 
             to:
-              `/test-plans/${encodeURIComponent(
-                requirement
-                  .testPlanBusinessId,
+              `/requirements/${encodeURIComponent(
+                scenario
+                  .requirementBusinessId,
               )}`,
           },
 
           {
             label:
-              requirement
-                .requirementId,
+              scenario.scenarioId,
           },
         ]}
         actions={
@@ -478,7 +528,7 @@ export default function RequirementDetailsPage() {
                 )
               }
             >
-              Add Test Scenario
+              Add Test Case
             </Button>
           </Stack>
         }
@@ -542,7 +592,7 @@ export default function RequirementDetailsPage() {
                     700
                   }
                 >
-                  Requirement
+                  Test Scenario
                   Information
                 </Typography>
 
@@ -550,9 +600,8 @@ export default function RequirementDetailsPage() {
                   variant="body2"
                   color="text.secondary"
                 >
-                  Requirement
-                  details and
-                  automation
+                  Scenario details
+                  and automation
                   metadata.
                 </Typography>
               </Box>
@@ -566,33 +615,40 @@ export default function RequirementDetailsPage() {
                 }}
               >
                 <Chip
+                  label={getTestTypeLabel(
+                    scenario.testType,
+                  )}
+                  variant="outlined"
+                />
+
+                <Chip
                   label={
-                    requirement.priority
+                    scenario.priority
                   }
                   color={getPriorityColor(
-                    requirement.priority,
+                    scenario.priority,
                   )}
                   variant="outlined"
                 />
 
                 <Chip
                   label={
-                    requirement.status
+                    scenario.status
                   }
                   color={getStatusColor(
-                    requirement.status,
+                    scenario.status,
                   )}
                   variant="outlined"
                 />
 
                 <Chip
                   label={
-                    requirement.automatable
+                    scenario.automatable
                       ? 'Automatable'
                       : 'Manual'
                   }
                   color={
-                    requirement.automatable
+                    scenario.automatable
                       ? 'success'
                       : 'default'
                   }
@@ -613,7 +669,7 @@ export default function RequirementDetailsPage() {
 
               <Typography>
                 {
-                  requirement.description
+                  scenario.description
                 }
               </Typography>
             </Box>
@@ -637,7 +693,7 @@ export default function RequirementDetailsPage() {
                   variant="caption"
                   color="text.secondary"
                 >
-                  Requirement ID
+                  Scenario ID
                 </Typography>
 
                 <Typography
@@ -646,7 +702,7 @@ export default function RequirementDetailsPage() {
                   }
                 >
                   {
-                    requirement.requirementId
+                    scenario.scenarioId
                   }
                 </Typography>
               </Box>
@@ -656,12 +712,12 @@ export default function RequirementDetailsPage() {
                   variant="caption"
                   color="text.secondary"
                 >
-                  Test Plan
+                  Requirement
                 </Typography>
 
                 <Typography>
                   {
-                    requirement.testPlanBusinessId
+                    scenario.requirementBusinessId
                   }
                 </Typography>
               </Box>
@@ -676,7 +732,7 @@ export default function RequirementDetailsPage() {
 
                 <Typography>
                   {formatDate(
-                    requirement.createdAt,
+                    scenario.createdAt,
                   )}
                 </Typography>
               </Box>
@@ -691,7 +747,7 @@ export default function RequirementDetailsPage() {
 
                 <Typography>
                   {formatDate(
-                    requirement.updatedAt,
+                    scenario.updatedAt,
                   )}
                 </Typography>
               </Box>
@@ -721,20 +777,20 @@ export default function RequirementDetailsPage() {
             variant="h5"
             fontWeight={700}
           >
-            Test Scenarios
+            Test Cases
           </Typography>
 
           <Typography
             color="text.secondary"
           >
-            Test Scenarios linked
-            to this Requirement.
+            Test Cases linked to
+            this Test Scenario.
           </Typography>
         </Box>
 
         <Chip
-          label={`${scenarios.length} scenario${
-            scenarios.length ===
+          label={`${testCases.length} test case${
+            testCases.length ===
             1
               ? ''
               : 's'
@@ -743,7 +799,7 @@ export default function RequirementDetailsPage() {
         />
       </Box>
 
-      {scenarios.length ===
+      {testCases.length ===
       0 ? (
         <Card
           variant="outlined"
@@ -770,16 +826,15 @@ export default function RequirementDetailsPage() {
               <Typography
                 variant="h6"
               >
-                No Test Scenarios
-                yet
+                No Test Cases yet
               </Typography>
 
               <Typography
                 color="text.secondary"
               >
                 Create the first
-                Test Scenario for
-                this Requirement.
+                Test Case for this
+                Scenario.
               </Typography>
 
               <Button
@@ -793,7 +848,7 @@ export default function RequirementDetailsPage() {
                   )
                 }
               >
-                Add Test Scenario
+                Add Test Case
               </Button>
             </Stack>
           </CardContent>
@@ -802,13 +857,13 @@ export default function RequirementDetailsPage() {
         <Stack
           spacing={2}
         >
-          {scenarios.map(
+          {testCases.map(
             (
-              scenario,
+              testCase,
             ) => (
               <Card
                 key={
-                  scenario.id
+                  testCase.id
                 }
                 variant="outlined"
                 sx={{
@@ -848,18 +903,20 @@ export default function RequirementDetailsPage() {
                           }
                         >
                           {
-                            scenario.scenarioId
+                            testCase.testCaseId
                           }
                         </Typography>
 
                         <Typography
-                          color="text.secondary"
+                          fontWeight={
+                            600
+                          }
                           sx={{
                             mt: 0.5,
                           }}
                         >
                           {
-                            scenario.description
+                            testCase.name
                           }
                         </Typography>
                       </Box>
@@ -877,39 +934,39 @@ export default function RequirementDetailsPage() {
                       >
                         <Chip
                           label={getTestTypeLabel(
-                            scenario.testType,
+                            testCase.testType,
                           )}
                           variant="outlined"
                         />
 
                         <Chip
                           label={
-                            scenario.priority
+                            testCase.priority
                           }
                           color={getPriorityColor(
-                            scenario.priority,
+                            testCase.priority,
                           )}
                           variant="outlined"
                         />
 
                         <Chip
                           label={
-                            scenario.status
+                            testCase.status
                           }
                           color={getStatusColor(
-                            scenario.status,
+                            testCase.status,
                           )}
                           variant="outlined"
                         />
 
                         <Chip
                           label={
-                            scenario.automatable
+                            testCase.automatable
                               ? 'Automatable'
                               : 'Manual'
                           }
                           color={
-                            scenario.automatable
+                            testCase.automatable
                               ? 'success'
                               : 'default'
                           }
@@ -927,12 +984,114 @@ export default function RequirementDetailsPage() {
 
                         gridTemplateColumns: {
                           xs: '1fr',
+                          md: 'repeat(3, 1fr)',
+                        },
+
+                        gap: 3,
+                      }}
+                    >
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                        >
+                          Preconditions
+                        </Typography>
+
+                        <Typography
+                          variant="body2"
+                        >
+                          {displayValue(
+                            testCase.preconditions,
+                          )}
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                        >
+                          Test Data
+                        </Typography>
+
+                        <Typography
+                          variant="body2"
+                        >
+                          {displayValue(
+                            testCase.testData,
+                          )}
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                        >
+                          Expected Result
+                        </Typography>
+
+                        <Typography
+                          variant="body2"
+                        >
+                          {
+                            testCase.expectedResult
+                          }
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Divider />
+
+                    <Box
+                      sx={{
+                        display:
+                          'grid',
+
+                        gridTemplateColumns: {
+                          xs: '1fr',
                           sm: 'repeat(2, 1fr)',
+                          md: 'repeat(4, 1fr)',
                         },
 
                         gap: 2,
                       }}
                     >
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                        >
+                          Automation Type
+                        </Typography>
+
+                        <Typography
+                          variant="body2"
+                        >
+                          {getAutomationTypeLabel(
+                            testCase.automationType,
+                          )}
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                        >
+                          Automation Status
+                        </Typography>
+
+                        <Typography
+                          variant="body2"
+                        >
+                          {getAutomationStatusLabel(
+                            testCase.automationStatus,
+                          )}
+                        </Typography>
+                      </Box>
+
                       <Box>
                         <Typography
                           variant="caption"
@@ -945,7 +1104,7 @@ export default function RequirementDetailsPage() {
                           variant="body2"
                         >
                           {formatDate(
-                            scenario.createdAt,
+                            testCase.createdAt,
                           )}
                         </Typography>
                       </Box>
@@ -962,35 +1121,10 @@ export default function RequirementDetailsPage() {
                           variant="body2"
                         >
                           {formatDate(
-                            scenario.updatedAt,
+                            testCase.updatedAt,
                           )}
                         </Typography>
                       </Box>
-                    </Box>
-
-                    <Box
-                      sx={{
-                        display:
-                          'flex',
-
-                        justifyContent:
-                          'flex-end',
-                      }}
-                    >
-                      <Button
-                        endIcon={
-                          <ArrowForward />
-                        }
-                        onClick={() =>
-                          navigate(
-                            `/scenarios/${encodeURIComponent(
-                              scenario.scenarioId,
-                            )}`,
-                          )
-                        }
-                      >
-                        Open Scenario
-                      </Button>
                     </Box>
                   </Stack>
                 </CardContent>
@@ -1000,12 +1134,12 @@ export default function RequirementDetailsPage() {
         </Stack>
       )}
 
-      <CreateTestScenarioDialog
+      <CreateTestCaseDialog
         open={
           createDialogOpen
         }
-        requirementId={
-          requirement.requirementId
+        scenarioId={
+          scenario.scenarioId
         }
         onClose={() =>
           setCreateDialogOpen(
@@ -1013,7 +1147,7 @@ export default function RequirementDetailsPage() {
           )
         }
         onCreated={
-          handleScenarioCreated
+          handleTestCaseCreated
         }
       />
     </Stack>
