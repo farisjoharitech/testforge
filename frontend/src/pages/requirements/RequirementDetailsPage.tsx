@@ -7,7 +7,6 @@ import {
 import {
   Add,
   ArrowBack,
-  ArrowForward,
   Refresh,
 } from '@mui/icons-material';
 
@@ -34,32 +33,22 @@ import {
 } from '../../api/requirementApi';
 
 import {
-  testPlanApi,
-} from '../../api/testPlanApi';
+  testScenarioApi,
+} from '../../api/testScenarioApi';
 
 import {
   PageHeader,
 } from '../../components/common/PageHeader';
 
-import CreateRequirementDialog from '../../components/requirements/CreateRequirementDialog';
+import CreateTestScenarioDialog from '../../components/scenarios/CreateTestScenarioDialog';
 
 import type {
   Requirement,
 } from '../../types/requirement';
 
 import type {
-  TestPlan,
-} from '../../types/testPlan';
-
-function displayValue(
-  value:
-    | string
-    | null
-    | undefined,
-): string {
-  return value?.trim() ||
-    'Not specified';
-}
+  TestScenario,
+} from '../../types/testScenario';
 
 function formatDate(
   value:
@@ -85,52 +74,6 @@ function formatDate(
   return date.toLocaleString();
 }
 
-function getTestPlanStatusColor(
-  status: string,
-):
-  | 'default'
-  | 'primary'
-  | 'success'
-  | 'warning' {
-  switch (status) {
-    case 'ACTIVE':
-      return 'success';
-
-    case 'COMPLETED':
-      return 'primary';
-
-    case 'DRAFT':
-      return 'warning';
-
-    default:
-      return 'default';
-  }
-}
-
-function getApprovalColor(
-  approvalStatus: string,
-):
-  | 'default'
-  | 'success'
-  | 'warning'
-  | 'error' {
-  switch (
-    approvalStatus
-  ) {
-    case 'APPROVED':
-      return 'success';
-
-    case 'PENDING':
-      return 'warning';
-
-    case 'REJECTED':
-      return 'error';
-
-    default:
-      return 'default';
-  }
-}
-
 function getPriorityColor(
   priority: string,
 ):
@@ -153,7 +96,7 @@ function getPriorityColor(
   }
 }
 
-function getRequirementStatusColor(
+function getStatusColor(
   status: string,
 ):
   | 'default'
@@ -179,28 +122,61 @@ function getRequirementStatusColor(
   }
 }
 
-export default function TestPlanDetailsPage() {
+function getTestTypeLabel(
+  testType: string,
+): string {
+  switch (testType) {
+    case 'END_TO_END':
+      return 'End To End';
+
+    case 'SMOKE':
+      return 'Smoke';
+
+    case 'SANITY':
+      return 'Sanity';
+
+    case 'REGRESSION':
+      return 'Regression';
+
+    case 'FUNCTIONAL':
+      return 'Functional';
+
+    case 'INTEGRATION':
+      return 'Integration';
+
+    case 'POSITIVE':
+      return 'Positive';
+
+    case 'NEGATIVE':
+      return 'Negative';
+
+    default:
+      return testType;
+  }
+}
+
+export default function RequirementDetailsPage() {
   const navigate =
     useNavigate();
 
   const {
-    testPlanId,
+    requirementId,
   } = useParams<{
-    testPlanId: string;
+    requirementId: string;
   }>();
 
   const [
-    testPlan,
-    setTestPlan,
+    requirement,
+    setRequirement,
   ] = useState<
-    TestPlan | null
+    Requirement | null
   >(null);
 
   const [
-    requirements,
-    setRequirements,
+    scenarios,
+    setScenarios,
   ] = useState<
-    Requirement[]
+    TestScenario[]
   >([]);
 
   const [
@@ -221,25 +197,27 @@ export default function TestPlanDetailsPage() {
   >(null);
 
   const [
-    createDialogOpen,
-    setCreateDialogOpen,
-  ] = useState(false);
-
-  const [
     successMessage,
     setSuccessMessage,
   ] = useState<
     string | null
   >(null);
 
+  const [
+    createDialogOpen,
+    setCreateDialogOpen,
+  ] = useState(false);
+
   const loadPage =
     useCallback(
       async (
         isRefresh = false,
       ) => {
-        if (!testPlanId) {
+        if (
+          !requirementId
+        ) {
           setError(
-            'Test Plan ID is missing.',
+            'Requirement ID is missing.',
           );
 
           setLoading(false);
@@ -248,54 +226,63 @@ export default function TestPlanDetailsPage() {
         }
 
         try {
-          if (isRefresh) {
+          if (
+            isRefresh
+          ) {
             setRefreshing(
               true,
             );
           } else {
-            setLoading(true);
+            setLoading(
+              true,
+            );
           }
 
           setError(null);
 
           const [
-            testPlanResponse,
-            requirementsResponse,
+            requirementResponse,
+            scenarioResponse,
           ] =
             await Promise.all([
-              testPlanApi
-                .getTestPlanByBusinessId(
-                  testPlanId,
+              requirementApi
+                .getRequirementByBusinessId(
+                  requirementId,
                 ),
 
-              requirementApi
-                .getRequirementsByTestPlan(
-                  testPlanId,
+              testScenarioApi
+                .getByRequirement(
+                  requirementId,
                 ),
             ]);
 
-          setTestPlan(
-            testPlanResponse,
+          setRequirement(
+            requirementResponse,
           );
 
-          setRequirements(
-            requirementsResponse,
+          setScenarios(
+            scenarioResponse,
           );
         } catch (err) {
           console.error(
-            'Failed to load Test Plan details:',
+            'Failed to load Requirement details:',
             err,
           );
 
           setError(
-            'Unable to load the Test Plan details or Requirements.',
+            'Unable to load the Requirement details or Test Scenarios.',
           );
         } finally {
-          setLoading(false);
-          setRefreshing(false);
+          setLoading(
+            false,
+          );
+
+          setRefreshing(
+            false,
+          );
         }
       },
-      [testPlanId],
+      [requirementId],
     );
 
   useEffect(
@@ -305,25 +292,25 @@ export default function TestPlanDetailsPage() {
     [loadPage],
   );
 
-  const handleRequirementCreated =
+  const handleScenarioCreated =
     (
-      requirement:
-        Requirement,
+      scenario:
+        TestScenario,
     ) => {
       setCreateDialogOpen(
         false,
       );
 
       setSuccessMessage(
-        `Requirement "${requirement.requirementId}" created successfully.`,
+        `Test Scenario "${scenario.scenarioId}" created successfully.`,
       );
 
-      setRequirements(
+      setScenarios(
         (
-          currentRequirements,
+          currentScenarios,
         ) => [
-          ...currentRequirements,
-          requirement,
+          ...currentScenarios,
+          scenario,
         ],
       );
     };
@@ -354,8 +341,8 @@ export default function TestPlanDetailsPage() {
             <Typography
               color="text.secondary"
             >
-              Loading Test
-              Plan...
+              Loading
+              Requirement...
             </Typography>
           </Stack>
         </CardContent>
@@ -365,7 +352,7 @@ export default function TestPlanDetailsPage() {
 
   if (
     error &&
-    !testPlan
+    !requirement
   ) {
     return (
       <Stack
@@ -410,7 +397,7 @@ export default function TestPlanDetailsPage() {
     );
   }
 
-  if (!testPlan) {
+  if (!requirement) {
     return null;
   }
 
@@ -420,10 +407,10 @@ export default function TestPlanDetailsPage() {
     >
       <PageHeader
         title={
-          testPlan.name
+          requirement.requirementId
         }
         description={
-          testPlan.testPlanId
+          requirement.description
         }
         breadcrumbs={[
           {
@@ -436,7 +423,20 @@ export default function TestPlanDetailsPage() {
 
           {
             label:
-              testPlan.name,
+              requirement
+                .testPlanBusinessId,
+
+            to:
+              `/test-plans/${encodeURIComponent(
+                requirement
+                  .testPlanBusinessId,
+              )}`,
+          },
+
+          {
+            label:
+              requirement
+                .requirementId,
           },
         ]}
         actions={
@@ -477,7 +477,7 @@ export default function TestPlanDetailsPage() {
                 )
               }
             >
-              Add Requirement
+              Add Test Scenario
             </Button>
           </Stack>
         }
@@ -541,7 +541,7 @@ export default function TestPlanDetailsPage() {
                     700
                   }
                 >
-                  Test Plan
+                  Requirement
                   Information
                 </Typography>
 
@@ -549,8 +549,10 @@ export default function TestPlanDetailsPage() {
                   variant="body2"
                   color="text.secondary"
                 >
-                  General Test Plan
-                  information.
+                  Requirement
+                  details and
+                  automation
+                  metadata.
                 </Typography>
               </Box>
 
@@ -564,27 +566,56 @@ export default function TestPlanDetailsPage() {
               >
                 <Chip
                   label={
-                    testPlan.status
+                    requirement.priority
                   }
-                  color={getTestPlanStatusColor(
-                    testPlan.status,
+                  color={getPriorityColor(
+                    requirement.priority,
                   )}
                   variant="outlined"
                 />
 
                 <Chip
                   label={
-                    testPlan.approvalStatus
+                    requirement.status
                   }
-                  color={getApprovalColor(
-                    testPlan.approvalStatus,
+                  color={getStatusColor(
+                    requirement.status,
                   )}
+                  variant="outlined"
+                />
+
+                <Chip
+                  label={
+                    requirement.automatable
+                      ? 'Automatable'
+                      : 'Manual'
+                  }
+                  color={
+                    requirement.automatable
+                      ? 'success'
+                      : 'default'
+                  }
                   variant="outlined"
                 />
               </Stack>
             </Box>
 
             <Divider />
+
+            <Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+              >
+                Description
+              </Typography>
+
+              <Typography>
+                {
+                  requirement.description
+                }
+              </Typography>
+            </Box>
 
             <Box
               sx={{
@@ -594,7 +625,7 @@ export default function TestPlanDetailsPage() {
                 gridTemplateColumns: {
                   xs: '1fr',
                   sm: 'repeat(2, 1fr)',
-                  md: 'repeat(3, 1fr)',
+                  md: 'repeat(4, 1fr)',
                 },
 
                 gap: 3,
@@ -605,7 +636,7 @@ export default function TestPlanDetailsPage() {
                   variant="caption"
                   color="text.secondary"
                 >
-                  Test Plan ID
+                  Requirement ID
                 </Typography>
 
                 <Typography
@@ -614,7 +645,7 @@ export default function TestPlanDetailsPage() {
                   }
                 >
                   {
-                    testPlan.testPlanId
+                    requirement.requirementId
                   }
                 </Typography>
               </Box>
@@ -624,13 +655,13 @@ export default function TestPlanDetailsPage() {
                   variant="caption"
                   color="text.secondary"
                 >
-                  Version
+                  Test Plan
                 </Typography>
 
                 <Typography>
-                  {displayValue(
-                    testPlan.version,
-                  )}
+                  {
+                    requirement.testPlanBusinessId
+                  }
                 </Typography>
               </Box>
 
@@ -639,72 +670,12 @@ export default function TestPlanDetailsPage() {
                   variant="caption"
                   color="text.secondary"
                 >
-                  Project
-                </Typography>
-
-                <Typography>
-                  {displayValue(
-                    testPlan.project,
-                  )}
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                >
-                  Application
-                </Typography>
-
-                <Typography>
-                  {displayValue(
-                    testPlan.application,
-                  )}
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                >
-                  Environment
-                </Typography>
-
-                <Typography>
-                  {displayValue(
-                    testPlan.environment,
-                  )}
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                >
-                  Prepared By
-                </Typography>
-
-                <Typography>
-                  {displayValue(
-                    testPlan.preparedBy,
-                  )}
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                >
-                  Created At
+                  Created
                 </Typography>
 
                 <Typography>
                   {formatDate(
-                    testPlan.createdAt,
+                    requirement.createdAt,
                   )}
                 </Typography>
               </Box>
@@ -714,12 +685,12 @@ export default function TestPlanDetailsPage() {
                   variant="caption"
                   color="text.secondary"
                 >
-                  Updated At
+                  Updated
                 </Typography>
 
                 <Typography>
                   {formatDate(
-                    testPlan.updatedAt,
+                    requirement.updatedAt,
                   )}
                 </Typography>
               </Box>
@@ -749,20 +720,20 @@ export default function TestPlanDetailsPage() {
             variant="h5"
             fontWeight={700}
           >
-            Requirements
+            Test Scenarios
           </Typography>
 
           <Typography
             color="text.secondary"
           >
-            Requirements linked
-            to this Test Plan.
+            Test Scenarios linked
+            to this Requirement.
           </Typography>
         </Box>
 
         <Chip
-          label={`${requirements.length} requirement${
-            requirements.length ===
+          label={`${scenarios.length} scenario${
+            scenarios.length ===
             1
               ? ''
               : 's'
@@ -771,7 +742,7 @@ export default function TestPlanDetailsPage() {
         />
       </Box>
 
-      {requirements.length ===
+      {scenarios.length ===
       0 ? (
         <Card
           variant="outlined"
@@ -798,16 +769,16 @@ export default function TestPlanDetailsPage() {
               <Typography
                 variant="h6"
               >
-                No Requirements
+                No Test Scenarios
                 yet
               </Typography>
 
               <Typography
                 color="text.secondary"
               >
-                Add the first
-                Requirement for
-                this Test Plan.
+                Create the first
+                Test Scenario for
+                this Requirement.
               </Typography>
 
               <Button
@@ -821,7 +792,7 @@ export default function TestPlanDetailsPage() {
                   )
                 }
               >
-                Add Requirement
+                Add Test Scenario
               </Button>
             </Stack>
           </CardContent>
@@ -830,13 +801,13 @@ export default function TestPlanDetailsPage() {
         <Stack
           spacing={2}
         >
-          {requirements.map(
+          {scenarios.map(
             (
-              requirement,
+              scenario,
             ) => (
               <Card
                 key={
-                  requirement.id
+                  scenario.id
                 }
                 variant="outlined"
                 sx={{
@@ -876,7 +847,7 @@ export default function TestPlanDetailsPage() {
                           }
                         >
                           {
-                            requirement.requirementId
+                            scenario.scenarioId
                           }
                         </Typography>
 
@@ -887,7 +858,7 @@ export default function TestPlanDetailsPage() {
                           }}
                         >
                           {
-                            requirement.description
+                            scenario.description
                           }
                         </Typography>
                       </Box>
@@ -904,33 +875,40 @@ export default function TestPlanDetailsPage() {
                         }}
                       >
                         <Chip
+                          label={getTestTypeLabel(
+                            scenario.testType,
+                          )}
+                          variant="outlined"
+                        />
+
+                        <Chip
                           label={
-                            requirement.priority
+                            scenario.priority
                           }
                           color={getPriorityColor(
-                            requirement.priority,
+                            scenario.priority,
                           )}
                           variant="outlined"
                         />
 
                         <Chip
                           label={
-                            requirement.status
+                            scenario.status
                           }
-                          color={getRequirementStatusColor(
-                            requirement.status,
+                          color={getStatusColor(
+                            scenario.status,
                           )}
                           variant="outlined"
                         />
 
                         <Chip
                           label={
-                            requirement.automatable
+                            scenario.automatable
                               ? 'Automatable'
                               : 'Manual'
                           }
                           color={
-                            requirement.automatable
+                            scenario.automatable
                               ? 'success'
                               : 'default'
                           }
@@ -941,12 +919,18 @@ export default function TestPlanDetailsPage() {
 
                     <Divider />
 
-                    <Stack
-                      direction={{
-                        xs: 'column',
-                        sm: 'row',
+                    <Box
+                      sx={{
+                        display:
+                          'grid',
+
+                        gridTemplateColumns: {
+                          xs: '1fr',
+                          sm: 'repeat(2, 1fr)',
+                        },
+
+                        gap: 2,
                       }}
-                      spacing={3}
                     >
                       <Box>
                         <Typography
@@ -960,7 +944,7 @@ export default function TestPlanDetailsPage() {
                           variant="body2"
                         >
                           {formatDate(
-                            requirement.createdAt,
+                            scenario.createdAt,
                           )}
                         </Typography>
                       </Box>
@@ -977,35 +961,10 @@ export default function TestPlanDetailsPage() {
                           variant="body2"
                         >
                           {formatDate(
-                            requirement.updatedAt,
+                            scenario.updatedAt,
                           )}
                         </Typography>
                       </Box>
-                    </Stack>
-
-                    <Box
-                      sx={{
-                        display:
-                          'flex',
-
-                        justifyContent:
-                          'flex-end',
-                      }}
-                    >
-                      <Button
-                        endIcon={
-                          <ArrowForward />
-                        }
-                        onClick={() =>
-                          navigate(
-                            `/requirements/${encodeURIComponent(
-                              requirement.requirementId,
-                            )}`,
-                          )
-                        }
-                      >
-                        Open Requirement
-                      </Button>
                     </Box>
                   </Stack>
                 </CardContent>
@@ -1015,12 +974,12 @@ export default function TestPlanDetailsPage() {
         </Stack>
       )}
 
-      <CreateRequirementDialog
+      <CreateTestScenarioDialog
         open={
           createDialogOpen
         }
-        testPlanId={
-          testPlan.testPlanId
+        requirementId={
+          requirement.requirementId
         }
         onClose={() =>
           setCreateDialogOpen(
@@ -1028,7 +987,7 @@ export default function TestPlanDetailsPage() {
           )
         }
         onCreated={
-          handleRequirementCreated
+          handleScenarioCreated
         }
       />
     </Stack>
