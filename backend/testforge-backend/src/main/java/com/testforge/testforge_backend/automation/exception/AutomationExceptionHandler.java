@@ -14,14 +14,19 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@RestControllerAdvice
+@RestControllerAdvice(
+        basePackages = "com.testforge.testforge_backend.automation"
+)
 public class AutomationExceptionHandler {
 
-    @ExceptionHandler(AutomationNotFoundException.class)
+    @ExceptionHandler(
+            AutomationNotFoundException.class
+    )
     public ResponseEntity<ApiErrorResponse> handleNotFound(
             AutomationNotFoundException exception,
             HttpServletRequest request
     ) {
+
         return buildResponse(
                 HttpStatus.NOT_FOUND,
                 exception.getMessage(),
@@ -29,11 +34,14 @@ public class AutomationExceptionHandler {
         );
     }
 
-    @ExceptionHandler(AutomationConflictException.class)
+    @ExceptionHandler(
+            AutomationConflictException.class
+    )
     public ResponseEntity<ApiErrorResponse> handleConflict(
             AutomationConflictException exception,
             HttpServletRequest request
     ) {
+
         return buildResponse(
                 HttpStatus.CONFLICT,
                 exception.getMessage(),
@@ -41,11 +49,14 @@ public class AutomationExceptionHandler {
         );
     }
 
-    @ExceptionHandler(AutomationValidationException.class)
+    @ExceptionHandler(
+            AutomationValidationException.class
+    )
     public ResponseEntity<ApiErrorResponse> handleAutomationValidation(
             AutomationValidationException exception,
             HttpServletRequest request
     ) {
+
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 exception.getMessage(),
@@ -53,11 +64,14 @@ public class AutomationExceptionHandler {
         );
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
+    @ExceptionHandler(
+            IllegalArgumentException.class
+    )
     public ResponseEntity<ApiErrorResponse> handleIllegalArgument(
             IllegalArgumentException exception,
             HttpServletRequest request
     ) {
+
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 safeMessage(
@@ -68,16 +82,23 @@ public class AutomationExceptionHandler {
         );
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ExceptionHandler(
+            MethodArgumentNotValidException.class
+    )
     public ResponseEntity<ApiErrorResponse> handleBeanValidation(
             MethodArgumentNotValidException exception,
             HttpServletRequest request
     ) {
+
         Map<String, String> validationErrors =
                 new LinkedHashMap<>();
 
-        for (FieldError fieldError
-                : exception.getBindingResult().getFieldErrors()) {
+        for (
+                FieldError fieldError :
+                exception
+                        .getBindingResult()
+                        .getFieldErrors()
+        ) {
 
             validationErrors.putIfAbsent(
                     fieldError.getField(),
@@ -98,15 +119,22 @@ public class AutomationExceptionHandler {
                 );
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(body);
+                .status(
+                        HttpStatus.BAD_REQUEST
+                )
+                .body(
+                        body
+                );
     }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ExceptionHandler(
+            HttpMessageNotReadableException.class
+    )
     public ResponseEntity<ApiErrorResponse> handleMalformedJson(
             HttpMessageNotReadableException exception,
             HttpServletRequest request
     ) {
+
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 "Request body is invalid or contains an unsupported value.",
@@ -114,18 +142,26 @@ public class AutomationExceptionHandler {
         );
     }
 
-    @ExceptionHandler(Exception.class)
+    @ExceptionHandler(
+            Exception.class
+    )
     public ResponseEntity<ApiErrorResponse> handleUnexpectedException(
             Exception exception,
             HttpServletRequest request
     ) {
+
         /*
+         * This handler is intentionally scoped to controllers
+         * inside:
+         *
+         * com.testforge.testforge_backend.automation
+         *
+         * It must not intercept normal Test Plan, Requirement,
+         * Scenario, Test Case, or Test Step exceptions.
+         *
          * Do not expose stack traces, SQL messages,
          * filesystem paths, or internal implementation details
          * to API clients.
-         *
-         * The exception will still be visible in server logs
-         * through the normal Spring logging infrastructure.
          */
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
@@ -139,6 +175,7 @@ public class AutomationExceptionHandler {
             String message,
             HttpServletRequest request
     ) {
+
         ApiErrorResponse body =
                 ApiErrorResponse.of(
                         status.value(),
@@ -151,15 +188,24 @@ public class AutomationExceptionHandler {
                 );
 
         return ResponseEntity
-                .status(status)
-                .body(body);
+                .status(
+                        status
+                )
+                .body(
+                        body
+                );
     }
 
     private String safeMessage(
             String message,
             String fallback
     ) {
-        if (message == null || message.isBlank()) {
+
+        if (
+                message == null
+                        || message.isBlank()
+        ) {
+
             return fallback;
         }
 
