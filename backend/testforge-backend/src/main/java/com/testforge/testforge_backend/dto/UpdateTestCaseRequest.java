@@ -1,6 +1,5 @@
 package com.testforge.testforge_backend.dto;
 
-import com.testforge.testforge_backend.domain.enums.AutomationStatus;
 import com.testforge.testforge_backend.domain.enums.AutomationType;
 import com.testforge.testforge_backend.domain.enums.TestCasePriority;
 import com.testforge.testforge_backend.domain.enums.TestCaseStatus;
@@ -11,48 +10,78 @@ import jakarta.validation.constraints.Size;
 
 public class UpdateTestCaseRequest {
 
-    @NotBlank(message = "Name is required")
+    @NotBlank(
+            message =
+                    "Name is required"
+    )
     @Size(
             max = 255,
-            message = "Name must not exceed 255 characters"
+            message =
+                    "Name must not exceed 255 characters"
     )
     private String name;
 
     @Size(
             max = 2000,
-            message = "Preconditions must not exceed 2000 characters"
+            message =
+                    "Preconditions must not exceed 2000 characters"
     )
     private String preconditions;
 
     @Size(
             max = 2000,
-            message = "Test Data must not exceed 2000 characters"
+            message =
+                    "Test Data must not exceed 2000 characters"
     )
     private String testData;
 
-    @NotBlank(message = "Expected Result is required")
+    @NotBlank(
+            message =
+                    "Expected Result is required"
+    )
     @Size(
             max = 2000,
-            message = "Expected Result must not exceed 2000 characters"
+            message =
+                    "Expected Result must not exceed 2000 characters"
     )
     private String expectedResult;
 
-    @NotNull(message = "Priority is required")
+    @NotNull(
+            message =
+                    "Priority is required"
+    )
     private TestCasePriority priority;
 
-    @NotNull(message = "Test Type is required")
+    @NotNull(
+            message =
+                    "Test Type is required"
+    )
     private TestType testType;
 
-    @NotNull(message = "Automatable is required")
+    @NotNull(
+            message =
+                    "Automatable is required"
+    )
     private Boolean automatable;
 
-    @NotNull(message = "Automation Type is required")
+    @NotNull(
+            message =
+                    "Automation Type is required"
+    )
     private AutomationType automationType;
 
-    @NotNull(message = "Automation Status is required")
-    private AutomationStatus automationStatus;
+    /*
+     * automationStatus intentionally
+     * does NOT belong here.
+     *
+     * Script generation and execution
+     * own lifecycle transitions.
+     */
 
-    @NotNull(message = "Status is required")
+    @NotNull(
+            message =
+                    "Status is required"
+    )
     private TestCaseStatus status;
 
     public String getName() {
@@ -62,7 +91,8 @@ public class UpdateTestCaseRequest {
     public void setName(
             String name
     ) {
-        this.name = name;
+        this.name =
+                name;
     }
 
     public String getPreconditions() {
@@ -72,7 +102,8 @@ public class UpdateTestCaseRequest {
     public void setPreconditions(
             String preconditions
     ) {
-        this.preconditions = preconditions;
+        this.preconditions =
+                preconditions;
     }
 
     public String getTestData() {
@@ -82,7 +113,8 @@ public class UpdateTestCaseRequest {
     public void setTestData(
             String testData
     ) {
-        this.testData = testData;
+        this.testData =
+                testData;
     }
 
     public String getExpectedResult() {
@@ -92,7 +124,8 @@ public class UpdateTestCaseRequest {
     public void setExpectedResult(
             String expectedResult
     ) {
-        this.expectedResult = expectedResult;
+        this.expectedResult =
+                expectedResult;
     }
 
     public TestCasePriority getPriority() {
@@ -102,7 +135,8 @@ public class UpdateTestCaseRequest {
     public void setPriority(
             TestCasePriority priority
     ) {
-        this.priority = priority;
+        this.priority =
+                priority;
     }
 
     public TestType getTestType() {
@@ -112,7 +146,8 @@ public class UpdateTestCaseRequest {
     public void setTestType(
             TestType testType
     ) {
-        this.testType = testType;
+        this.testType =
+                testType;
     }
 
     public Boolean getAutomatable() {
@@ -122,7 +157,8 @@ public class UpdateTestCaseRequest {
     public void setAutomatable(
             Boolean automatable
     ) {
-        this.automatable = automatable;
+        this.automatable =
+                automatable;
     }
 
     public AutomationType getAutomationType() {
@@ -132,17 +168,8 @@ public class UpdateTestCaseRequest {
     public void setAutomationType(
             AutomationType automationType
     ) {
-        this.automationType = automationType;
-    }
-
-    public AutomationStatus getAutomationStatus() {
-        return automationStatus;
-    }
-
-    public void setAutomationStatus(
-            AutomationStatus automationStatus
-    ) {
-        this.automationStatus = automationStatus;
+        this.automationType =
+                automationType;
     }
 
     public TestCaseStatus getStatus() {
@@ -152,6 +179,7 @@ public class UpdateTestCaseRequest {
     public void setStatus(
             TestCaseStatus status
     ) {
-        this.status = status;
+        this.status =
+                status;
     }
 }

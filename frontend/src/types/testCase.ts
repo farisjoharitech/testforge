@@ -37,46 +37,96 @@ export type AutomationStatus =
 
 export interface CreateTestCaseRequest {
   testCaseId: string;
+
   name: string;
+
   preconditions?: string;
+
   testData?: string;
+
   expectedResult: string;
+
   priority: TestCasePriority;
+
   testType: TestType;
+
   automatable: boolean;
-  automationType: AutomationType;
-  automationStatus: AutomationStatus;
+
+  automationType:
+    AutomationType;
+
   status: TestCaseStatus;
 }
 
 export interface UpdateTestCaseRequest {
   name: string;
+
   preconditions?: string;
+
   testData?: string;
+
   expectedResult: string;
+
   priority: TestCasePriority;
+
   testType: TestType;
+
   automatable: boolean;
-  automationType: AutomationType;
-  automationStatus: AutomationStatus;
+
+  automationType:
+    AutomationType;
+
   status: TestCaseStatus;
 }
 
 export interface TestCase {
   id: number;
+
   testCaseId: string;
+
   scenarioId: number;
-  scenarioBusinessId: string;
+
+  scenarioBusinessId:
+    string;
+
   name: string;
-  preconditions?: string | null;
-  testData?: string | null;
+
+  preconditions?:
+    string | null;
+
+  testData?:
+    string | null;
+
   expectedResult: string;
-  priority: TestCasePriority;
-  testType: TestType;
-  automatable: boolean;
-  automationType: AutomationType;
-  automationStatus: AutomationStatus;
-  status: TestCaseStatus;
-  createdAt: string;
-  updatedAt: string;
+
+  priority:
+    TestCasePriority;
+
+  testType:
+    TestType;
+
+  automatable:
+    boolean;
+
+  automationType:
+    AutomationType;
+
+  /*
+   * Read-only lifecycle state
+   * from the backend.
+   *
+   * Normal Test Case CRUD
+   * must not control this value.
+   */
+  automationStatus:
+    AutomationStatus;
+
+  status:
+    TestCaseStatus;
+
+  createdAt:
+    string;
+
+  updatedAt:
+    string;
 }

@@ -32,7 +32,6 @@ import {
 } from '../../api/testCaseApi';
 
 import type {
-  AutomationStatus,
   AutomationType,
   TestCase,
   TestCasePriority,
@@ -42,8 +41,11 @@ import type {
 
 interface EditTestCaseDialogProps {
   open: boolean;
+
   testCase: TestCase;
+
   onClose: () => void;
+
   onUpdated: (
     testCase: TestCase,
   ) => void;
@@ -85,15 +87,6 @@ const automationTypes:
     'UI_API',
   ];
 
-const automationStatuses:
-  AutomationStatus[] = [
-    'NOT_AUTOMATED',
-    'SCRIPT_GENERATED',
-    'READY',
-    'RUNNING',
-    'AUTOMATED',
-  ];
-
 export default function EditTestCaseDialog({
   open,
   testCase,
@@ -123,16 +116,18 @@ export default function EditTestCaseDialog({
   const [
     priority,
     setPriority,
-  ] = useState<TestCasePriority>(
-    'MEDIUM',
-  );
+  ] =
+    useState<TestCasePriority>(
+      'MEDIUM',
+    );
 
   const [
     testType,
     setTestType,
-  ] = useState<TestType>(
-    'FUNCTIONAL',
-  );
+  ] =
+    useState<TestType>(
+      'FUNCTIONAL',
+    );
 
   const [
     automatable,
@@ -142,23 +137,18 @@ export default function EditTestCaseDialog({
   const [
     automationType,
     setAutomationType,
-  ] = useState<AutomationType>(
-    'MANUAL',
-  );
-
-  const [
-    automationStatus,
-    setAutomationStatus,
-  ] = useState<AutomationStatus>(
-    'NOT_APPLICABLE',
-  );
+  ] =
+    useState<AutomationType>(
+      'MANUAL',
+    );
 
   const [
     status,
     setStatus,
-  ] = useState<TestCaseStatus>(
-    'DRAFT',
-  );
+  ] =
+    useState<TestCaseStatus>(
+      'DRAFT',
+    );
 
   const [
     submitting,
@@ -183,13 +173,13 @@ export default function EditTestCaseDialog({
       );
 
       setPreconditions(
-        testCase.preconditions ??
-          '',
+        testCase.preconditions
+        ?? '',
       );
 
       setTestData(
-        testCase.testData ??
-          '',
+        testCase.testData
+        ?? '',
       );
 
       setExpectedResult(
@@ -210,10 +200,6 @@ export default function EditTestCaseDialog({
 
       setAutomationType(
         testCase.automationType,
-      );
-
-      setAutomationStatus(
-        testCase.automationStatus,
       );
 
       setStatus(
@@ -237,33 +223,42 @@ export default function EditTestCaseDialog({
       );
 
       if (checked) {
-        setAutomationType(
-          'UI',
-        );
+        /*
+         * Preserve a valid
+         * automation type when
+         * possible.
+         */
+        if (
+          automationType
+          === 'MANUAL'
+        ) {
+          setAutomationType(
+            'UI',
+          );
+        }
 
-        setAutomationStatus(
-          'NOT_AUTOMATED',
-        );
-      } else {
-        setAutomationType(
-          'MANUAL',
-        );
-
-        setAutomationStatus(
-          'NOT_APPLICABLE',
-        );
+        return;
       }
+
+      setAutomationType(
+        'MANUAL',
+      );
     };
 
-  const optionalValue = (
-    value: string,
-  ): string | undefined => {
-    const trimmed =
-      value.trim();
+  const optionalValue =
+    (
+      value: string,
+    ):
+      | string
+      | undefined => {
+      const trimmed =
+        value.trim();
 
-    return trimmed ||
-      undefined;
-  };
+      return (
+        trimmed
+        || undefined
+      );
+    };
 
   const handleSubmit =
     async (
@@ -286,9 +281,77 @@ export default function EditTestCaseDialog({
         return;
       }
 
+      if (
+        trimmedName.length
+        > 255
+      ) {
+        setError(
+          'Name must not exceed 255 characters.',
+        );
+
+        return;
+      }
+
+      if (
+        preconditions.length
+        > 2000
+      ) {
+        setError(
+          'Preconditions must not exceed 2000 characters.',
+        );
+
+        return;
+      }
+
+      if (
+        testData.length
+        > 2000
+      ) {
+        setError(
+          'Test Data must not exceed 2000 characters.',
+        );
+
+        return;
+      }
+
       if (!trimmedExpected) {
         setError(
           'Expected Result is required.',
+        );
+
+        return;
+      }
+
+      if (
+        trimmedExpected.length
+        > 2000
+      ) {
+        setError(
+          'Expected Result must not exceed 2000 characters.',
+        );
+
+        return;
+      }
+
+      if (
+        !automatable
+        && automationType
+          !== 'MANUAL'
+      ) {
+        setError(
+          'Non-automatable Test Cases must use Automation Type MANUAL.',
+        );
+
+        return;
+      }
+
+      if (
+        automatable
+        && automationType
+          === 'MANUAL'
+      ) {
+        setError(
+          'Automatable Test Cases cannot use Automation Type MANUAL.',
         );
 
         return;
@@ -320,16 +383,26 @@ export default function EditTestCaseDialog({
                   trimmedExpected,
 
                 priority,
+
                 testType,
+
                 automatable,
+
                 automationType,
-                automationStatus,
+
                 status,
               },
             );
 
-        onUpdated(updated);
+        onUpdated(
+          updated,
+        );
       } catch (err) {
+        console.error(
+          'Failed to update Test Case:',
+          err,
+        );
+
         if (
           err instanceof
           ApiError
@@ -337,11 +410,24 @@ export default function EditTestCaseDialog({
           setError(
             err.message,
           );
-        } else {
-          setError(
-            'Unable to update Test Case.',
-          );
+
+          return;
         }
+
+        if (
+          err instanceof
+          TypeError
+        ) {
+          setError(
+            'Unable to connect to the backend. Make sure TestForge backend is running.',
+          );
+
+          return;
+        }
+
+        setError(
+          'Unable to update Test Case.',
+        );
       } finally {
         setSubmitting(false);
       }
@@ -378,6 +464,9 @@ export default function EditTestCaseDialog({
             {error && (
               <Alert
                 severity="error"
+                onClose={() =>
+                  setError(null)
+                }
               >
                 {error}
               </Alert>
@@ -399,6 +488,7 @@ export default function EditTestCaseDialog({
             <TextField
               label="Name"
               required
+              fullWidth
               value={name}
               inputProps={{
                 maxLength: 255,
@@ -406,9 +496,7 @@ export default function EditTestCaseDialog({
               disabled={
                 submitting
               }
-              onChange={(
-                event,
-              ) =>
+              onChange={event =>
                 setName(
                   event.target.value,
                 )
@@ -419,19 +507,17 @@ export default function EditTestCaseDialog({
               label="Preconditions"
               multiline
               minRows={3}
+              fullWidth
               value={
                 preconditions
               }
               inputProps={{
-                maxLength:
-                  2000,
+                maxLength: 2000,
               }}
               disabled={
                 submitting
               }
-              onChange={(
-                event,
-              ) =>
+              onChange={event =>
                 setPreconditions(
                   event.target.value,
                 )
@@ -442,17 +528,15 @@ export default function EditTestCaseDialog({
               label="Test Data"
               multiline
               minRows={3}
+              fullWidth
               value={testData}
               inputProps={{
-                maxLength:
-                  2000,
+                maxLength: 2000,
               }}
               disabled={
                 submitting
               }
-              onChange={(
-                event,
-              ) =>
+              onChange={event =>
                 setTestData(
                   event.target.value,
                 )
@@ -464,19 +548,17 @@ export default function EditTestCaseDialog({
               required
               multiline
               minRows={3}
+              fullWidth
               value={
                 expectedResult
               }
               inputProps={{
-                maxLength:
-                  2000,
+                maxLength: 2000,
               }}
               disabled={
                 submitting
               }
-              onChange={(
-                event,
-              ) =>
+              onChange={event =>
                 setExpectedResult(
                   event.target.value,
                 )
@@ -485,14 +567,13 @@ export default function EditTestCaseDialog({
 
             <TextField
               select
+              fullWidth
               label="Priority"
               value={priority}
               disabled={
                 submitting
               }
-              onChange={(
-                event,
-              ) =>
+              onChange={event =>
                 setPriority(
                   event.target
                     .value as
@@ -501,16 +582,10 @@ export default function EditTestCaseDialog({
               }
             >
               {priorities.map(
-                (
-                  option,
-                ) => (
+                option => (
                   <MenuItem
-                    key={
-                      option
-                    }
-                    value={
-                      option
-                    }
+                    key={option}
+                    value={option}
                   >
                     {option}
                   </MenuItem>
@@ -520,14 +595,13 @@ export default function EditTestCaseDialog({
 
             <TextField
               select
+              fullWidth
               label="Test Type"
               value={testType}
               disabled={
                 submitting
               }
-              onChange={(
-                event,
-              ) =>
+              onChange={event =>
                 setTestType(
                   event.target
                     .value as
@@ -536,16 +610,10 @@ export default function EditTestCaseDialog({
               }
             >
               {testTypes.map(
-                (
-                  option,
-                ) => (
+                option => (
                   <MenuItem
-                    key={
-                      option
-                    }
-                    value={
-                      option
-                    }
+                    key={option}
+                    value={option}
                   >
                     {option}
                   </MenuItem>
@@ -562,9 +630,7 @@ export default function EditTestCaseDialog({
                   disabled={
                     submitting
                   }
-                  onChange={(
-                    event,
-                  ) =>
+                  onChange={event =>
                     handleAutomatableChange(
                       event.target
                         .checked,
@@ -577,17 +643,16 @@ export default function EditTestCaseDialog({
 
             <TextField
               select
+              fullWidth
               label="Automation Type"
               value={
                 automationType
               }
               disabled={
-                submitting ||
-                !automatable
+                submitting
+                || !automatable
               }
-              onChange={(
-                event,
-              ) =>
+              onChange={event =>
                 setAutomationType(
                   event.target
                     .value as
@@ -603,16 +668,10 @@ export default function EditTestCaseDialog({
                 </MenuItem>
               ) : (
                 automationTypes.map(
-                  (
-                    option,
-                  ) => (
+                  option => (
                     <MenuItem
-                      key={
-                        option
-                      }
-                      value={
-                        option
-                      }
+                      key={option}
+                      value={option}
                     >
                       {option}
                     </MenuItem>
@@ -621,62 +680,53 @@ export default function EditTestCaseDialog({
               )}
             </TextField>
 
+            {/*
+             * Display lifecycle
+             * state but do not let
+             * normal CRUD modify it.
+             */}
             <TextField
-              select
+              fullWidth
               label="Automation Status"
               value={
-                automationStatus
+                testCase
+                  .automationStatus
               }
-              disabled={
-                submitting ||
-                !automatable
+              disabled
+              helperText={
+                testCase.automationStatus
+                === 'RUNNING'
+                  ? 'Automation is currently running. Automation configuration cannot be changed until execution finishes.'
+                  : 'Managed automatically by script generation and execution.'
               }
-              onChange={(
-                event,
-              ) =>
-                setAutomationStatus(
-                  event.target
-                    .value as
-                    AutomationStatus,
-                )
-              }
+            />
+
+            <Alert
+              severity="info"
+              variant="outlined"
             >
-              {!automatable ? (
-                <MenuItem
-                  value="NOT_APPLICABLE"
-                >
-                  NOT_APPLICABLE
-                </MenuItem>
-              ) : (
-                automationStatuses.map(
-                  (
-                    option,
-                  ) => (
-                    <MenuItem
-                      key={
-                        option
-                      }
-                      value={
-                        option
-                      }
-                    >
-                      {option}
-                    </MenuItem>
-                  ),
-                )
-              )}
-            </TextField>
+              Changing Automatable or
+              Automation Type resets
+              the automation lifecycle
+              to{' '}
+              <strong>
+                NOT_AUTOMATED
+              </strong>{' '}
+              when appropriate.
+              Existing lifecycle
+              status is otherwise
+              preserved.
+            </Alert>
 
             <TextField
               select
+              fullWidth
               label="Status"
               value={status}
               disabled={
                 submitting
               }
-              onChange={(
-                event,
-              ) =>
+              onChange={event =>
                 setStatus(
                   event.target
                     .value as
@@ -685,16 +735,10 @@ export default function EditTestCaseDialog({
               }
             >
               {statuses.map(
-                (
-                  option,
-                ) => (
+                option => (
                   <MenuItem
-                    key={
-                      option
-                    }
-                    value={
-                      option
-                    }
+                    key={option}
+                    value={option}
                   >
                     {option}
                   </MenuItem>
@@ -730,14 +774,16 @@ export default function EditTestCaseDialog({
             submitting
           }
           startIcon={
-            submitting ? (
-              <CircularProgress
-                size={18}
-                color="inherit"
-              />
-            ) : (
-              <Save />
-            )
+            submitting
+              ? (
+                <CircularProgress
+                  size={18}
+                  color="inherit"
+                />
+              )
+              : (
+                <Save />
+              )
           }
         >
           {submitting

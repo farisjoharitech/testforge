@@ -9,7 +9,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface AutomationExecutionRepository
-        extends JpaRepository<AutomationExecution, Long> {
+        extends JpaRepository<
+        AutomationExecution,
+        Long
+        > {
 
     @EntityGraph(
             attributePaths = {
@@ -17,7 +20,8 @@ public interface AutomationExecutionRepository
                     "testCase"
             }
     )
-    Optional<AutomationExecution> findByExecutionId(
+    Optional<AutomationExecution>
+    findByExecutionId(
             String executionId
     );
 
@@ -65,6 +69,27 @@ public interface AutomationExecutionRepository
 
     boolean existsByAutomationScript_IdAndStatus(
             Long automationScriptId,
+            AutomationExecutionStatus status
+    );
+
+    /*
+     * =========================================================
+     * TASK 36.13 — DASHBOARD
+     * =========================================================
+     */
+
+    long countByStatus(
+            AutomationExecutionStatus status
+    );
+
+    @EntityGraph(
+            attributePaths = {
+                    "automationScript",
+                    "testCase"
+            }
+    )
+    List<AutomationExecution>
+    findTop5ByStatusNotOrderByStartedAtDesc(
             AutomationExecutionStatus status
     );
 }

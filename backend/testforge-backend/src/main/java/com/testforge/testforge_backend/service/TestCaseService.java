@@ -30,8 +30,8 @@ public class TestCaseService {
 
     public TestCaseService(
             TestCaseRepository testCaseRepository,
-            TestScenarioRepository testScenarioRepository) {
-
+            TestScenarioRepository testScenarioRepository
+    ) {
         this.testCaseRepository =
                 testCaseRepository;
 
@@ -41,35 +41,36 @@ public class TestCaseService {
 
     public TestCase create(
             String scenarioBusinessId,
-            CreateTestCaseRequest request) {
-
+            CreateTestCaseRequest request
+    ) {
         TestScenario testScenario =
                 testScenarioRepository
                         .findByScenarioId(
                                 scenarioBusinessId
                         )
-                        .orElseThrow(() ->
-                                new TestScenarioNotFoundException(
-                                        "Test Scenario not found with scenarioId: "
-                                                + scenarioBusinessId
-                                )
+                        .orElseThrow(
+                                () ->
+                                        new TestScenarioNotFoundException(
+                                                "Test Scenario not found with scenarioId: "
+                                                        + scenarioBusinessId
+                                        )
                         );
 
-        if (testCaseRepository
-                .existsByTestCaseId(
-                        request.getTestCaseId()
-                )) {
-
+        if (
+                testCaseRepository
+                        .existsByTestCaseId(
+                                request.getTestCaseId()
+                        )
+        ) {
             throw new DuplicateTestCaseException(
                     "Test Case ID already exists: "
                             + request.getTestCaseId()
             );
         }
 
-        validateAutomationConfiguration(
+        validateAutomationType(
                 request.getAutomatable(),
-                request.getAutomationType(),
-                request.getAutomationStatus()
+                request.getAutomationType()
         );
 
         TestCase testCase =
@@ -115,8 +116,16 @@ public class TestCaseService {
                 request.getAutomationType()
         );
 
+        /*
+         * Lifecycle state is derived
+         * by the backend.
+         *
+         * Clients do not choose this.
+         */
         testCase.setAutomationStatus(
-                request.getAutomationStatus()
+                initialAutomationStatus(
+                        request.getAutomatable()
+                )
         );
 
         testCase.setStatus(
@@ -139,20 +148,23 @@ public class TestCaseService {
         );
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(
+            readOnly = true
+    )
     public List<TestCase> getByScenario(
-            String scenarioBusinessId) {
-
+            String scenarioBusinessId
+    ) {
         TestScenario testScenario =
                 testScenarioRepository
                         .findByScenarioId(
                                 scenarioBusinessId
                         )
-                        .orElseThrow(() ->
-                                new TestScenarioNotFoundException(
-                                        "Test Scenario not found with scenarioId: "
-                                                + scenarioBusinessId
-                                )
+                        .orElseThrow(
+                                () ->
+                                        new TestScenarioNotFoundException(
+                                                "Test Scenario not found with scenarioId: "
+                                                        + scenarioBusinessId
+                                        )
                         );
 
         return testCaseRepository
@@ -161,62 +173,119 @@ public class TestCaseService {
                 );
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(
+            readOnly = true
+    )
     public TestCase getById(
-            Long id) {
-
+            Long id
+    ) {
         return testCaseRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new TestCaseNotFoundException(
-                                "Test Case not found with id: "
-                                        + id
-                        )
+                .findById(
+                        id
+                )
+                .orElseThrow(
+                        () ->
+                                new TestCaseNotFoundException(
+                                        "Test Case not found with id: "
+                                                + id
+                                )
                 );
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(
+            readOnly = true
+    )
     public TestCase getByTestCaseId(
-            String testCaseId) {
-
+            String testCaseId
+    ) {
         return testCaseRepository
                 .findByTestCaseId(
                         testCaseId
                 )
-                .orElseThrow(() ->
-                        new TestCaseNotFoundException(
-                                "Test Case not found with testCaseId: "
-                                        + testCaseId
-                        )
+                .orElseThrow(
+                        () ->
+                                new TestCaseNotFoundException(
+                                        "Test Case not found with testCaseId: "
+                                                + testCaseId
+                                )
                 );
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(
+            readOnly = true
+    )
     public List<TestCase> getAutomationEligible() {
-
         return testCaseRepository
                 .findByAutomatableTrueOrderByIdAsc();
     }
 
     public TestCase update(
             Long id,
-            UpdateTestCaseRequest request) {
-
+            UpdateTestCaseRequest request
+    ) {
         TestCase testCase =
                 testCaseRepository
-                        .findById(id)
-                        .orElseThrow(() ->
-                                new TestCaseNotFoundException(
-                                        "Test Case not found with id: "
-                                                + id
-                                )
+                        .findById(
+                                id
+                        )
+                        .orElseThrow(
+                                () ->
+                                        new TestCaseNotFoundException(
+                                                "Test Case not found with id: "
+                                                        + id
+                                        )
                         );
 
-        validateAutomationConfiguration(
+        validateAutomationType(
                 request.getAutomatable(),
-                request.getAutomationType(),
-                request.getAutomationStatus()
+                request.getAutomationType()
         );
+
+        boolean wasAutomatable =
+                testCase.isAutomatable();
+
+        boolean willBeAutomatable =
+                Boolean.TRUE.equals(
+                        request.getAutomatable()
+                );
+
+        AutomationType previousAutomationType =
+                testCase.getAutomationType();
+
+        AutomationType requestedAutomationType =
+                request.getAutomationType();
+
+        boolean automatableChanged =
+                wasAutomatable
+                        != willBeAutomatable;
+
+        boolean automationTypeChanged =
+                previousAutomationType
+                        != requestedAutomationType;
+
+        boolean automationConfigurationChanged =
+                automatableChanged
+                        || automationTypeChanged;
+
+        /*
+         * An execution owns its
+         * configuration while it is
+         * RUNNING.
+         *
+         * Normal metadata fields can
+         * still be edited, but the
+         * automation configuration
+         * cannot be changed.
+         */
+        if (
+                testCase.getAutomationStatus()
+                        == AutomationStatus.RUNNING
+                        && automationConfigurationChanged
+        ) {
+            throw new InvalidTestCaseAutomationException(
+                    "Automation configuration cannot be changed while the Test Case is RUNNING"
+            );
+        }
 
         testCase.setName(
                 request.getName()
@@ -250,9 +319,63 @@ public class TestCaseService {
                 request.getAutomationType()
         );
 
-        testCase.setAutomationStatus(
-                request.getAutomationStatus()
-        );
+        /*
+         * ==================================================
+         * AUTOMATION LIFECYCLE OWNERSHIP
+         * ==================================================
+         *
+         * The normal Test Case update
+         * endpoint never accepts an
+         * automationStatus.
+         *
+         * Only derive/reset when the
+         * automation configuration
+         * itself changes.
+         */
+
+        if (!willBeAutomatable) {
+
+            /*
+             * Automatable -> Manual
+             */
+            testCase.setAutomationStatus(
+                    AutomationStatus.NOT_APPLICABLE
+            );
+
+        } else if (
+                !wasAutomatable
+                        || automationTypeChanged
+                        || testCase.getAutomationStatus()
+                        == AutomationStatus.NOT_APPLICABLE
+        ) {
+
+            /*
+             * Manual -> Automatable,
+             * or UI/API/UI_API changed.
+             *
+             * Existing generated scripts
+             * or execution lifecycle no
+             * longer represent the new
+             * configuration.
+             */
+            testCase.setAutomationStatus(
+                    AutomationStatus.NOT_AUTOMATED
+            );
+
+        }
+
+        /*
+         * Otherwise preserve:
+         *
+         * NOT_AUTOMATED
+         * SCRIPT_GENERATED
+         * READY
+         * RUNNING
+         * AUTOMATED
+         *
+         * Normal metadata edits must not
+         * reset lifecycle state.
+         */
 
         testCase.setStatus(
                 request.getStatus()
@@ -263,18 +386,25 @@ public class TestCaseService {
         );
 
         /*
-         * Do not call save() here.
-         * The entity is managed by this transaction.
+         * No save() required.
+         *
+         * testCase is a managed entity
+         * inside this transaction and
+         * Hibernate dirty checking will
+         * persist the changes.
          */
         return testCase;
     }
 
     public void delete(
-            Long id) {
-
-        if (!testCaseRepository
-                .existsById(id)) {
-
+            Long id
+    ) {
+        if (
+                !testCaseRepository
+                        .existsById(
+                                id
+                        )
+        ) {
             throw new TestCaseNotFoundException(
                     "Test Case not found with id: "
                             + id
@@ -282,49 +412,62 @@ public class TestCaseService {
         }
 
         testCaseRepository
-                .deleteById(id);
+                .deleteById(
+                        id
+                );
     }
 
-    private void validateAutomationConfiguration(
+    private void validateAutomationType(
             Boolean automatable,
-            AutomationType automationType,
-            AutomationStatus automationStatus) {
+            AutomationType automationType
+    ) {
+        if (automatable == null) {
+            throw new InvalidTestCaseAutomationException(
+                    "Automatable is required"
+            );
+        }
+
+        if (automationType == null) {
+            throw new InvalidTestCaseAutomationException(
+                    "Automation Type is required"
+            );
+        }
 
         if (!automatable) {
 
-            if (automationType
-                    != AutomationType.MANUAL) {
-
+            if (
+                    automationType
+                            != AutomationType.MANUAL
+            ) {
                 throw new InvalidTestCaseAutomationException(
                         "Non-automatable Test Case must use automationType MANUAL"
-                );
-            }
-
-            if (automationStatus
-                    != AutomationStatus.NOT_APPLICABLE) {
-
-                throw new InvalidTestCaseAutomationException(
-                        "Non-automatable Test Case must use automationStatus NOT_APPLICABLE"
                 );
             }
 
             return;
         }
 
-        if (automationType
-                == AutomationType.MANUAL) {
-
+        if (
+                automationType
+                        == AutomationType.MANUAL
+        ) {
             throw new InvalidTestCaseAutomationException(
                     "Automatable Test Case cannot use automationType MANUAL"
             );
         }
+    }
 
-        if (automationStatus
-                == AutomationStatus.NOT_APPLICABLE) {
-
-            throw new InvalidTestCaseAutomationException(
-                    "Automatable Test Case cannot use automationStatus NOT_APPLICABLE"
-            );
+    private AutomationStatus initialAutomationStatus(
+            Boolean automatable
+    ) {
+        if (
+                Boolean.TRUE.equals(
+                        automatable
+                )
+        ) {
+            return AutomationStatus.NOT_AUTOMATED;
         }
+
+        return AutomationStatus.NOT_APPLICABLE;
     }
 }

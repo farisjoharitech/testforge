@@ -6,13 +6,18 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface AutomationScriptRepository
-        extends JpaRepository<AutomationScript, Long> {
+        extends JpaRepository<
+        AutomationScript,
+        Long
+        > {
 
-    Optional<AutomationScript> findByAutomationScriptId(
+    Optional<AutomationScript>
+    findByAutomationScriptId(
             String automationScriptId
     );
 
-    Optional<AutomationScript> findByTestCaseId(
+    Optional<AutomationScript>
+    findByTestCaseId(
             Long testCaseId
     );
 
@@ -23,4 +28,12 @@ public interface AutomationScriptRepository
     boolean existsByTestCaseId(
             Long testCaseId
     );
+
+    /*
+     * =========================================================
+     * TASK 36.13 — DASHBOARD
+     * =========================================================
+     */
+
+    long countByGeneratedAtIsNotNull();
 }

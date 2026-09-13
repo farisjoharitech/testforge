@@ -19,7 +19,8 @@ export class ApiError extends Error {
   }
 }
 
-interface ApiRequestOptions extends RequestInit {
+interface ApiRequestOptions
+  extends RequestInit {
   body?: BodyInit | null;
 }
 
@@ -33,8 +34,12 @@ async function request<T>(
       ...options,
 
       headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
+        'Content-Type':
+          'application/json',
+
+        Accept:
+          'application/json',
+
         ...options.headers,
       },
     },
@@ -44,9 +49,11 @@ async function request<T>(
     let details: unknown;
 
     try {
-      details = await response.json();
+      details =
+        await response.json();
     } catch {
-      details = await response.text();
+      details =
+        await response.text();
     }
 
     let message =
@@ -57,16 +64,19 @@ async function request<T>(
       typeof details === 'object' &&
       'message' in details
     ) {
-      const backendMessage = (
-        details as {
-          message?: unknown;
-        }
-      ).message;
+      const backendMessage =
+        (
+          details as {
+            message?: unknown;
+          }
+        ).message;
 
       if (
-        typeof backendMessage === 'string'
+        typeof backendMessage
+        === 'string'
       ) {
-        message = backendMessage;
+        message =
+          backendMessage;
       }
     }
 
@@ -77,17 +87,22 @@ async function request<T>(
     );
   }
 
-  if (response.status === 204) {
+  if (
+    response.status === 204
+  ) {
     return undefined as T;
   }
 
-  const text = await response.text();
+  const text =
+    await response.text();
 
   if (!text) {
     return undefined as T;
   }
 
-  return JSON.parse(text) as T;
+  return JSON.parse(
+    text,
+  ) as T;
 }
 
 export const apiClient = {
@@ -102,7 +117,10 @@ export const apiClient = {
     );
   },
 
-  post<TResponse, TRequest>(
+  post<
+    TResponse,
+    TRequest
+  >(
     path: string,
     body: TRequest,
   ): Promise<TResponse> {
@@ -110,12 +128,18 @@ export const apiClient = {
       path,
       {
         method: 'POST',
-        body: JSON.stringify(body),
+        body:
+          JSON.stringify(
+            body,
+          ),
       },
     );
   },
 
-  put<TResponse, TRequest>(
+  put<
+    TResponse,
+    TRequest
+  >(
     path: string,
     body: TRequest,
   ): Promise<TResponse> {
@@ -123,7 +147,10 @@ export const apiClient = {
       path,
       {
         method: 'PUT',
-        body: JSON.stringify(body),
+        body:
+          JSON.stringify(
+            body,
+          ),
       },
     );
   },

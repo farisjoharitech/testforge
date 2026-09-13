@@ -35,7 +35,6 @@ import {
 } from '../../api/testCaseApi';
 
 import type {
-  AutomationStatus,
   AutomationType,
   TestCase,
   TestCasePriority,
@@ -116,14 +115,6 @@ export default function CreateTestCaseDialog({
     );
 
   const [
-    automationStatus,
-    setAutomationStatus,
-  ] =
-    useState<AutomationStatus>(
-      'NOT_APPLICABLE',
-    );
-
-  const [
     status,
     setStatus,
   ] =
@@ -167,10 +158,6 @@ export default function CreateTestCaseDialog({
         'MANUAL',
       );
 
-      setAutomationStatus(
-        'NOT_APPLICABLE',
-      );
-
       setStatus(
         'DRAFT',
       );
@@ -200,19 +187,11 @@ export default function CreateTestCaseDialog({
           'UI',
         );
 
-        setAutomationStatus(
-          'NOT_AUTOMATED',
-        );
-
         return;
       }
 
       setAutomationType(
         'MANUAL',
-      );
-
-      setAutomationStatus(
-        'NOT_APPLICABLE',
       );
     };
 
@@ -225,8 +204,10 @@ export default function CreateTestCaseDialog({
       const trimmed =
         value.trim();
 
-      return trimmed ||
-        undefined;
+      return (
+        trimmed
+        || undefined
+      );
     };
 
   const handleClose =
@@ -267,8 +248,8 @@ export default function CreateTestCaseDialog({
       }
 
       if (
-        trimmedTestCaseId.length >
-        50
+        trimmedTestCaseId.length
+        > 50
       ) {
         setError(
           'Test Case ID must not exceed 50 characters.',
@@ -286,8 +267,8 @@ export default function CreateTestCaseDialog({
       }
 
       if (
-        trimmedName.length >
-        255
+        trimmedName.length
+        > 255
       ) {
         setError(
           'Name must not exceed 255 characters.',
@@ -297,8 +278,8 @@ export default function CreateTestCaseDialog({
       }
 
       if (
-        preconditions.length >
-        2000
+        preconditions.length
+        > 2000
       ) {
         setError(
           'Preconditions must not exceed 2000 characters.',
@@ -308,8 +289,8 @@ export default function CreateTestCaseDialog({
       }
 
       if (
-        testData.length >
-        2000
+        testData.length
+        > 2000
       ) {
         setError(
           'Test Data must not exceed 2000 characters.',
@@ -330,8 +311,7 @@ export default function CreateTestCaseDialog({
 
       if (
         trimmedExpectedResult
-          .length >
-        2000
+          .length > 2000
       ) {
         setError(
           'Expected Result must not exceed 2000 characters.',
@@ -341,9 +321,9 @@ export default function CreateTestCaseDialog({
       }
 
       if (
-        !automatable &&
-        automationType !==
-          'MANUAL'
+        !automatable
+        && automationType
+          !== 'MANUAL'
       ) {
         setError(
           'Non-automatable Test Cases must use Automation Type MANUAL.',
@@ -353,36 +333,12 @@ export default function CreateTestCaseDialog({
       }
 
       if (
-        !automatable &&
-        automationStatus !==
-          'NOT_APPLICABLE'
-      ) {
-        setError(
-          'Non-automatable Test Cases must use Automation Status NOT_APPLICABLE.',
-        );
-
-        return;
-      }
-
-      if (
-        automatable &&
-        automationType ===
-          'MANUAL'
+        automatable
+        && automationType
+          === 'MANUAL'
       ) {
         setError(
           'Automatable Test Cases cannot use Automation Type MANUAL.',
-        );
-
-        return;
-      }
-
-      if (
-        automatable &&
-        automationStatus ===
-          'NOT_APPLICABLE'
-      ) {
-        setError(
-          'Automatable Test Cases cannot use Automation Status NOT_APPLICABLE.',
         );
 
         return;
@@ -425,8 +381,6 @@ export default function CreateTestCaseDialog({
 
                 automationType,
 
-                automationStatus,
-
                 status,
               },
             );
@@ -447,8 +401,8 @@ export default function CreateTestCaseDialog({
           ApiError
         ) {
           setError(
-            err.message ||
-              `Backend returned HTTP ${err.status}.`,
+            err.message
+            || `Backend returned HTTP ${err.status}.`,
           );
 
           return;
@@ -478,9 +432,7 @@ export default function CreateTestCaseDialog({
   return (
     <Dialog
       open={open}
-      onClose={
-        handleClose
-      }
+      onClose={handleClose}
       fullWidth
       maxWidth="md"
     >
@@ -527,12 +479,9 @@ export default function CreateTestCaseDialog({
               }}
               helperText="Test Case ID must be unique."
               placeholder="Example: TC-LOGIN-001"
-              onChange={(
-                event,
-              ) =>
+              onChange={event =>
                 setTestCaseId(
-                  event.target
-                    .value,
+                  event.target.value,
                 )
               }
             />
@@ -549,12 +498,9 @@ export default function CreateTestCaseDialog({
                 maxLength: 255,
               }}
               placeholder="Example: Successful login with valid credentials"
-              onChange={(
-                event,
-              ) =>
+              onChange={event =>
                 setName(
-                  event.target
-                    .value,
+                  event.target.value,
                 )
               }
             />
@@ -571,16 +517,12 @@ export default function CreateTestCaseDialog({
                 preconditions
               }
               inputProps={{
-                maxLength:
-                  2000,
+                maxLength: 2000,
               }}
               placeholder="Example: User account exists and is active."
-              onChange={(
-                event,
-              ) =>
+              onChange={event =>
                 setPreconditions(
-                  event.target
-                    .value,
+                  event.target.value,
                 )
               }
             />
@@ -597,16 +539,12 @@ export default function CreateTestCaseDialog({
                 testData
               }
               inputProps={{
-                maxLength:
-                  2000,
+                maxLength: 2000,
               }}
               placeholder="Example: username=test.user, password=Password123"
-              onChange={(
-                event,
-              ) =>
+              onChange={event =>
                 setTestData(
-                  event.target
-                    .value,
+                  event.target.value,
                 )
               }
             />
@@ -624,16 +562,12 @@ export default function CreateTestCaseDialog({
                 expectedResult
               }
               inputProps={{
-                maxLength:
-                  2000,
+                maxLength: 2000,
               }}
               placeholder="Example: User is authenticated and redirected to the dashboard."
-              onChange={(
-                event,
-              ) =>
+              onChange={event =>
                 setExpectedResult(
-                  event.target
-                    .value,
+                  event.target.value,
                 )
               }
             />
@@ -647,18 +581,15 @@ export default function CreateTestCaseDialog({
 
               <Select
                 label="Priority"
-                value={
-                  priority
-                }
+                value={priority}
                 disabled={
                   submitting
                 }
-                onChange={(
-                  event,
-                ) =>
+                onChange={event =>
                   setPriority(
                     event.target
-                      .value as TestCasePriority,
+                      .value as
+                      TestCasePriority,
                   )
                 }
               >
@@ -697,18 +628,15 @@ export default function CreateTestCaseDialog({
 
               <Select
                 label="Test Type"
-                value={
-                  testType
-                }
+                value={testType}
                 disabled={
                   submitting
                 }
-                onChange={(
-                  event,
-                ) =>
+                onChange={event =>
                   setTestType(
                     event.target
-                      .value as TestType,
+                      .value as
+                      TestType,
                   )
                 }
               >
@@ -771,9 +699,7 @@ export default function CreateTestCaseDialog({
                   disabled={
                     submitting
                   }
-                  onChange={(
-                    event,
-                  ) =>
+                  onChange={event =>
                     handleAutomatableChange(
                       event.target
                         .checked,
@@ -797,15 +723,14 @@ export default function CreateTestCaseDialog({
                   automationType
                 }
                 disabled={
-                  submitting ||
-                  !automatable
+                  submitting
+                  || !automatable
                 }
-                onChange={(
-                  event,
-                ) =>
+                onChange={event =>
                   setAutomationType(
                     event.target
-                      .value as AutomationType,
+                      .value as
+                      AutomationType,
                   )
                 }
               >
@@ -843,80 +768,24 @@ export default function CreateTestCaseDialog({
               </Select>
             </FormControl>
 
-            <FormControl
-              fullWidth
+            <Alert
+              severity="info"
+              variant="outlined"
             >
-              <InputLabel>
-                Automation Status
-              </InputLabel>
-
-              <Select
-                label="Automation Status"
-                value={
-                  automationStatus
-                }
-                disabled={
-                  submitting ||
-                  !automatable
-                }
-                onChange={(
-                  event,
-                ) =>
-                  setAutomationStatus(
-                    event.target
-                      .value as AutomationStatus,
-                  )
-                }
-              >
-                {!automatable && (
-                  <MenuItem
-                    value="NOT_APPLICABLE"
-                  >
-                    Not Applicable
-                  </MenuItem>
-                )}
-
-                {automatable && (
-                  <MenuItem
-                    value="NOT_AUTOMATED"
-                  >
-                    Not Automated
-                  </MenuItem>
-                )}
-
-                {automatable && (
-                  <MenuItem
-                    value="SCRIPT_GENERATED"
-                  >
-                    Script Generated
-                  </MenuItem>
-                )}
-
-                {automatable && (
-                  <MenuItem
-                    value="READY"
-                  >
-                    Ready
-                  </MenuItem>
-                )}
-
-                {automatable && (
-                  <MenuItem
-                    value="RUNNING"
-                  >
-                    Running
-                  </MenuItem>
-                )}
-
-                {automatable && (
-                  <MenuItem
-                    value="AUTOMATED"
-                  >
-                    Automated
-                  </MenuItem>
-                )}
-              </Select>
-            </FormControl>
+              Automation Status is
+              managed automatically by
+              TestForge. New
+              automatable Test Cases
+              start as{' '}
+              <strong>
+                NOT_AUTOMATED
+              </strong>
+              ; manual Test Cases use{' '}
+              <strong>
+                NOT_APPLICABLE
+              </strong>
+              .
+            </Alert>
 
             <FormControl
               fullWidth
@@ -927,18 +796,15 @@ export default function CreateTestCaseDialog({
 
               <Select
                 label="Status"
-                value={
-                  status
-                }
+                value={status}
                 disabled={
                   submitting
                 }
-                onChange={(
-                  event,
-                ) =>
+                onChange={event =>
                   setStatus(
                     event.target
-                      .value as TestCaseStatus,
+                      .value as
+                      TestCaseStatus,
                   )
                 }
               >
@@ -1015,14 +881,16 @@ export default function CreateTestCaseDialog({
             submitting
           }
           startIcon={
-            submitting ? (
-              <CircularProgress
-                size={18}
-                color="inherit"
-              />
-            ) : (
-              <Add />
-            )
+            submitting
+              ? (
+                <CircularProgress
+                  size={18}
+                  color="inherit"
+                />
+              )
+              : (
+                <Add />
+              )
           }
         >
           {submitting

@@ -43,6 +43,9 @@ import AutomationResultsPage
 import AutomationResultDetailsPage
   from '../pages/results/AutomationResultDetailsPage';
 
+import DashboardPage
+  from '../pages/dashboard/DashboardPage';
+
 export default function App() {
 
   return (
@@ -145,6 +148,19 @@ export default function App() {
           path="/results/:executionId"
           element={
             <AutomationResultDetailsPage />
+          }
+        />
+
+        {/*
+         * ===============================================
+         * TASK 36.13 — DASHBOARD
+         * ===============================================
+         */}
+
+        <Route
+          path="/dashboard"
+          element={
+            <DashboardPage />
           }
         />
 

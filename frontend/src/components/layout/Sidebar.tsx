@@ -1,3 +1,7 @@
+import type {
+  ReactNode,
+} from 'react';
+
 import {
   Assessment,
   Dashboard,
@@ -22,100 +26,99 @@ import {
 } from 'react-router-dom';
 
 interface NavigationItem {
-  label: string;
-  path: string;
-  icon: React.ReactNode;
-  disabled?: boolean;
+  label:
+    string;
+
+  path:
+    string;
+
+  icon:
+    ReactNode;
 }
 
 interface NavigationSection {
-  title: string;
-  items: NavigationItem[];
+  title:
+    string;
+
+  items:
+    NavigationItem[];
 }
 
-const navigationSections: NavigationSection[] = [
+const navigationSections:
+  NavigationSection[] = [
 
-  {
-    title:
-      'Test Management',
+    {
+      title:
+        'Test Management',
 
-    items: [
+      items: [
 
-      {
-        label:
-          'Test Plans',
+        {
+          label:
+            'Test Plans',
 
-        path:
-          '/test-plans',
+          path:
+            '/test-plans',
 
-        icon:
-          <Description />,
-      },
+          icon:
+            <Description />,
+        },
 
-    ],
-  },
+      ],
+    },
 
-  {
-    title:
-      'Automation',
+    {
+      title:
+        'Automation',
 
-    items: [
+      items: [
 
-      {
-        label:
-          'Automation',
+        {
+          label:
+            'Automation',
 
-        path:
-          '/automation',
+          path:
+            '/automation',
 
-        icon:
-          <Science />,
-      },
+          icon:
+            <Science />,
+        },
 
-      {
-        label:
-          'Results',
+        {
+          label:
+            'Results',
 
-        path:
-          '/results',
+          path:
+            '/results',
 
-        icon:
-          <Assessment />,
-      },
+          icon:
+            <Assessment />,
+        },
 
-    ],
-  },
+      ],
+    },
 
-  {
-    title:
-      'Reporting',
+    {
+      title:
+        'Reporting',
 
-    items: [
+      items: [
 
-      {
-        label:
-          'Dashboard',
+        {
+          label:
+            'Dashboard',
 
-        path:
-          '/dashboard',
+          path:
+            '/dashboard',
 
-        icon:
-          <Dashboard />,
+          icon:
+            <Dashboard />,
+        },
 
-        /*
-         * Task 36.13
-         *
-         * Dashboard is intentionally
-         * unavailable during 36.12.
-         */
-        disabled:
-          true,
-      },
+      ],
+    },
 
-    ],
-  },
-
-];
+  ];
 
 function isNavigationItemActive(
   pathname: string,
@@ -123,21 +126,14 @@ function isNavigationItemActive(
 ): boolean {
 
   /*
-   * Exact home/root style matching.
-   */
-  if (
-    path === '/'
-  ) {
-
-    return pathname === '/';
-  }
-
-  /*
-   * Test Plans:
+   * Test Management hierarchy:
    *
    * /test-plans
    * /test-plans/new
-   * /test-plans/TP-001
+   * /test-plans/:testPlanId
+   * /requirements/:requirementId
+   * /scenarios/:scenarioId
+   * /test-cases/:testCaseId
    */
   if (
     path === '/test-plans'
@@ -145,15 +141,19 @@ function isNavigationItemActive(
 
     return (
       pathname === '/test-plans'
+
       || pathname.startsWith(
         '/test-plans/',
       )
+
       || pathname.startsWith(
         '/requirements/',
       )
+
       || pathname.startsWith(
-        '/test-scenarios/',
+        '/scenarios/',
       )
+
       || pathname.startsWith(
         '/test-cases/',
       )
@@ -161,12 +161,7 @@ function isNavigationItemActive(
   }
 
   /*
-   * Automation:
-   *
-   * /automation
-   * /automation/TC-001
-   * /automation/TC-001/script
-   * /automation/TC-001/execute
+   * Automation hierarchy.
    */
   if (
     path === '/automation'
@@ -174,6 +169,7 @@ function isNavigationItemActive(
 
     return (
       pathname === '/automation'
+
       || pathname.startsWith(
         '/automation/',
       )
@@ -181,10 +177,7 @@ function isNavigationItemActive(
   }
 
   /*
-   * Results:
-   *
-   * /results
-   * /results/EXEC-...
+   * Results hierarchy.
    */
   if (
     path === '/results'
@@ -192,14 +185,32 @@ function isNavigationItemActive(
 
     return (
       pathname === '/results'
+
       || pathname.startsWith(
         '/results/',
       )
     );
   }
 
+  /*
+   * Dashboard hierarchy.
+   */
+  if (
+    path === '/dashboard'
+  ) {
+
+    return (
+      pathname === '/dashboard'
+
+      || pathname.startsWith(
+        '/dashboard/',
+      )
+    );
+  }
+
   return (
     pathname === path
+
     || pathname.startsWith(
       `${path}/`,
     )
@@ -219,22 +230,37 @@ export default function Sidebar() {
       component="aside"
       sx={{
         width: 260,
+
         minWidth: 260,
+
         height: '100vh',
-        position: 'sticky',
+
+        position:
+          'sticky',
+
         top: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        borderRight: '1px solid',
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
+
+        display:
+          'flex',
+
+        flexDirection:
+          'column',
+
+        borderRight:
+          '1px solid',
+
+        borderColor:
+          'divider',
+
+        bgcolor:
+          'background.paper',
       }}
     >
 
       {/*
-       * =====================================================
+       * ===============================================
        * BRAND
-       * =====================================================
+       * ===============================================
        */}
 
       <Box
@@ -243,11 +269,9 @@ export default function Sidebar() {
           py: 2.5,
         }}
       >
-
         <Stack
           spacing={0.25}
         >
-
           <Typography
             variant="h5"
             fontWeight={800}
@@ -265,32 +289,32 @@ export default function Sidebar() {
           >
             Test Management Platform
           </Typography>
-
         </Stack>
-
       </Box>
 
       <Divider />
 
       {/*
-       * =====================================================
+       * ===============================================
        * NAVIGATION
-       * =====================================================
+       * ===============================================
        */}
 
       <Box
         sx={{
           flex: 1,
-          overflowY: 'auto',
+
+          overflowY:
+            'auto',
+
           px: 1.5,
+
           py: 2,
         }}
       >
-
         <Stack
           spacing={2.5}
         >
-
           {navigationSections.map(
             section => (
 
@@ -299,17 +323,21 @@ export default function Sidebar() {
                   section.title
                 }
               >
-
                 <Typography
                   variant="overline"
                   color="text.secondary"
                   sx={{
                     display:
                       'block',
+
                     px: 1.5,
+
                     mb: 0.5,
+
                     fontSize: 11,
+
                     fontWeight: 700,
+
                     letterSpacing:
                       '0.08em',
                   }}
@@ -322,7 +350,6 @@ export default function Sidebar() {
                 <List
                   disablePadding
                 >
-
                   {section.items.map(
                     item => {
 
@@ -333,7 +360,6 @@ export default function Sidebar() {
                         );
 
                       return (
-
                         <ListItemButton
                           key={
                             item.path
@@ -341,40 +367,36 @@ export default function Sidebar() {
                           selected={
                             active
                           }
-                          disabled={
-                            item.disabled
+                          onClick={() =>
+                            navigate(
+                              item.path,
+                            )
                           }
-                          onClick={() => {
-
-                            if (
-                              !item.disabled
-                            ) {
-
-                              navigate(
-                                item.path,
-                              );
-                            }
-                          }}
                           sx={{
                             minHeight: 44,
+
                             mb: 0.5,
-                            borderRadius: 1.5,
 
-                            '&.Mui-selected': {
-                              bgcolor:
-                                'action.selected',
-                            },
+                            borderRadius:
+                              1.5,
 
-                            '&.Mui-selected:hover': {
-                              bgcolor:
-                                'action.selected',
-                            },
+                            '&.Mui-selected':
+                              {
+                                bgcolor:
+                                  'action.selected',
+                              },
+
+                            '&.Mui-selected:hover':
+                              {
+                                bgcolor:
+                                  'action.selected',
+                              },
                           }}
                         >
-
                           <ListItemIcon
                             sx={{
                               minWidth: 38,
+
                               color:
                                 active
                                   ? 'primary.main'
@@ -392,51 +414,32 @@ export default function Sidebar() {
                             }
                             primaryTypographyProps={{
                               fontSize: 14,
+
                               fontWeight:
                                 active
                                   ? 700
                                   : 500,
                             }}
                           />
-
-                          {item.disabled && (
-
-                            <Typography
-                              variant="caption"
-                              color="text.disabled"
-                              sx={{
-                                ml: 1,
-                              }}
-                            >
-                              Soon
-                            </Typography>
-
-                          )}
-
                         </ListItemButton>
-
                       );
                     },
                   )}
-
                 </List>
-
               </Box>
 
             ),
           )}
-
         </Stack>
-
       </Box>
 
-      {/*
-       * =====================================================
-       * FOOTER
-       * =====================================================
-       */}
-
       <Divider />
+
+      {/*
+       * ===============================================
+       * FOOTER
+       * ===============================================
+       */}
 
       <Box
         sx={{
@@ -444,7 +447,6 @@ export default function Sidebar() {
           py: 2,
         }}
       >
-
         <Typography
           variant="caption"
           color="text.secondary"
@@ -459,7 +461,6 @@ export default function Sidebar() {
         >
           Playwright + Java
         </Typography>
-
       </Box>
 
     </Box>

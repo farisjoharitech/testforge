@@ -24,7 +24,10 @@ import java.time.LocalDateTime;
 public class TestCase {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy =
+                    GenerationType.IDENTITY
+    )
     private Long id;
 
     @Column(
@@ -71,7 +74,9 @@ public class TestCase {
     )
     private String expectedResult;
 
-    @Enumerated(EnumType.STRING)
+    @Enumerated(
+            EnumType.STRING
+    )
     @Column(
             name = "priority",
             nullable = false,
@@ -79,7 +84,9 @@ public class TestCase {
     )
     private TestCasePriority priority;
 
-    @Enumerated(EnumType.STRING)
+    @Enumerated(
+            EnumType.STRING
+    )
     @Column(
             name = "test_type",
             nullable = false,
@@ -93,7 +100,9 @@ public class TestCase {
     )
     private boolean automatable;
 
-    @Enumerated(EnumType.STRING)
+    @Enumerated(
+            EnumType.STRING
+    )
     @Column(
             name = "automation_type",
             nullable = false,
@@ -101,7 +110,9 @@ public class TestCase {
     )
     private AutomationType automationType;
 
-    @Enumerated(EnumType.STRING)
+    @Enumerated(
+            EnumType.STRING
+    )
     @Column(
             name = "automation_status",
             nullable = false,
@@ -109,7 +120,9 @@ public class TestCase {
     )
     private AutomationStatus automationStatus;
 
-    @Enumerated(EnumType.STRING)
+    @Enumerated(
+            EnumType.STRING
+    )
     @Column(
             name = "status",
             nullable = false,
@@ -136,7 +149,9 @@ public class TestCase {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(
+            Long id
+    ) {
         this.id = id;
     }
 
@@ -147,7 +162,8 @@ public class TestCase {
     public void setTestCaseId(
             String testCaseId
     ) {
-        this.testCaseId = testCaseId;
+        this.testCaseId =
+                testCaseId;
     }
 
     public TestScenario getTestScenario() {
@@ -157,7 +173,8 @@ public class TestCase {
     public void setTestScenario(
             TestScenario testScenario
     ) {
-        this.testScenario = testScenario;
+        this.testScenario =
+                testScenario;
     }
 
     public String getName() {
@@ -167,7 +184,8 @@ public class TestCase {
     public void setName(
             String name
     ) {
-        this.name = name;
+        this.name =
+                name;
     }
 
     public String getPreconditions() {
@@ -177,7 +195,8 @@ public class TestCase {
     public void setPreconditions(
             String preconditions
     ) {
-        this.preconditions = preconditions;
+        this.preconditions =
+                preconditions;
     }
 
     public String getTestData() {
@@ -187,7 +206,8 @@ public class TestCase {
     public void setTestData(
             String testData
     ) {
-        this.testData = testData;
+        this.testData =
+                testData;
     }
 
     public String getExpectedResult() {
@@ -197,7 +217,8 @@ public class TestCase {
     public void setExpectedResult(
             String expectedResult
     ) {
-        this.expectedResult = expectedResult;
+        this.expectedResult =
+                expectedResult;
     }
 
     public TestCasePriority getPriority() {
@@ -207,7 +228,8 @@ public class TestCase {
     public void setPriority(
             TestCasePriority priority
     ) {
-        this.priority = priority;
+        this.priority =
+                priority;
     }
 
     public TestType getTestType() {
@@ -217,7 +239,8 @@ public class TestCase {
     public void setTestType(
             TestType testType
     ) {
-        this.testType = testType;
+        this.testType =
+                testType;
     }
 
     public boolean isAutomatable() {
@@ -227,7 +250,8 @@ public class TestCase {
     public void setAutomatable(
             boolean automatable
     ) {
-        this.automatable = automatable;
+        this.automatable =
+                automatable;
     }
 
     public AutomationType getAutomationType() {
@@ -237,7 +261,8 @@ public class TestCase {
     public void setAutomationType(
             AutomationType automationType
     ) {
-        this.automationType = automationType;
+        this.automationType =
+                automationType;
     }
 
     public AutomationStatus getAutomationStatus() {
@@ -247,7 +272,8 @@ public class TestCase {
     public void setAutomationStatus(
             AutomationStatus automationStatus
     ) {
-        this.automationStatus = automationStatus;
+        this.automationStatus =
+                automationStatus;
     }
 
     public TestCaseStatus getStatus() {
@@ -257,7 +283,8 @@ public class TestCase {
     public void setStatus(
             TestCaseStatus status
     ) {
-        this.status = status;
+        this.status =
+                status;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -267,7 +294,8 @@ public class TestCase {
     public void setCreatedAt(
             LocalDateTime createdAt
     ) {
-        this.createdAt = createdAt;
+        this.createdAt =
+                createdAt;
     }
 
     public LocalDateTime getUpdatedAt() {
@@ -277,6 +305,7 @@ public class TestCase {
     public void setUpdatedAt(
             LocalDateTime updatedAt
     ) {
-        this.updatedAt = updatedAt;
+        this.updatedAt =
+                updatedAt;
     }
 }
