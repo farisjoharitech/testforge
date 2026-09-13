@@ -17,6 +17,7 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Divider,
   Stack,
   Typography,
 } from '@mui/material';
@@ -39,7 +40,7 @@ interface LocationState {
 }
 
 function getStatusColor(
-  status?: string,
+  status: string,
 ):
   | 'default'
   | 'primary'
@@ -58,6 +59,40 @@ function getStatusColor(
     default:
       return 'default';
   }
+}
+
+function getApprovalColor(
+  approvalStatus: string,
+):
+  | 'default'
+  | 'success'
+  | 'warning'
+  | 'error' {
+  switch (
+    approvalStatus
+  ) {
+    case 'APPROVED':
+      return 'success';
+
+    case 'PENDING':
+      return 'warning';
+
+    case 'REJECTED':
+      return 'error';
+
+    default:
+      return 'default';
+  }
+}
+
+function displayValue(
+  value:
+    | string
+    | null
+    | undefined,
+): string {
+  return value?.trim() ||
+    'Not specified';
 }
 
 export default function TestPlanListPage() {
@@ -98,20 +133,9 @@ export default function TestPlanListPage() {
           setLoading(true);
           setError(null);
 
-          const response =
-            await testPlanApi
-              .getTestPlans({
-                page: 0,
-                size: 20,
-              });
-
           const plans =
-            Array.isArray(
-              response,
-            )
-              ? response
-              : response.content ??
-                [];
+            await testPlanApi
+              .getTestPlans();
 
           setTestPlans(
             plans,
@@ -144,11 +168,15 @@ export default function TestPlanListPage() {
       <Box
         sx={{
           display: 'flex',
+
           justifyContent:
             'space-between',
+
           alignItems:
             'center',
+
           gap: 2,
+
           mb: 3,
         }}
       >
@@ -164,8 +192,8 @@ export default function TestPlanListPage() {
             color="text.secondary"
           >
             Create and manage
-            test plans for
-            your projects.
+            TestForge test
+            plans.
           </Typography>
         </Box>
 
@@ -242,8 +270,10 @@ export default function TestPlanListPage() {
               spacing={2}
               sx={{
                 minHeight: 280,
+
                 alignItems:
                   'center',
+
                 justifyContent:
                   'center',
               }}
@@ -272,8 +302,10 @@ export default function TestPlanListPage() {
               spacing={1}
               sx={{
                 minHeight: 280,
+
                 alignItems:
                   'center',
+
                 justifyContent:
                   'center',
               }}
@@ -325,13 +357,10 @@ export default function TestPlanListPage() {
           {testPlans.map(
             (
               testPlan,
-              index,
             ) => (
               <Card
                 key={
-                  testPlan.id ??
-                  testPlan.testPlanId ??
-                  index
+                  testPlan.id
                 }
                 variant="outlined"
                 sx={{
@@ -339,55 +368,35 @@ export default function TestPlanListPage() {
                 }}
               >
                 <CardContent>
-                  <Box
-                    sx={{
-                      display:
-                        'flex',
-                      alignItems:
-                        'flex-start',
-                      justifyContent:
-                        'space-between',
-                      gap: 2,
-                    }}
+                  <Stack
+                    spacing={2}
                   >
-                    <Box>
-                      <Typography
-                        variant="h6"
-                        fontWeight={
-                          700
-                        }
-                      >
-                        {
-                          testPlan.name
-                        }
-                      </Typography>
+                    <Box
+                      sx={{
+                        display:
+                          'flex',
 
-                      <Typography
-                        color="text.secondary"
-                        sx={{
-                          mt: 0.5,
-                        }}
-                      >
-                        {testPlan.description ||
-                          'No description'}
-                      </Typography>
+                        alignItems:
+                          'flex-start',
 
-                      {testPlan.testPlanId && (
+                        justifyContent:
+                          'space-between',
+
+                        gap: 2,
+                      }}
+                    >
+                      <Box>
                         <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            mt: 1,
-                          }}
+                          variant="h6"
+                          fontWeight={
+                            700
+                          }
                         >
-                          ID:{' '}
                           {
-                            testPlan.testPlanId
+                            testPlan.name
                           }
                         </Typography>
-                      )}
 
-                      {testPlan.approvalStatus && (
                         <Typography
                           variant="body2"
                           color="text.secondary"
@@ -395,25 +404,137 @@ export default function TestPlanListPage() {
                             mt: 0.5,
                           }}
                         >
-                          Approval:{' '}
                           {
-                            testPlan.approvalStatus
+                            testPlan.testPlanId
                           }
                         </Typography>
-                      )}
+                      </Box>
+
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{
+                          flexWrap:
+                            'wrap',
+
+                          justifyContent:
+                            'flex-end',
+                        }}
+                      >
+                        <Chip
+                          label={
+                            testPlan.status
+                          }
+                          color={getStatusColor(
+                            testPlan.status,
+                          )}
+                          variant="outlined"
+                        />
+
+                        <Chip
+                          label={
+                            testPlan.approvalStatus
+                          }
+                          color={getApprovalColor(
+                            testPlan.approvalStatus,
+                          )}
+                          variant="outlined"
+                        />
+                      </Stack>
                     </Box>
 
-                    <Chip
-                      label={
-                        testPlan.status ??
-                        'UNKNOWN'
-                      }
-                      color={getStatusColor(
-                        testPlan.status,
-                      )}
-                      variant="outlined"
-                    />
-                  </Box>
+                    <Divider />
+
+                    <Box
+                      sx={{
+                        display:
+                          'grid',
+
+                        gridTemplateColumns: {
+                          xs: '1fr',
+                          sm: 'repeat(2, 1fr)',
+                          md: 'repeat(4, 1fr)',
+                        },
+
+                        gap: 2,
+                      }}
+                    >
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                        >
+                          Version
+                        </Typography>
+
+                        <Typography>
+                          {displayValue(
+                            testPlan.version,
+                          )}
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                        >
+                          Project
+                        </Typography>
+
+                        <Typography>
+                          {displayValue(
+                            testPlan.project,
+                          )}
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                        >
+                          Application
+                        </Typography>
+
+                        <Typography>
+                          {displayValue(
+                            testPlan.application,
+                          )}
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                        >
+                          Environment
+                        </Typography>
+
+                        <Typography>
+                          {displayValue(
+                            testPlan.environment,
+                          )}
+                        </Typography>
+                      </Box>
+
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                        >
+                          Prepared By
+                        </Typography>
+
+                        <Typography>
+                          {displayValue(
+                            testPlan.preparedBy,
+                          )}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Stack>
                 </CardContent>
               </Card>
             ),

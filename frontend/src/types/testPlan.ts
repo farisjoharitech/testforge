@@ -12,41 +12,26 @@ export type ApprovalStatus =
 export interface CreateTestPlanRequest {
   testPlanId: string;
   name: string;
-  description?: string;
-  projectId: number;
-  status?: TestPlanStatus;
+  version?: string;
+  project?: string;
+  application?: string;
+  environment?: string;
+  preparedBy?: string;
+  status: TestPlanStatus;
   approvalStatus: ApprovalStatus;
-  ownerId?: number;
-  startDate?: string;
 }
 
 export interface TestPlan {
-  id?: number;
+  id: number;
   testPlanId: string;
-
   name: string;
-  description?: string | null;
-
-  projectId?: number;
-  status?: TestPlanStatus | string;
-  approvalStatus?: ApprovalStatus | string;
-
-  ownerId?: number | null;
-  startDate?: string | null;
-
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface PageResponse<T> {
-  content: T[];
-
-  totalElements?: number;
-  totalPages?: number;
-
-  size?: number;
-  number?: number;
-
-  first?: boolean;
-  last?: boolean;
+  version?: string | null;
+  project?: string | null;
+  application?: string | null;
+  environment?: string | null;
+  preparedBy?: string | null;
+  status: TestPlanStatus;
+  approvalStatus: ApprovalStatus;
+  createdAt: string;
+  updatedAt: string;
 }

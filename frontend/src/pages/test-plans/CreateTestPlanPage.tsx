@@ -1,6 +1,7 @@
 import {
   useMemo,
   useState,
+  type FormEvent,
 } from 'react';
 
 import {
@@ -42,19 +43,28 @@ import type {
   TestPlanStatus,
 } from '../../types/testPlan';
 
-const DEFAULT_PROJECT_ID = 1;
+const DEFAULT_APPROVAL_STATUS:
+  ApprovalStatus =
+    'PENDING';
 
-const DEFAULT_APPROVAL_STATUS: ApprovalStatus =
-  'PENDING';
+function generateTestPlanId():
+  string {
+  return `TP-${Date.now()}`;
+}
 
-function generateTestPlanId(): string {
-  const timestamp = Date.now();
+function optionalValue(
+  value: string,
+): string | undefined {
+  const trimmedValue =
+    value.trim();
 
-  return `TP-${timestamp}`;
+  return trimmedValue ||
+    undefined;
 }
 
 export default function CreateTestPlanPage() {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   const [
     name,
@@ -62,8 +72,28 @@ export default function CreateTestPlanPage() {
   ] = useState('');
 
   const [
-    description,
-    setDescription,
+    version,
+    setVersion,
+  ] = useState('');
+
+  const [
+    project,
+    setProject,
+  ] = useState('');
+
+  const [
+    application,
+    setApplication,
+  ] = useState('');
+
+  const [
+    environment,
+    setEnvironment,
+  ] = useState('');
+
+  const [
+    preparedBy,
+    setPreparedBy,
   ] = useState('');
 
   const [
@@ -82,10 +112,9 @@ export default function CreateTestPlanPage() {
   const [
     error,
     setError,
-  ] =
-    useState<string | null>(
-      null,
-    );
+  ] = useState<
+    string | null
+  >(null);
 
   const trimmedName =
     name.trim();
@@ -97,6 +126,13 @@ export default function CreateTestPlanPage() {
           return 'Test Plan Name is required.';
         }
 
+        if (
+          trimmedName.length >
+          255
+        ) {
+          return 'Test Plan Name must not exceed 255 characters.';
+        }
+
         return '';
       },
       [trimmedName],
@@ -105,7 +141,7 @@ export default function CreateTestPlanPage() {
   const handleSubmit =
     async (
       event:
-        React.FormEvent<HTMLFormElement>,
+        FormEvent<HTMLFormElement>,
     ) => {
       event.preventDefault();
 
@@ -128,12 +164,30 @@ export default function CreateTestPlanPage() {
         name:
           trimmedName,
 
-        description:
-          description.trim() ||
-          undefined,
+        version:
+          optionalValue(
+            version,
+          ),
 
-        projectId:
-          DEFAULT_PROJECT_ID,
+        project:
+          optionalValue(
+            project,
+          ),
+
+        application:
+          optionalValue(
+            application,
+          ),
+
+        environment:
+          optionalValue(
+            environment,
+          ),
+
+        preparedBy:
+          optionalValue(
+            preparedBy,
+          ),
 
         status,
 
@@ -151,11 +205,6 @@ export default function CreateTestPlanPage() {
             .createTestPlan(
               request,
             );
-
-        console.log(
-          'Created Test Plan:',
-          createdTestPlan,
-        );
 
         navigate(
           '/test-plans',
@@ -185,17 +234,6 @@ export default function CreateTestPlanPage() {
             setError(
               err.message ||
                 'Please check the form values.',
-            );
-
-            return;
-          }
-
-          if (
-            err.status ===
-            404
-          ) {
-            setError(
-              'The selected project could not be found.',
             );
 
             return;
@@ -272,9 +310,8 @@ export default function CreateTestPlanPage() {
         <Typography
           color="text.secondary"
         >
-          Define the test
-          plan that will
-          contain
+          Create the test plan
+          that will contain
           requirements,
           scenarios,
           test cases and
@@ -324,6 +361,9 @@ export default function CreateTestPlanPage() {
                   submitting
                 }
                 value={name}
+                inputProps={{
+                  maxLength: 255,
+                }}
                 onChange={(
                   event,
                 ) =>
@@ -334,29 +374,138 @@ export default function CreateTestPlanPage() {
                   )
                 }
                 placeholder="Example: Customer Portal Regression"
+                error={
+                  Boolean(
+                    name &&
+                    nameError,
+                  )
+                }
+                helperText={
+                  name &&
+                  nameError
+                    ? nameError
+                    : undefined
+                }
               />
 
               <TextField
-                label="Description"
+                label="Version"
                 fullWidth
-                multiline
-                minRows={4}
                 disabled={
                   submitting
                 }
                 value={
-                  description
+                  version
                 }
+                inputProps={{
+                  maxLength: 50,
+                }}
                 onChange={(
                   event,
                 ) =>
-                  setDescription(
+                  setVersion(
                     event
                       .target
                       .value,
                   )
                 }
-                placeholder="Describe the purpose and scope of this test plan..."
+                placeholder="Example: 1.0"
+              />
+
+              <TextField
+                label="Project"
+                fullWidth
+                disabled={
+                  submitting
+                }
+                value={
+                  project
+                }
+                inputProps={{
+                  maxLength: 255,
+                }}
+                onChange={(
+                  event,
+                ) =>
+                  setProject(
+                    event
+                      .target
+                      .value,
+                  )
+                }
+                placeholder="Example: TestForge"
+              />
+
+              <TextField
+                label="Application"
+                fullWidth
+                disabled={
+                  submitting
+                }
+                value={
+                  application
+                }
+                inputProps={{
+                  maxLength: 255,
+                }}
+                onChange={(
+                  event,
+                ) =>
+                  setApplication(
+                    event
+                      .target
+                      .value,
+                  )
+                }
+                placeholder="Example: TestForge"
+              />
+
+              <TextField
+                label="Environment"
+                fullWidth
+                disabled={
+                  submitting
+                }
+                value={
+                  environment
+                }
+                inputProps={{
+                  maxLength: 100,
+                }}
+                onChange={(
+                  event,
+                ) =>
+                  setEnvironment(
+                    event
+                      .target
+                      .value,
+                  )
+                }
+                placeholder="Example: LOCAL, DEV, QA"
+              />
+
+              <TextField
+                label="Prepared By"
+                fullWidth
+                disabled={
+                  submitting
+                }
+                value={
+                  preparedBy
+                }
+                inputProps={{
+                  maxLength: 255,
+                }}
+                onChange={(
+                  event,
+                ) =>
+                  setPreparedBy(
+                    event
+                      .target
+                      .value,
+                  )
+                }
+                placeholder="Example: QA Team"
               />
 
               <FormControl
@@ -401,6 +550,12 @@ export default function CreateTestPlanPage() {
                   >
                     Completed
                   </MenuItem>
+
+                  <MenuItem
+                    value="ARCHIVED"
+                  >
+                    Archived
+                  </MenuItem>
                 </Select>
               </FormControl>
 
@@ -408,19 +563,15 @@ export default function CreateTestPlanPage() {
                 severity="info"
                 variant="outlined"
               >
-                Project ID:{' '}
-                <strong>
-                  {
-                    DEFAULT_PROJECT_ID
-                  }
-                </strong>
-                {' '}| Approval
-                Status:{' '}
+                New Test Plans
+                start with approval
+                status{' '}
                 <strong>
                   {
                     DEFAULT_APPROVAL_STATUS
                   }
                 </strong>
+                .
               </Alert>
 
               <Box
