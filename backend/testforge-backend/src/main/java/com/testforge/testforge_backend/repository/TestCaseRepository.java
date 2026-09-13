@@ -28,4 +28,7 @@ public interface TestCaseRepository
     @Override
     @EntityGraph(attributePaths = "testScenario")
     Optional<TestCase> findById(Long id);
+
+    @EntityGraph(attributePaths = "testScenario")
+    List<TestCase> findByAutomatableTrueOrderByIdAsc();
 }

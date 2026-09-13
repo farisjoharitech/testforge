@@ -52,6 +52,20 @@ export const testCaseApi = {
     );
   },
 
+  /*
+   * Task 36.8
+   *
+   * Returns only Test Cases where:
+   *
+   * automatable = true
+   */
+  getAutomationEligible():
+    Promise<TestCase[]> {
+    return apiClient.get<TestCase[]>(
+      '/api/test-cases/automation-eligible',
+    );
+  },
+
   updateTestCase(
     id: number,
     request: UpdateTestCaseRequest,

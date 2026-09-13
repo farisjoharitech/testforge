@@ -72,6 +72,36 @@ public class TestCaseController {
         return ResponseEntity.ok(response);
     }
 
+    /*
+     * Task 36.8
+     *
+     * Return only Test Cases that are eligible
+     * for automation.
+     *
+     * Eligibility is determined by:
+     *
+     * automatable = true
+     *
+     * Repository already loads testScenario
+     * using @EntityGraph so toResponse() can
+     * safely access scenario information.
+     */
+    @GetMapping(
+            "/test-cases/automation-eligible"
+    )
+    public ResponseEntity<List<TestCaseResponse>>
+    getAutomationEligible() {
+
+        List<TestCaseResponse> response =
+                testCaseService
+                        .getAutomationEligible()
+                        .stream()
+                        .map(this::toResponse)
+                        .toList();
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/test-cases/{id}")
     public ResponseEntity<TestCaseResponse>
     getById(

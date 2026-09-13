@@ -6,17 +6,29 @@ import {
 
 import AppLayout from '../components/layout/AppLayout';
 
-import RequirementDetailsPage from '../pages/requirements/RequirementDetailsPage';
+import AutomationBuilderPage
+  from '../pages/automation/AutomationBuilderPage';
 
-import ScenarioDetailsPage from '../pages/scenarios/ScenarioDetailsPage';
+import AutomationSelectionPage
+  from '../pages/automation/AutomationSelectionPage';
 
-import TestCaseDetailsPage from '../pages/test-cases/TestCaseDetailsPage';
+import RequirementDetailsPage
+  from '../pages/requirements/RequirementDetailsPage';
 
-import CreateTestPlanPage from '../pages/test-plans/CreateTestPlanPage';
+import ScenarioDetailsPage
+  from '../pages/scenarios/ScenarioDetailsPage';
 
-import TestPlanDetailsPage from '../pages/test-plans/TestPlanDetailsPage';
+import TestCaseDetailsPage
+  from '../pages/test-cases/TestCaseDetailsPage';
 
-import TestPlanListPage from '../pages/test-plans/TestPlanListPage';
+import CreateTestPlanPage
+  from '../pages/test-plans/CreateTestPlanPage';
+
+import TestPlanDetailsPage
+  from '../pages/test-plans/TestPlanDetailsPage';
+
+import TestPlanListPage
+  from '../pages/test-plans/TestPlanListPage';
 
 export default function App() {
   return (
@@ -75,6 +87,20 @@ export default function App() {
           path="/test-cases/:testCaseId"
           element={
             <TestCaseDetailsPage />
+          }
+        />
+
+        <Route
+          path="/automation"
+          element={
+            <AutomationSelectionPage />
+          }
+        />
+
+        <Route
+          path="/automation/:testCaseId"
+          element={
+            <AutomationBuilderPage />
           }
         />
       </Route>

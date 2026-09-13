@@ -191,6 +191,13 @@ public class TestCaseService {
                 );
     }
 
+    @Transactional(readOnly = true)
+    public List<TestCase> getAutomationEligible() {
+
+        return testCaseRepository
+                .findByAutomatableTrueOrderByIdAsc();
+    }
+
     public TestCase update(
             Long id,
             UpdateTestCaseRequest request) {
