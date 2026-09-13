@@ -7,17 +7,14 @@ import {
 import AppLayout
   from '../components/layout/AppLayout';
 
-import AutomationBuilderPage
-  from '../pages/automation/AutomationBuilderPage';
+import TestPlanListPage
+  from '../pages/test-plans/TestPlanListPage';
 
-import AutomationExecutionPage
-  from '../pages/automation/AutomationExecutionPage';
+import CreateTestPlanPage
+  from '../pages/test-plans/CreateTestPlanPage';
 
-import AutomationSelectionPage
-  from '../pages/automation/AutomationSelectionPage';
-
-import ScriptGenerationPage
-  from '../pages/automation/ScriptGenerationPage';
+import TestPlanDetailsPage
+  from '../pages/test-plans/TestPlanDetailsPage';
 
 import RequirementDetailsPage
   from '../pages/requirements/RequirementDetailsPage';
@@ -28,25 +25,37 @@ import ScenarioDetailsPage
 import TestCaseDetailsPage
   from '../pages/test-cases/TestCaseDetailsPage';
 
-import CreateTestPlanPage
-  from '../pages/test-plans/CreateTestPlanPage';
+import AutomationSelectionPage
+  from '../pages/automation/AutomationSelectionPage';
 
-import TestPlanDetailsPage
-  from '../pages/test-plans/TestPlanDetailsPage';
+import AutomationBuilderPage
+  from '../pages/automation/AutomationBuilderPage';
 
-import TestPlanListPage
-  from '../pages/test-plans/TestPlanListPage';
+import ScriptGenerationPage
+  from '../pages/automation/ScriptGenerationPage';
+
+import AutomationExecutionPage
+  from '../pages/automation/AutomationExecutionPage';
+
+import AutomationResultsPage
+  from '../pages/results/AutomationResultsPage';
+
+import AutomationResultDetailsPage
+  from '../pages/results/AutomationResultDetailsPage';
 
 export default function App() {
+
   return (
     <Routes>
+
       <Route
         element={
           <AppLayout />
         }
       >
+
         <Route
-          path="/"
+          index
           element={
             <Navigate
               to="/test-plans"
@@ -124,7 +133,33 @@ export default function App() {
             <AutomationExecutionPage />
           }
         />
+
+        <Route
+          path="/results"
+          element={
+            <AutomationResultsPage />
+          }
+        />
+
+        <Route
+          path="/results/:executionId"
+          element={
+            <AutomationResultDetailsPage />
+          }
+        />
+
+        <Route
+          path="*"
+          element={
+            <Navigate
+              to="/test-plans"
+              replace
+            />
+          }
+        />
+
       </Route>
+
     </Routes>
   );
 }

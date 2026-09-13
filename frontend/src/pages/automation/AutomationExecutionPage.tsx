@@ -6,9 +6,9 @@ import {
 
 import {
   ArrowBack,
+  Assessment,
   PlayArrow,
   Refresh,
-  Terminal,
 } from '@mui/icons-material';
 
 import {
@@ -47,6 +47,7 @@ import {
 
 import type {
   AutomationExecution,
+  AutomationExecutionStatus,
   AutomationScript,
   GeneratedScript,
 } from '../../types/automation';
@@ -58,6 +59,7 @@ import type {
 function getErrorMessage(
   error: unknown,
 ): string {
+
   if (
     error instanceof ApiError
   ) {
@@ -73,41 +75,17 @@ function getErrorMessage(
   return 'Unexpected error occurred.';
 }
 
-function formatDuration(
-  durationMs:
-    | number
-    | null
-    | undefined,
-): string {
-  if (
-    durationMs === null ||
-    durationMs === undefined
-  ) {
-    return '—';
-  }
-
-  if (
-    durationMs < 1000
-  ) {
-    return `${durationMs} ms`;
-  }
-
-  const seconds =
-    durationMs / 1000;
-
-  return `${seconds.toFixed(2)} s`;
-}
-
-function executionColor(
-  status:
-    AutomationExecution['status'],
+function getStatusColor(
+  status: AutomationExecutionStatus,
 ):
-  | 'default'
   | 'primary'
   | 'success'
   | 'error'
-  | 'warning' {
+  | 'warning'
+  | 'default' {
+
   switch (status) {
+
     case 'RUNNING':
       return 'primary';
 
@@ -128,7 +106,45 @@ function executionColor(
   }
 }
 
+function formatDate(
+  value:
+    | string
+    | null,
+): string {
+
+  if (!value) {
+    return '—';
+  }
+
+  return new Date(
+    value,
+  ).toLocaleString();
+}
+
+function formatDuration(
+  durationMs:
+    | number
+    | null,
+): string {
+
+  if (
+    durationMs === null
+    || durationMs === undefined
+  ) {
+    return '—';
+  }
+
+  if (durationMs < 1000) {
+    return `${durationMs} ms`;
+  }
+
+  return `${(
+    durationMs / 1000
+  ).toFixed(2)} s`;
+}
+
 export default function AutomationExecutionPage() {
+
   const navigate =
     useNavigate();
 
@@ -143,7 +159,9 @@ export default function AutomationExecutionPage() {
     testCase,
     setTestCase,
   ] =
-    useState<TestCase | null>(
+    useState<
+      TestCase | null
+    >(
       null,
     );
 
@@ -151,7 +169,9 @@ export default function AutomationExecutionPage() {
     script,
     setScript,
   ] =
-    useState<AutomationScript | null>(
+    useState<
+      AutomationScript | null
+    >(
       null,
     );
 
@@ -159,15 +179,19 @@ export default function AutomationExecutionPage() {
     generated,
     setGenerated,
   ] =
-    useState<GeneratedScript | null>(
+    useState<
+      GeneratedScript | null
+    >(
       null,
     );
 
   const [
-    execution,
-    setExecution,
+    latestExecution,
+    setLatestExecution,
   ] =
-    useState<AutomationExecution | null>(
+    useState<
+      AutomationExecution | null
+    >(
       null,
     );
 
@@ -187,16 +211,28 @@ export default function AutomationExecutionPage() {
     error,
     setError,
   ] =
-    useState<string | null>(
+    useState<
+      string | null
+    >(
+      null,
+    );
+
+  const [
+    successMessage,
+    setSuccessMessage,
+  ] =
+    useState<
+      string | null
+    >(
       null,
     );
 
   const loadPage =
     useCallback(
       async () => {
-        if (
-          !testCaseId
-        ) {
+
+        if (!testCaseId) {
+
           setError(
             'Test Case ID is missing.',
           );
@@ -209,6 +245,7 @@ export default function AutomationExecutionPage() {
         }
 
         try {
+
           setLoading(
             true,
           );
@@ -248,32 +285,38 @@ export default function AutomationExecutionPage() {
           );
 
           try {
-            const latestExecution =
+
+            const loadedExecution =
               await automationApi
                 .getLatestExecution(
                   loadedScript.id,
                 );
 
-            setExecution(
-              latestExecution,
+            setLatestExecution(
+              loadedExecution,
             );
+
           } catch (
             latestError
           ) {
+
             if (
-              latestError instanceof
-                ApiError &&
-              latestError.status ===
-                404
+              latestError instanceof ApiError
+              && latestError.status === 404
             ) {
-              setExecution(
+
+              setLatestExecution(
                 null,
               );
+
             } else {
+
               throw latestError;
             }
           }
+
         } catch (err) {
+
           console.error(
             err,
           );
@@ -283,7 +326,9 @@ export default function AutomationExecutionPage() {
               err,
             ),
           );
+
         } finally {
+
           setLoading(
             false,
           );
@@ -296,6 +341,7 @@ export default function AutomationExecutionPage() {
 
   useEffect(
     () => {
+
       void loadPage();
     },
     [
@@ -305,13 +351,16 @@ export default function AutomationExecutionPage() {
 
   const handleExecute =
     async () => {
+
       if (
         !script
+        || !testCaseId
       ) {
         return;
       }
 
       try {
+
         setExecuting(
           true,
         );
@@ -320,34 +369,48 @@ export default function AutomationExecutionPage() {
           null,
         );
 
-        const result =
+        setSuccessMessage(
+          null,
+        );
+
+        const execution =
           await automationApi
             .executeScript(
               script.id,
             );
 
-        setExecution(
-          result,
+        setLatestExecution(
+          execution,
         );
 
-        /*
-         * Reload Test Case so automationStatus
-         * becomes AUTOMATED or READY.
-         */
-        if (
-          testCaseId
-        ) {
-          const refreshed =
-            await testCaseApi
-              .getTestCaseByBusinessId(
-                testCaseId,
-              );
+        const refreshedTestCase =
+          await testCaseApi
+            .getTestCaseByBusinessId(
+              testCaseId,
+            );
 
-          setTestCase(
-            refreshed,
+        setTestCase(
+          refreshedTestCase,
+        );
+
+        if (
+          execution.status ===
+          'PASSED'
+        ) {
+
+          setSuccessMessage(
+            'Automation execution passed successfully.',
+          );
+
+        } else {
+
+          setSuccessMessage(
+            `Automation execution completed with status ${execution.status}.`,
           );
         }
+
       } catch (err) {
+
         console.error(
           err,
         );
@@ -357,16 +420,17 @@ export default function AutomationExecutionPage() {
             err,
           ),
         );
+
       } finally {
+
         setExecuting(
           false,
         );
       }
     };
 
-  if (
-    loading
-  ) {
+  if (loading) {
+
     return (
       <Box
         sx={{
@@ -383,93 +447,92 @@ export default function AutomationExecutionPage() {
   }
 
   if (
-    !testCase ||
-    !script ||
-    !generated ||
-    !testCaseId
+    !testCase
+    || !script
+    || !generated
   ) {
+
     return (
-      <Stack spacing={3}>
+      <Stack
+        spacing={3}
+      >
         <PageHeader
           title="Automation Execution"
-          description="Unable to load Automation Execution."
+          description="Unable to load automation execution."
         />
 
         <Alert
           severity="error"
         >
-          {error ??
-            'Generated automation could not be loaded.'}
+          {
+            error
+            ?? 'Automation execution information could not be loaded.'
+          }
         </Alert>
 
-        <Box>
-          <Button
-            variant="outlined"
-            startIcon={
-              <ArrowBack />
-            }
-            onClick={() =>
-              navigate(
-                '/automation',
-              )
-            }
-          >
-            Back
-          </Button>
-        </Box>
+        <Button
+          variant="outlined"
+          startIcon={
+            <ArrowBack />
+          }
+          onClick={() =>
+            navigate(
+              '/automation',
+            )
+          }
+        >
+          Back to Automation
+        </Button>
       </Stack>
     );
   }
 
+  const canExecute =
+    !generated.stale
+    && !executing;
+
   return (
-    <Stack spacing={3}>
+    <Stack
+      spacing={3}
+    >
       <PageHeader
         title="Automation Execution"
-        description={`Execute generated Playwright automation for ${testCase.testCaseId}.`}
-        breadcrumbs={[
-          {
-            label:
-              'Automation',
-            to:
-              '/automation',
-          },
-          {
-            label:
-              testCase.testCaseId,
-            to:
-              `/automation/${encodeURIComponent(
-                testCase.testCaseId,
-              )}`,
-          },
-          {
-            label:
-              'Script Generation',
-            to:
-              `/automation/${encodeURIComponent(
-                testCase.testCaseId,
-              )}/script`,
-          },
-          {
-            label:
-              'Execution',
-          },
-        ]}
+        description={`Run generated Playwright Java automation for ${testCase.testCaseId}.`}
         actions={
-          <Button
-            variant="outlined"
-            startIcon={
-              <ArrowBack />
-            }
-            onClick={() =>
-              navigate(
-                `/automation/${encodeURIComponent(
-                  testCase.testCaseId,
-                )}/script`,
-              )
-            }
+          <Stack
+            direction="row"
+            spacing={1}
           >
-            Back to Script
-          </Button>
+            <Button
+              variant="outlined"
+              startIcon={
+                <Assessment />
+              }
+              onClick={() =>
+                navigate(
+                  '/results',
+                )
+              }
+            >
+              Results
+            </Button>
+
+            <Button
+              variant="outlined"
+              startIcon={
+                <ArrowBack />
+              }
+              onClick={() =>
+                navigate(
+                  `/automation/${encodeURIComponent(
+                    testCase.testCaseId,
+                  )}/script`,
+                )
+              }
+            >
+              Script
+            </Button>
+          </Stack>
         }
       />
 
@@ -481,13 +544,27 @@ export default function AutomationExecutionPage() {
         </Alert>
       )}
 
+      {successMessage && (
+        <Alert
+          severity="success"
+          onClose={() =>
+            setSuccessMessage(
+              null,
+            )
+          }
+        >
+          {successMessage}
+        </Alert>
+      )}
+
       {generated.stale && (
         <Alert
           severity="warning"
         >
-          The generated source is stale.
-          Return to Script Generation and
-          regenerate it before executing.
+          Generated source is stale.
+          Return to Script Generation
+          and regenerate it before
+          executing.
         </Alert>
       )}
 
@@ -495,171 +572,171 @@ export default function AutomationExecutionPage() {
         variant="outlined"
       >
         <CardContent>
-          <Stack spacing={2}>
-            <Stack
-              direction={{
-                xs: 'column',
-                md: 'row',
+          <Stack
+            spacing={2}
+          >
+            <Typography
+              variant="h6"
+              fontWeight={700}
+            >
+              Execution
+            </Typography>
+
+            <Divider />
+
+            <Box
+              sx={{
+                display:
+                  'grid',
+                gridTemplateColumns: {
+                  xs:
+                    '1fr',
+                  sm:
+                    'repeat(2, minmax(0, 1fr))',
+                  lg:
+                    'repeat(4, minmax(0, 1fr))',
+                },
+                gap: 2,
               }}
-              justifyContent="space-between"
-              spacing={2}
             >
               <Box>
                 <Typography
-                  variant="overline"
+                  variant="caption"
                   color="text.secondary"
                 >
                   Test Case
                 </Typography>
 
                 <Typography
-                  variant="h6"
                   fontWeight={700}
                 >
                   {
                     testCase.testCaseId
                   }
-                  {' — '}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  Automation Script
+                </Typography>
+
+                <Typography
+                  fontWeight={700}
+                >
                   {
-                    testCase.name
+                    script.automationScriptId
                   }
                 </Typography>
               </Box>
 
-              <Stack
-                direction="row"
-                spacing={1}
-                useFlexGap
-                flexWrap="wrap"
-              >
-                <Chip
-                  label={
-                    testCase.automationType ===
-                    'UI_API'
-                      ? 'UI + API'
-                      : testCase.automationType
-                  }
-                  variant="outlined"
-                />
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  Generated Class
+                </Typography>
 
-                <Chip
-                  label={
+                <Typography
+                  fontFamily="monospace"
+                >
+                  {
+                    generated.className
+                  }
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  Test Case Status
+                </Typography>
+
+                <Typography>
+                  {
                     testCase.automationStatus
                   }
-                  color={
-                    testCase.automationStatus ===
-                    'AUTOMATED'
-                      ? 'success'
-                      : 'default'
-                  }
-                  variant="outlined"
-                />
-              </Stack>
-            </Stack>
+                </Typography>
+              </Box>
+            </Box>
 
             <Divider />
 
-            <Box>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-              >
-                Generated Class
-              </Typography>
-
-              <Typography
-                fontFamily="monospace"
+            <Stack
+              direction="row"
+              spacing={1}
+              useFlexGap
+              flexWrap="wrap"
+            >
+              <Button
+                variant="contained"
+                startIcon={
+                  executing
+                    ? (
+                      <CircularProgress
+                        size={18}
+                        color="inherit"
+                      />
+                    )
+                    : (
+                      <PlayArrow />
+                    )
+                }
+                disabled={
+                  !canExecute
+                }
+                onClick={() =>
+                  void handleExecute()
+                }
               >
                 {
-                  generated.className
+                  executing
+                    ? 'Running...'
+                    : latestExecution
+                      ? 'Run Again'
+                      : 'Run Automation'
                 }
-              </Typography>
-            </Box>
+              </Button>
 
-            <Box>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-              >
-                Generated At
-              </Typography>
-
-              <Typography>
-                {new Date(
-                  generated.generatedAt,
-                ).toLocaleString()}
-              </Typography>
-            </Box>
-
-            <Button
-              variant="contained"
-              size="large"
-              startIcon={
-                executing
-                  ? (
-                    <CircularProgress
-                      size={18}
-                      color="inherit"
-                    />
-                  )
-                  : (
-                    <PlayArrow />
-                  )
-              }
-              disabled={
-                executing ||
-                generated.stale
-              }
-              onClick={() =>
-                void handleExecute()
-              }
-              sx={{
-                alignSelf:
-                  'flex-start',
-              }}
-            >
-              {executing
-                ? 'Executing...'
-                : execution
-                  ? 'Run Again'
-                  : 'Run Automation'}
-            </Button>
-
-            {executing && (
-              <Alert
-                severity="info"
-                icon={
-                  <Terminal />
+              <Button
+                variant="outlined"
+                startIcon={
+                  <Refresh />
+                }
+                disabled={
+                  executing
+                }
+                onClick={() =>
+                  void loadPage()
                 }
               >
-                The generated automation is
-                running. TestForge is
-                waiting for the isolated
-                execution process to
-                finish.
-              </Alert>
-            )}
+                Refresh
+              </Button>
+            </Stack>
           </Stack>
         </CardContent>
       </Card>
 
-      {!execution ? (
-        <Alert
-          severity="info"
-        >
-          This automation has not been
-          executed yet.
-        </Alert>
-      ) : (
+      {latestExecution && (
         <Card
           variant="outlined"
         >
           <CardContent>
-            <Stack spacing={2}>
+            <Stack
+              spacing={2}
+            >
               <Stack
                 direction={{
-                  xs: 'column',
-                  md: 'row',
+                  xs:
+                    'column',
+                  sm:
+                    'row',
                 }}
                 justifyContent="space-between"
                 spacing={2}
@@ -674,68 +751,30 @@ export default function AutomationExecutionPage() {
 
                   <Typography
                     variant="h6"
+                    fontFamily="monospace"
                     fontWeight={700}
                   >
                     {
-                      execution.executionId
+                      latestExecution.executionId
                     }
                   </Typography>
                 </Box>
 
                 <Chip
                   label={
-                    execution.status
+                    latestExecution.status
                   }
                   color={
-                    executionColor(
-                      execution.status,
+                    getStatusColor(
+                      latestExecution.status,
                     )
                   }
+                  sx={{
+                    alignSelf:
+                      'flex-start',
+                  }}
                 />
               </Stack>
-
-              {execution.status ===
-                'PASSED' && (
-                <Alert
-                  severity="success"
-                >
-                  Automation execution
-                  passed successfully.
-                </Alert>
-              )}
-
-              {execution.status ===
-                'FAILED' && (
-                <Alert
-                  severity="error"
-                >
-                  The generated automation
-                  executed but the test
-                  failed.
-                </Alert>
-              )}
-
-              {execution.status ===
-                'TIMED_OUT' && (
-                <Alert
-                  severity="warning"
-                >
-                  Automation execution
-                  exceeded the configured
-                  timeout.
-                </Alert>
-              )}
-
-              {execution.status ===
-                'ERROR' && (
-                <Alert
-                  severity="error"
-                >
-                  TestForge could not
-                  complete the automation
-                  execution.
-                </Alert>
-              )}
 
               <Divider />
 
@@ -763,9 +802,11 @@ export default function AutomationExecutionPage() {
                   </Typography>
 
                   <Typography>
-                    {new Date(
-                      execution.startedAt,
-                    ).toLocaleString()}
+                    {
+                      formatDate(
+                        latestExecution.startedAt,
+                      )
+                    }
                   </Typography>
                 </Box>
 
@@ -778,11 +819,11 @@ export default function AutomationExecutionPage() {
                   </Typography>
 
                   <Typography>
-                    {execution.finishedAt
-                      ? new Date(
-                          execution.finishedAt,
-                        ).toLocaleString()
-                      : '—'}
+                    {
+                      formatDate(
+                        latestExecution.finishedAt,
+                      )
+                    }
                   </Typography>
                 </Box>
 
@@ -795,9 +836,11 @@ export default function AutomationExecutionPage() {
                   </Typography>
 
                   <Typography>
-                    {formatDuration(
-                      execution.durationMs,
-                    )}
+                    {
+                      formatDuration(
+                        latestExecution.durationMs,
+                      )
+                    }
                   </Typography>
                 </Box>
 
@@ -810,73 +853,44 @@ export default function AutomationExecutionPage() {
                   </Typography>
 
                   <Typography>
-                    {execution.exitCode ??
-                      '—'}
+                    {
+                      latestExecution.exitCode
+                      ?? '—'
+                    }
                   </Typography>
                 </Box>
               </Box>
 
-              {execution.errorMessage && (
+              {latestExecution.errorMessage && (
                 <Alert
                   severity="error"
-                  variant="outlined"
                 >
                   {
-                    execution.errorMessage
+                    latestExecution.errorMessage
                   }
                 </Alert>
               )}
 
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Typography
-                  variant="h6"
-                  fontWeight={700}
-                >
-                  Execution Log
-                </Typography>
-
-                <Button
-                  size="small"
-                  startIcon={
-                    <Refresh />
-                  }
-                  onClick={() =>
-                    void loadPage()
-                  }
-                >
-                  Refresh
-                </Button>
-              </Stack>
-
-              <Box
-                component="pre"
-                sx={{
-                  m: 0,
-                  p: 2,
-                  bgcolor:
-                    'grey.950',
-                  color:
-                    'grey.100',
-                  borderRadius: 1,
-                  fontFamily:
-                    'monospace',
-                  fontSize: 12,
-                  lineHeight: 1.55,
-                  maxHeight: 650,
-                  overflow: 'auto',
-                  whiteSpace:
-                    'pre-wrap',
-                  overflowWrap:
-                    'anywhere',
-                }}
-              >
-                {execution.logOutput ||
-                  '(no execution log)'}
-              </Box>
+              {latestExecution.status !==
+                'RUNNING' && (
+                <Box>
+                  <Button
+                    variant="contained"
+                    startIcon={
+                      <Assessment />
+                    }
+                    onClick={() =>
+                      navigate(
+                        `/results/${encodeURIComponent(
+                          latestExecution.executionId,
+                        )}`,
+                      )
+                    }
+                  >
+                    View Result
+                  </Button>
+                </Box>
+              )}
             </Stack>
           </CardContent>
         </Card>
