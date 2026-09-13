@@ -11,11 +11,13 @@ import com.testforge.testforge_backend.exception.TestStepNotFoundException;
 import com.testforge.testforge_backend.repository.TestCaseRepository;
 import com.testforge.testforge_backend.repository.TestStepRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Transactional
 public class TestStepService {
 
     private final TestStepRepository
@@ -110,14 +112,20 @@ public class TestStepService {
         LocalDateTime now =
                 LocalDateTime.now();
 
-        testStep.setCreatedAt(now);
-        testStep.setUpdatedAt(now);
+        testStep.setCreatedAt(
+                now
+        );
+
+        testStep.setUpdatedAt(
+                now
+        );
 
         return testStepRepository.save(
                 testStep
         );
     }
 
+    @Transactional(readOnly = true)
     public List<TestStep> getByTestCase(
             String testCaseBusinessId) {
 
@@ -139,6 +147,7 @@ public class TestStepService {
                 );
     }
 
+    @Transactional(readOnly = true)
     public TestStep getById(
             Long id) {
 
@@ -152,6 +161,7 @@ public class TestStepService {
                 );
     }
 
+    @Transactional(readOnly = true)
     public TestStep getByTestStepId(
             String testStepId) {
 
@@ -222,12 +232,15 @@ public class TestStepService {
                 LocalDateTime.now()
         );
 
-        return testStepRepository.save(
-                testStep
-        );
+        /*
+         * Managed entity.
+         * Hibernate dirty checking persists updates.
+         */
+        return testStep;
     }
 
-    public void delete(Long id) {
+    public void delete(
+            Long id) {
 
         if (!testStepRepository
                 .existsById(id)) {
@@ -238,6 +251,7 @@ public class TestStepService {
             );
         }
 
-        testStepRepository.deleteById(id);
+        testStepRepository
+                .deleteById(id);
     }
 }

@@ -37,58 +37,46 @@ export type AutomationStatus =
 
 export interface CreateTestCaseRequest {
   testCaseId: string;
-
   name: string;
-
   preconditions?: string;
-
   testData?: string;
-
   expectedResult: string;
-
   priority: TestCasePriority;
-
   testType: TestType;
-
   automatable: boolean;
-
   automationType: AutomationType;
-
   automationStatus: AutomationStatus;
+  status: TestCaseStatus;
+}
 
+export interface UpdateTestCaseRequest {
+  name: string;
+  preconditions?: string;
+  testData?: string;
+  expectedResult: string;
+  priority: TestCasePriority;
+  testType: TestType;
+  automatable: boolean;
+  automationType: AutomationType;
+  automationStatus: AutomationStatus;
   status: TestCaseStatus;
 }
 
 export interface TestCase {
   id: number;
-
   testCaseId: string;
-
   scenarioId: number;
-
   scenarioBusinessId: string;
-
   name: string;
-
   preconditions?: string | null;
-
   testData?: string | null;
-
   expectedResult: string;
-
   priority: TestCasePriority;
-
   testType: TestType;
-
   automatable: boolean;
-
   automationType: AutomationType;
-
   automationStatus: AutomationStatus;
-
   status: TestCaseStatus;
-
   createdAt: string;
-
   updatedAt: string;
 }

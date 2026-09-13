@@ -6,8 +6,9 @@ import {
 
 import {
   Add,
-  ArrowBack,
   ArrowForward,
+  Delete,
+  Edit,
   Refresh,
 } from '@mui/icons-material';
 
@@ -30,6 +31,10 @@ import {
 } from 'react-router-dom';
 
 import {
+  ApiError,
+} from '../../api/apiClient';
+
+import {
   requirementApi,
 } from '../../api/requirementApi';
 
@@ -37,11 +42,15 @@ import {
   testPlanApi,
 } from '../../api/testPlanApi';
 
+import DeleteConfirmationDialog from '../../components/common/DeleteConfirmationDialog';
+
 import {
   PageHeader,
 } from '../../components/common/PageHeader';
 
 import CreateRequirementDialog from '../../components/requirements/CreateRequirementDialog';
+
+import EditTestPlanDialog from '../../components/test-plans/EditTestPlanDialog';
 
 import type {
   Requirement,
@@ -83,52 +92,6 @@ function formatDate(
   }
 
   return date.toLocaleString();
-}
-
-function getTestPlanStatusColor(
-  status: string,
-):
-  | 'default'
-  | 'primary'
-  | 'success'
-  | 'warning' {
-  switch (status) {
-    case 'ACTIVE':
-      return 'success';
-
-    case 'COMPLETED':
-      return 'primary';
-
-    case 'DRAFT':
-      return 'warning';
-
-    default:
-      return 'default';
-  }
-}
-
-function getApprovalColor(
-  approvalStatus: string,
-):
-  | 'default'
-  | 'success'
-  | 'warning'
-  | 'error' {
-  switch (
-    approvalStatus
-  ) {
-    case 'APPROVED':
-      return 'success';
-
-    case 'PENDING':
-      return 'warning';
-
-    case 'REJECTED':
-      return 'error';
-
-    default:
-      return 'default';
-  }
 }
 
 function getPriorityColor(
@@ -179,6 +142,50 @@ function getRequirementStatusColor(
   }
 }
 
+function getTestPlanStatusColor(
+  status: string,
+):
+  | 'default'
+  | 'primary'
+  | 'success'
+  | 'warning' {
+  switch (status) {
+    case 'ACTIVE':
+      return 'primary';
+
+    case 'COMPLETED':
+      return 'success';
+
+    case 'DRAFT':
+      return 'warning';
+
+    default:
+      return 'default';
+  }
+}
+
+function getApprovalStatusColor(
+  status: string,
+):
+  | 'default'
+  | 'success'
+  | 'warning'
+  | 'error' {
+  switch (status) {
+    case 'APPROVED':
+      return 'success';
+
+    case 'REJECTED':
+      return 'error';
+
+    case 'PENDING':
+      return 'warning';
+
+    default:
+      return 'default';
+  }
+}
+
 export default function TestPlanDetailsPage() {
   const navigate =
     useNavigate();
@@ -221,13 +228,35 @@ export default function TestPlanDetailsPage() {
   >(null);
 
   const [
+    successMessage,
+    setSuccessMessage,
+  ] = useState<
+    string | null
+  >(null);
+
+  const [
     createDialogOpen,
     setCreateDialogOpen,
   ] = useState(false);
 
   const [
-    successMessage,
-    setSuccessMessage,
+    editDialogOpen,
+    setEditDialogOpen,
+  ] = useState(false);
+
+  const [
+    deleteDialogOpen,
+    setDeleteDialogOpen,
+  ] = useState(false);
+
+  const [
+    deleting,
+    setDeleting,
+  ] = useState(false);
+
+  const [
+    deleteError,
+    setDeleteError,
   ] = useState<
     string | null
   >(null);
@@ -249,9 +278,7 @@ export default function TestPlanDetailsPage() {
 
         try {
           if (isRefresh) {
-            setRefreshing(
-              true,
-            );
+            setRefreshing(true);
           } else {
             setLoading(true);
           }
@@ -260,7 +287,7 @@ export default function TestPlanDetailsPage() {
 
           const [
             testPlanResponse,
-            requirementsResponse,
+            requirementResponse,
           ] =
             await Promise.all([
               testPlanApi
@@ -279,7 +306,7 @@ export default function TestPlanDetailsPage() {
           );
 
           setRequirements(
-            requirementsResponse,
+            requirementResponse,
           );
         } catch (err) {
           console.error(
@@ -287,9 +314,18 @@ export default function TestPlanDetailsPage() {
             err,
           );
 
-          setError(
-            'Unable to load the Test Plan details or Requirements.',
-          );
+          if (
+            err instanceof
+            ApiError
+          ) {
+            setError(
+              err.message,
+            );
+          } else {
+            setError(
+              'Unable to load the Test Plan details or Requirements.',
+            );
+          }
         } finally {
           setLoading(false);
           setRefreshing(false);
@@ -314,18 +350,80 @@ export default function TestPlanDetailsPage() {
         false,
       );
 
-      setSuccessMessage(
-        `Requirement "${requirement.requirementId}" created successfully.`,
-      );
-
       setRequirements(
         (
-          currentRequirements,
+          current,
         ) => [
-          ...currentRequirements,
+          ...current,
           requirement,
         ],
       );
+
+      setSuccessMessage(
+        `Requirement "${requirement.requirementId}" created successfully.`,
+      );
+    };
+
+  const handleTestPlanUpdated =
+    (
+      updatedTestPlan:
+        TestPlan,
+    ) => {
+      setTestPlan(
+        updatedTestPlan,
+      );
+
+      setEditDialogOpen(
+        false,
+      );
+
+      setSuccessMessage(
+        `Test Plan "${updatedTestPlan.testPlanId}" updated successfully.`,
+      );
+    };
+
+  const handleDelete =
+    async () => {
+      if (!testPlan) {
+        return;
+      }
+
+      try {
+        setDeleting(true);
+
+        setDeleteError(
+          null,
+        );
+
+        await testPlanApi
+          .deleteTestPlan(
+            testPlan.id,
+          );
+
+        navigate(
+          '/test-plans',
+        );
+      } catch (err) {
+        console.error(
+          'Failed to delete Test Plan:',
+          err,
+        );
+
+        if (
+          err instanceof
+          ApiError
+        ) {
+          setDeleteError(
+            err.message,
+          );
+        } else {
+          setDeleteError(
+            'Unable to delete the Test Plan. Delete its child Requirements first.',
+          );
+        }
+      } finally {
+        setDeleting(false);
+      }
     };
 
   if (loading) {
@@ -341,10 +439,8 @@ export default function TestPlanDetailsPage() {
             spacing={2}
             sx={{
               minHeight: 320,
-
               alignItems:
                 'center',
-
               justifyContent:
                 'center',
             }}
@@ -371,41 +467,36 @@ export default function TestPlanDetailsPage() {
       <Stack
         spacing={3}
       >
-        <Button
-          startIcon={
-            <ArrowBack />
-          }
-          onClick={() =>
-            navigate(
-              '/test-plans',
-            )
-          }
-          sx={{
-            alignSelf:
-              'flex-start',
-          }}
-        >
-          Back to Test Plans
-        </Button>
-
         <Alert
           severity="error"
         >
           {error}
         </Alert>
 
-        <Button
-          variant="contained"
-          onClick={() =>
-            void loadPage()
-          }
-          sx={{
-            alignSelf:
-              'flex-start',
-          }}
+        <Stack
+          direction="row"
+          spacing={1}
         >
-          Try Again
-        </Button>
+          <Button
+            variant="outlined"
+            onClick={() =>
+              navigate(
+                '/test-plans',
+              )
+            }
+          >
+            Back to Test Plans
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={() =>
+              void loadPage()
+            }
+          >
+            Try Again
+          </Button>
+        </Stack>
       </Stack>
     );
   }
@@ -420,23 +511,21 @@ export default function TestPlanDetailsPage() {
     >
       <PageHeader
         title={
-          testPlan.name
+          testPlan.testPlanId
         }
         description={
-          testPlan.testPlanId
+          testPlan.name
         }
         breadcrumbs={[
           {
             label:
               'Test Plans',
-
             to:
               '/test-plans',
           },
-
           {
             label:
-              testPlan.name,
+              testPlan.testPlanId,
           },
         ]}
         actions={
@@ -464,6 +553,39 @@ export default function TestPlanDetailsPage() {
               {refreshing
                 ? 'Refreshing...'
                 : 'Refresh'}
+            </Button>
+
+            <Button
+              variant="outlined"
+              startIcon={
+                <Edit />
+              }
+              onClick={() =>
+                setEditDialogOpen(
+                  true,
+                )
+              }
+            >
+              Edit
+            </Button>
+
+            <Button
+              color="error"
+              variant="outlined"
+              startIcon={
+                <Delete />
+              }
+              onClick={() => {
+                setDeleteError(
+                  null,
+                );
+
+                setDeleteDialogOpen(
+                  true,
+                );
+              }}
+            >
+              Delete
             </Button>
 
             <Button
@@ -521,15 +643,11 @@ export default function TestPlanDetailsPage() {
               sx={{
                 display:
                   'flex',
-
                 justifyContent:
                   'space-between',
-
                 alignItems:
                   'flex-start',
-
                 gap: 2,
-
                 flexWrap:
                   'wrap',
               }}
@@ -537,9 +655,7 @@ export default function TestPlanDetailsPage() {
               <Box>
                 <Typography
                   variant="h6"
-                  fontWeight={
-                    700
-                  }
+                  fontWeight={700}
                 >
                   Test Plan
                   Information
@@ -549,8 +665,9 @@ export default function TestPlanDetailsPage() {
                   variant="body2"
                   color="text.secondary"
                 >
-                  General Test Plan
-                  information.
+                  Core Test Plan
+                  configuration and
+                  lifecycle status.
                 </Typography>
               </Box>
 
@@ -576,7 +693,7 @@ export default function TestPlanDetailsPage() {
                   label={
                     testPlan.approvalStatus
                   }
-                  color={getApprovalColor(
+                  color={getApprovalStatusColor(
                     testPlan.approvalStatus,
                   )}
                   variant="outlined"
@@ -609,12 +726,25 @@ export default function TestPlanDetailsPage() {
                 </Typography>
 
                 <Typography
-                  fontWeight={
-                    600
-                  }
+                  fontWeight={600}
                 >
                   {
                     testPlan.testPlanId
+                  }
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  Name
+                </Typography>
+
+                <Typography>
+                  {
+                    testPlan.name
                   }
                 </Typography>
               </Box>
@@ -699,7 +829,7 @@ export default function TestPlanDetailsPage() {
                   variant="caption"
                   color="text.secondary"
                 >
-                  Created At
+                  Created
                 </Typography>
 
                 <Typography>
@@ -714,7 +844,7 @@ export default function TestPlanDetailsPage() {
                   variant="caption"
                   color="text.secondary"
                 >
-                  Updated At
+                  Updated
                 </Typography>
 
                 <Typography>
@@ -731,15 +861,11 @@ export default function TestPlanDetailsPage() {
       <Box
         sx={{
           display: 'flex',
-
           justifyContent:
             'space-between',
-
           alignItems:
             'center',
-
           gap: 2,
-
           flexWrap:
             'wrap',
         }}
@@ -784,13 +910,10 @@ export default function TestPlanDetailsPage() {
               spacing={2}
               sx={{
                 minHeight: 250,
-
                 alignItems:
                   'center',
-
                 justifyContent:
                   'center',
-
                 textAlign:
                   'center',
               }}
@@ -806,8 +929,8 @@ export default function TestPlanDetailsPage() {
                 color="text.secondary"
               >
                 Add the first
-                Requirement for
-                this Test Plan.
+                Requirement to this
+                Test Plan.
               </Typography>
 
               <Button
@@ -851,15 +974,11 @@ export default function TestPlanDetailsPage() {
                       sx={{
                         display:
                           'flex',
-
                         justifyContent:
                           'space-between',
-
                         alignItems:
                           'flex-start',
-
                         gap: 2,
-
                         flexWrap:
                           'wrap',
                       }}
@@ -884,6 +1003,8 @@ export default function TestPlanDetailsPage() {
                           color="text.secondary"
                           sx={{
                             mt: 0.5,
+                            whiteSpace:
+                              'pre-wrap',
                           }}
                         >
                           {
@@ -898,9 +1019,6 @@ export default function TestPlanDetailsPage() {
                         sx={{
                           flexWrap:
                             'wrap',
-
-                          justifyContent:
-                            'flex-end',
                         }}
                       >
                         <Chip
@@ -941,12 +1059,18 @@ export default function TestPlanDetailsPage() {
 
                     <Divider />
 
-                    <Stack
-                      direction={{
-                        xs: 'column',
-                        sm: 'row',
+                    <Box
+                      sx={{
+                        display:
+                          'grid',
+
+                        gridTemplateColumns: {
+                          xs: '1fr',
+                          sm: 'repeat(2, 1fr)',
+                        },
+
+                        gap: 2,
                       }}
-                      spacing={3}
                     >
                       <Box>
                         <Typography
@@ -981,13 +1105,12 @@ export default function TestPlanDetailsPage() {
                           )}
                         </Typography>
                       </Box>
-                    </Stack>
+                    </Box>
 
                     <Box
                       sx={{
                         display:
                           'flex',
-
                         justifyContent:
                           'flex-end',
                       }}
@@ -1029,6 +1152,56 @@ export default function TestPlanDetailsPage() {
         }
         onCreated={
           handleRequirementCreated
+        }
+      />
+
+      <EditTestPlanDialog
+        open={
+          editDialogOpen
+        }
+        testPlan={
+          testPlan
+        }
+        onClose={() =>
+          setEditDialogOpen(
+            false,
+          )
+        }
+        onUpdated={
+          handleTestPlanUpdated
+        }
+      />
+
+      <DeleteConfirmationDialog
+        open={
+          deleteDialogOpen
+        }
+        title="Delete Test Plan?"
+        entityName={
+          testPlan.testPlanId
+        }
+        description="A Test Plan cannot be deleted while child Requirements still reference it. Delete the child lifecycle records first."
+        deleting={
+          deleting
+        }
+        error={
+          deleteError
+        }
+        onClose={() => {
+          if (deleting) {
+            return;
+          }
+
+          setDeleteDialogOpen(
+            false,
+          );
+
+          setDeleteError(
+            null,
+          );
+        }}
+        onConfirm={() =>
+          void handleDelete()
         }
       />
     </Stack>

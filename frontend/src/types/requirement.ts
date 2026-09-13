@@ -19,20 +19,22 @@ export interface CreateRequirementRequest {
   automatable: boolean;
 }
 
+export interface UpdateRequirementRequest {
+  description: string;
+  priority: RequirementPriority;
+  status: RequirementStatus;
+  automatable: boolean;
+}
+
 export interface Requirement {
   id: number;
   requirementId: string;
-
   testPlanId: number;
   testPlanBusinessId: string;
-
   description: string;
-
   priority: RequirementPriority;
   status: RequirementStatus;
-
   automatable: boolean;
-
   createdAt: string;
   updatedAt: string;
 }

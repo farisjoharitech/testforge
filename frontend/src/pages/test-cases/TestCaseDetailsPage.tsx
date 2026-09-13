@@ -8,6 +8,8 @@ import {
 import {
   Add,
   ArrowBack,
+  Delete,
+  Edit,
   Refresh,
 } from '@mui/icons-material';
 
@@ -30,6 +32,10 @@ import {
 } from 'react-router-dom';
 
 import {
+  ApiError,
+} from '../../api/apiClient';
+
+import {
   testCaseApi,
 } from '../../api/testCaseApi';
 
@@ -37,11 +43,17 @@ import {
   testStepApi,
 } from '../../api/testStepApi';
 
+import DeleteConfirmationDialog from '../../components/common/DeleteConfirmationDialog';
+
 import {
   PageHeader,
 } from '../../components/common/PageHeader';
 
+import EditTestCaseDialog from '../../components/test-cases/EditTestCaseDialog';
+
 import CreateTestStepDialog from '../../components/test-steps/CreateTestStepDialog';
+
+import EditTestStepDialog from '../../components/test-steps/EditTestStepDialog';
 
 import type {
   TestCase,
@@ -267,6 +279,54 @@ export default function TestCaseDetailsPage() {
     setCreateDialogOpen,
   ] = useState(false);
 
+  const [
+    editDialogOpen,
+    setEditDialogOpen,
+  ] = useState(false);
+
+  const [
+    deleteDialogOpen,
+    setDeleteDialogOpen,
+  ] = useState(false);
+
+  const [
+    deleting,
+    setDeleting,
+  ] = useState(false);
+
+  const [
+    deleteError,
+    setDeleteError,
+  ] = useState<
+    string | null
+  >(null);
+
+  const [
+    editingTestStep,
+    setEditingTestStep,
+  ] = useState<
+    TestStep | null
+  >(null);
+
+  const [
+    deletingTestStep,
+    setDeletingTestStep,
+  ] = useState<
+    TestStep | null
+  >(null);
+
+  const [
+    deletingStep,
+    setDeletingStep,
+  ] = useState(false);
+
+  const [
+    deleteStepError,
+    setDeleteStepError,
+  ] = useState<
+    string | null
+  >(null);
+
   const suggestedStepOrder =
     useMemo(
       () => {
@@ -351,9 +411,18 @@ export default function TestCaseDetailsPage() {
             err,
           );
 
-          setError(
-            'Unable to load the Test Case details or Test Steps.',
-          );
+          if (
+            err instanceof
+            ApiError
+          ) {
+            setError(
+              err.message,
+            );
+          } else {
+            setError(
+              'Unable to load the Test Case details or Test Steps.',
+            );
+          }
         } finally {
           setLoading(false);
 
@@ -388,18 +457,188 @@ export default function TestCaseDetailsPage() {
       setTestSteps(
         (
           currentSteps,
-        ) => [
-          ...currentSteps,
-          testStep,
-        ].sort(
-          (
-            first,
-            second,
-          ) =>
-            first.stepOrder -
-            second.stepOrder,
-        ),
+        ) =>
+          [
+            ...currentSteps,
+            testStep,
+          ].sort(
+            (
+              first,
+              second,
+            ) =>
+              first.stepOrder -
+              second.stepOrder,
+          ),
       );
+    };
+
+  const handleTestCaseUpdated =
+    (
+      updatedTestCase:
+        TestCase,
+    ) => {
+      setTestCase(
+        updatedTestCase,
+      );
+
+      setEditDialogOpen(
+        false,
+      );
+
+      setSuccessMessage(
+        `Test Case "${updatedTestCase.testCaseId}" updated successfully.`,
+      );
+    };
+
+  const handleDeleteTestCase =
+    async () => {
+      if (!testCase) {
+        return;
+      }
+
+      try {
+        setDeleting(true);
+
+        setDeleteError(
+          null,
+        );
+
+        await testCaseApi
+          .deleteTestCase(
+            testCase.id,
+          );
+
+        navigate(
+          `/scenarios/${encodeURIComponent(
+            testCase.scenarioBusinessId,
+          )}`,
+        );
+      } catch (err) {
+        console.error(
+          'Failed to delete Test Case:',
+          err,
+        );
+
+        if (
+          err instanceof
+          ApiError
+        ) {
+          setDeleteError(
+            err.message,
+          );
+        } else {
+          setDeleteError(
+            'Unable to delete the Test Case. Delete its Test Steps or related automation records first.',
+          );
+        }
+      } finally {
+        setDeleting(false);
+      }
+    };
+
+  const handleTestStepUpdated =
+    (
+      updatedTestStep:
+        TestStep,
+    ) => {
+      setTestSteps(
+        (
+          current,
+        ) =>
+          current
+            .map(
+              (
+                step,
+              ) =>
+                step.id ===
+                updatedTestStep.id
+                  ? updatedTestStep
+                  : step,
+            )
+            .sort(
+              (
+                first,
+                second,
+              ) =>
+                first.stepOrder -
+                second.stepOrder,
+            ),
+      );
+
+      setEditingTestStep(
+        null,
+      );
+
+      setSuccessMessage(
+        `Test Step "${updatedTestStep.testStepId}" updated successfully.`,
+      );
+    };
+
+  const handleDeleteTestStep =
+    async () => {
+      if (
+        !deletingTestStep
+      ) {
+        return;
+      }
+
+      try {
+        setDeletingStep(
+          true,
+        );
+
+        setDeleteStepError(
+          null,
+        );
+
+        await testStepApi
+          .deleteTestStep(
+            deletingTestStep.id,
+          );
+
+        setTestSteps(
+          (
+            current,
+          ) =>
+            current.filter(
+              (
+                step,
+              ) =>
+                step.id !==
+                deletingTestStep.id,
+            ),
+        );
+
+        setSuccessMessage(
+          `Test Step "${deletingTestStep.testStepId}" deleted successfully.`,
+        );
+
+        setDeletingTestStep(
+          null,
+        );
+      } catch (err) {
+        console.error(
+          'Failed to delete Test Step:',
+          err,
+        );
+
+        if (
+          err instanceof
+          ApiError
+        ) {
+          setDeleteStepError(
+            err.message,
+          );
+        } else {
+          setDeleteStepError(
+            'Unable to delete the Test Step.',
+          );
+        }
+      } finally {
+        setDeletingStep(
+          false,
+        );
+      }
     };
 
   if (loading) {
@@ -501,20 +740,17 @@ export default function TestCaseDetailsPage() {
           {
             label:
               'Test Plans',
-
             to:
               '/test-plans',
           },
 
           {
             label:
-              testCase
-                .scenarioBusinessId,
+              testCase.scenarioBusinessId,
 
             to:
               `/scenarios/${encodeURIComponent(
-                testCase
-                  .scenarioBusinessId,
+                testCase.scenarioBusinessId,
               )}`,
           },
 
@@ -548,6 +784,39 @@ export default function TestCaseDetailsPage() {
               {refreshing
                 ? 'Refreshing...'
                 : 'Refresh'}
+            </Button>
+
+            <Button
+              variant="outlined"
+              startIcon={
+                <Edit />
+              }
+              onClick={() =>
+                setEditDialogOpen(
+                  true,
+                )
+              }
+            >
+              Edit
+            </Button>
+
+            <Button
+              color="error"
+              variant="outlined"
+              startIcon={
+                <Delete />
+              }
+              onClick={() => {
+                setDeleteError(
+                  null,
+                );
+
+                setDeleteDialogOpen(
+                  true,
+                );
+              }}
+            >
+              Delete
             </Button>
 
             <Button
@@ -621,9 +890,7 @@ export default function TestCaseDetailsPage() {
               <Box>
                 <Typography
                   variant="h6"
-                  fontWeight={
-                    700
-                  }
+                  fontWeight={700}
                 >
                   Test Case
                   Information
@@ -727,7 +994,12 @@ export default function TestCaseDetailsPage() {
                   Preconditions
                 </Typography>
 
-                <Typography>
+                <Typography
+                  sx={{
+                    whiteSpace:
+                      'pre-wrap',
+                  }}
+                >
                   {displayValue(
                     testCase.preconditions,
                   )}
@@ -742,7 +1014,12 @@ export default function TestCaseDetailsPage() {
                   Test Data
                 </Typography>
 
-                <Typography>
+                <Typography
+                  sx={{
+                    whiteSpace:
+                      'pre-wrap',
+                  }}
+                >
                   {displayValue(
                     testCase.testData,
                   )}
@@ -757,7 +1034,12 @@ export default function TestCaseDetailsPage() {
                   Expected Result
                 </Typography>
 
-                <Typography>
+                <Typography
+                  sx={{
+                    whiteSpace:
+                      'pre-wrap',
+                  }}
+                >
                   {
                     testCase.expectedResult
                   }
@@ -790,9 +1072,7 @@ export default function TestCaseDetailsPage() {
                 </Typography>
 
                 <Typography
-                  fontWeight={
-                    600
-                  }
+                  fontWeight={600}
                 >
                   {
                     testCase.testCaseId
@@ -1027,6 +1307,9 @@ export default function TestCaseDetailsPage() {
                           gap: 2,
 
                           flex: 1,
+
+                          flexWrap:
+                            'wrap',
                         }}
                       >
                         <Chip
@@ -1034,19 +1317,53 @@ export default function TestCaseDetailsPage() {
                           color="primary"
                         />
 
-                        <Box>
-                          <Typography
-                            variant="h6"
-                            fontWeight={
-                              700
-                            }
-                          >
-                            {
-                              testStep.testStepId
-                            }
-                          </Typography>
-                        </Box>
+                        <Typography
+                          variant="h6"
+                          fontWeight={700}
+                        >
+                          {
+                            testStep.testStepId
+                          }
+                        </Typography>
                       </Box>
+
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                      >
+                        <Button
+                          size="small"
+                          startIcon={
+                            <Edit />
+                          }
+                          onClick={() =>
+                            setEditingTestStep(
+                              testStep,
+                            )
+                          }
+                        >
+                          Edit
+                        </Button>
+
+                        <Button
+                          size="small"
+                          color="error"
+                          startIcon={
+                            <Delete />
+                          }
+                          onClick={() => {
+                            setDeleteStepError(
+                              null,
+                            );
+
+                            setDeletingTestStep(
+                              testStep,
+                            );
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </Stack>
                     </Box>
 
                     <Divider />
@@ -1224,6 +1541,108 @@ export default function TestCaseDetailsPage() {
           handleTestStepCreated
         }
       />
+
+      <EditTestCaseDialog
+        open={
+          editDialogOpen
+        }
+        testCase={
+          testCase
+        }
+        onClose={() =>
+          setEditDialogOpen(
+            false,
+          )
+        }
+        onUpdated={
+          handleTestCaseUpdated
+        }
+      />
+
+      <DeleteConfirmationDialog
+        open={
+          deleteDialogOpen
+        }
+        title="Delete Test Case?"
+        entityName={
+          testCase.testCaseId
+        }
+        description="A Test Case cannot be deleted while Test Steps or related automation records still reference it."
+        deleting={
+          deleting
+        }
+        error={
+          deleteError
+        }
+        onClose={() => {
+          if (deleting) {
+            return;
+          }
+
+          setDeleteDialogOpen(
+            false,
+          );
+
+          setDeleteError(
+            null,
+          );
+        }}
+        onConfirm={() =>
+          void handleDeleteTestCase()
+        }
+      />
+
+      {editingTestStep && (
+        <EditTestStepDialog
+          open
+          testStep={
+            editingTestStep
+          }
+          onClose={() =>
+            setEditingTestStep(
+              null,
+            )
+          }
+          onUpdated={
+            handleTestStepUpdated
+          }
+        />
+      )}
+
+      {deletingTestStep && (
+        <DeleteConfirmationDialog
+          open
+          title="Delete Test Step?"
+          entityName={
+            deletingTestStep.testStepId
+          }
+          description={`Step ${deletingTestStep.stepOrder} will be permanently deleted.`}
+          deleting={
+            deletingStep
+          }
+          error={
+            deleteStepError
+          }
+          onClose={() => {
+            if (
+              deletingStep
+            ) {
+              return;
+            }
+
+            setDeletingTestStep(
+              null,
+            );
+
+            setDeleteStepError(
+              null,
+            );
+          }}
+          onConfirm={() =>
+            void handleDeleteTestStep()
+          }
+        />
+      )}
     </Stack>
   );
 }

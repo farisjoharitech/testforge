@@ -10,11 +10,13 @@ import com.testforge.testforge_backend.exception.TestScenarioNotFoundException;
 import com.testforge.testforge_backend.repository.RequirementRepository;
 import com.testforge.testforge_backend.repository.TestScenarioRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Transactional
 public class TestScenarioService {
 
     private final TestScenarioRepository
@@ -95,13 +97,20 @@ public class TestScenarioService {
         LocalDateTime now =
                 LocalDateTime.now();
 
-        scenario.setCreatedAt(now);
-        scenario.setUpdatedAt(now);
+        scenario.setCreatedAt(
+                now
+        );
 
-        return testScenarioRepository
-                .save(scenario);
+        scenario.setUpdatedAt(
+                now
+        );
+
+        return testScenarioRepository.save(
+                scenario
+        );
     }
 
+    @Transactional(readOnly = true)
     public List<TestScenario> getByRequirement(
             String requirementBusinessId) {
 
@@ -123,7 +132,9 @@ public class TestScenarioService {
                 );
     }
 
-    public TestScenario getById(Long id) {
+    @Transactional(readOnly = true)
+    public TestScenario getById(
+            Long id) {
 
         return testScenarioRepository
                 .findById(id)
@@ -135,11 +146,14 @@ public class TestScenarioService {
                 );
     }
 
+    @Transactional(readOnly = true)
     public TestScenario getByScenarioId(
             String scenarioId) {
 
         return testScenarioRepository
-                .findByScenarioId(scenarioId)
+                .findByScenarioId(
+                        scenarioId
+                )
                 .orElseThrow(() ->
                         new TestScenarioNotFoundException(
                                 "Test Scenario not found with scenarioId: "
@@ -186,11 +200,15 @@ public class TestScenarioService {
                 LocalDateTime.now()
         );
 
-        return testScenarioRepository
-                .save(scenario);
+        /*
+         * Managed inside the transaction.
+         * Hibernate dirty checking persists it.
+         */
+        return scenario;
     }
 
-    public void delete(Long id) {
+    public void delete(
+            Long id) {
 
         if (!testScenarioRepository
                 .existsById(id)) {

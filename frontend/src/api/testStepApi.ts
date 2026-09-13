@@ -5,6 +5,7 @@ import {
 import type {
   CreateTestStepRequest,
   TestStep,
+  UpdateTestStepRequest,
 } from '../types/testStep';
 
 export const testStepApi = {
@@ -48,6 +49,27 @@ export const testStepApi = {
       `/api/test-steps/business/${encodeURIComponent(
         testStepId,
       )}`,
+    );
+  },
+
+  updateTestStep(
+    id: number,
+    request: UpdateTestStepRequest,
+  ): Promise<TestStep> {
+    return apiClient.put<
+      TestStep,
+      UpdateTestStepRequest
+    >(
+      `/api/test-steps/${id}`,
+      request,
+    );
+  },
+
+  deleteTestStep(
+    id: number,
+  ): Promise<void> {
+    return apiClient.delete<void>(
+      `/api/test-steps/${id}`,
     );
   },
 };

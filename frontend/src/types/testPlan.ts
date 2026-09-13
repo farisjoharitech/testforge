@@ -21,6 +21,17 @@ export interface CreateTestPlanRequest {
   approvalStatus: ApprovalStatus;
 }
 
+export interface UpdateTestPlanRequest {
+  name: string;
+  version?: string;
+  project?: string;
+  application?: string;
+  environment?: string;
+  preparedBy?: string;
+  status: TestPlanStatus;
+  approvalStatus: ApprovalStatus;
+}
+
 export interface TestPlan {
   id: number;
   testPlanId: string;

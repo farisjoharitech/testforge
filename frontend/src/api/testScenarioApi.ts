@@ -5,15 +5,14 @@ import {
 import type {
   CreateTestScenarioRequest,
   TestScenario,
+  UpdateTestScenarioRequest,
 } from '../types/testScenario';
 
 export const testScenarioApi = {
   getByRequirement(
     requirementId: string,
   ): Promise<TestScenario[]> {
-    return apiClient.get<
-      TestScenario[]
-    >(
+    return apiClient.get<TestScenario[]>(
       `/api/requirements/${encodeURIComponent(
         requirementId,
       )}/scenarios`,
@@ -22,8 +21,7 @@ export const testScenarioApi = {
 
   createTestScenario(
     requirementId: string,
-    request:
-      CreateTestScenarioRequest,
+    request: CreateTestScenarioRequest,
   ): Promise<TestScenario> {
     return apiClient.post<
       TestScenario,
@@ -39,9 +37,7 @@ export const testScenarioApi = {
   getTestScenario(
     id: number,
   ): Promise<TestScenario> {
-    return apiClient.get<
-      TestScenario
-    >(
+    return apiClient.get<TestScenario>(
       `/api/scenarios/${id}`,
     );
   },
@@ -49,12 +45,31 @@ export const testScenarioApi = {
   getTestScenarioByBusinessId(
     scenarioId: string,
   ): Promise<TestScenario> {
-    return apiClient.get<
-      TestScenario
-    >(
+    return apiClient.get<TestScenario>(
       `/api/scenarios/business/${encodeURIComponent(
         scenarioId,
       )}`,
+    );
+  },
+
+  updateTestScenario(
+    id: number,
+    request: UpdateTestScenarioRequest,
+  ): Promise<TestScenario> {
+    return apiClient.put<
+      TestScenario,
+      UpdateTestScenarioRequest
+    >(
+      `/api/scenarios/${id}`,
+      request,
+    );
+  },
+
+  deleteTestScenario(
+    id: number,
+  ): Promise<void> {
+    return apiClient.delete<void>(
+      `/api/scenarios/${id}`,
     );
   },
 };

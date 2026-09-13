@@ -5,15 +5,14 @@ import {
 import type {
   CreateRequirementRequest,
   Requirement,
+  UpdateRequirementRequest,
 } from '../types/requirement';
 
 export const requirementApi = {
   getRequirementsByTestPlan(
     testPlanId: string,
   ): Promise<Requirement[]> {
-    return apiClient.get<
-      Requirement[]
-    >(
+    return apiClient.get<Requirement[]>(
       `/api/test-plans/${encodeURIComponent(
         testPlanId,
       )}/requirements`,
@@ -22,8 +21,7 @@ export const requirementApi = {
 
   createRequirement(
     testPlanId: string,
-    request:
-      CreateRequirementRequest,
+    request: CreateRequirementRequest,
   ): Promise<Requirement> {
     return apiClient.post<
       Requirement,
@@ -39,9 +37,7 @@ export const requirementApi = {
   getRequirement(
     id: number,
   ): Promise<Requirement> {
-    return apiClient.get<
-      Requirement
-    >(
+    return apiClient.get<Requirement>(
       `/api/requirements/${id}`,
     );
   },
@@ -49,12 +45,31 @@ export const requirementApi = {
   getRequirementByBusinessId(
     requirementId: string,
   ): Promise<Requirement> {
-    return apiClient.get<
-      Requirement
-    >(
+    return apiClient.get<Requirement>(
       `/api/requirements/business/${encodeURIComponent(
         requirementId,
       )}`,
+    );
+  },
+
+  updateRequirement(
+    id: number,
+    request: UpdateRequirementRequest,
+  ): Promise<Requirement> {
+    return apiClient.put<
+      Requirement,
+      UpdateRequirementRequest
+    >(
+      `/api/requirements/${id}`,
+      request,
+    );
+  },
+
+  deleteRequirement(
+    id: number,
+  ): Promise<void> {
+    return apiClient.delete<void>(
+      `/api/requirements/${id}`,
     );
   },
 };

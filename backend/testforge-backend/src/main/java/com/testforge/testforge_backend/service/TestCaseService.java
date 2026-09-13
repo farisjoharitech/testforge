@@ -13,11 +13,13 @@ import com.testforge.testforge_backend.exception.TestScenarioNotFoundException;
 import com.testforge.testforge_backend.repository.TestCaseRepository;
 import com.testforge.testforge_backend.repository.TestScenarioRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Transactional
 public class TestCaseService {
 
     private final TestCaseRepository
@@ -124,13 +126,20 @@ public class TestCaseService {
         LocalDateTime now =
                 LocalDateTime.now();
 
-        testCase.setCreatedAt(now);
-        testCase.setUpdatedAt(now);
+        testCase.setCreatedAt(
+                now
+        );
 
-        return testCaseRepository
-                .save(testCase);
+        testCase.setUpdatedAt(
+                now
+        );
+
+        return testCaseRepository.save(
+                testCase
+        );
     }
 
+    @Transactional(readOnly = true)
     public List<TestCase> getByScenario(
             String scenarioBusinessId) {
 
@@ -152,7 +161,9 @@ public class TestCaseService {
                 );
     }
 
-    public TestCase getById(Long id) {
+    @Transactional(readOnly = true)
+    public TestCase getById(
+            Long id) {
 
         return testCaseRepository
                 .findById(id)
@@ -164,6 +175,7 @@ public class TestCaseService {
                 );
     }
 
+    @Transactional(readOnly = true)
     public TestCase getByTestCaseId(
             String testCaseId) {
 
@@ -243,11 +255,15 @@ public class TestCaseService {
                 LocalDateTime.now()
         );
 
-        return testCaseRepository
-                .save(testCase);
+        /*
+         * Do not call save() here.
+         * The entity is managed by this transaction.
+         */
+        return testCase;
     }
 
-    public void delete(Long id) {
+    public void delete(
+            Long id) {
 
         if (!testCaseRepository
                 .existsById(id)) {
@@ -269,7 +285,9 @@ public class TestCaseService {
 
         if (!automatable) {
 
-            if (automationType != AutomationType.MANUAL) {
+            if (automationType
+                    != AutomationType.MANUAL) {
+
                 throw new InvalidTestCaseAutomationException(
                         "Non-automatable Test Case must use automationType MANUAL"
                 );
@@ -286,7 +304,9 @@ public class TestCaseService {
             return;
         }
 
-        if (automationType == AutomationType.MANUAL) {
+        if (automationType
+                == AutomationType.MANUAL) {
+
             throw new InvalidTestCaseAutomationException(
                     "Automatable Test Case cannot use automationType MANUAL"
             );

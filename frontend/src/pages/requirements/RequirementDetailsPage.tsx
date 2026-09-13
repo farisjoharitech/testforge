@@ -8,6 +8,8 @@ import {
   Add,
   ArrowBack,
   ArrowForward,
+  Delete,
+  Edit,
   Refresh,
 } from '@mui/icons-material';
 
@@ -30,6 +32,10 @@ import {
 } from 'react-router-dom';
 
 import {
+  ApiError,
+} from '../../api/apiClient';
+
+import {
   requirementApi,
 } from '../../api/requirementApi';
 
@@ -37,9 +43,13 @@ import {
   testScenarioApi,
 } from '../../api/testScenarioApi';
 
+import DeleteConfirmationDialog from '../../components/common/DeleteConfirmationDialog';
+
 import {
   PageHeader,
 } from '../../components/common/PageHeader';
+
+import EditRequirementDialog from '../../components/requirements/EditRequirementDialog';
 
 import CreateTestScenarioDialog from '../../components/scenarios/CreateTestScenarioDialog';
 
@@ -209,14 +219,34 @@ export default function RequirementDetailsPage() {
     setCreateDialogOpen,
   ] = useState(false);
 
+  const [
+    editDialogOpen,
+    setEditDialogOpen,
+  ] = useState(false);
+
+  const [
+    deleteDialogOpen,
+    setDeleteDialogOpen,
+  ] = useState(false);
+
+  const [
+    deleting,
+    setDeleting,
+  ] = useState(false);
+
+  const [
+    deleteError,
+    setDeleteError,
+  ] = useState<
+    string | null
+  >(null);
+
   const loadPage =
     useCallback(
       async (
         isRefresh = false,
       ) => {
-        if (
-          !requirementId
-        ) {
+        if (!requirementId) {
           setError(
             'Requirement ID is missing.',
           );
@@ -227,16 +257,10 @@ export default function RequirementDetailsPage() {
         }
 
         try {
-          if (
-            isRefresh
-          ) {
-            setRefreshing(
-              true,
-            );
+          if (isRefresh) {
+            setRefreshing(true);
           } else {
-            setLoading(
-              true,
-            );
+            setLoading(true);
           }
 
           setError(null);
@@ -270,17 +294,21 @@ export default function RequirementDetailsPage() {
             err,
           );
 
-          setError(
-            'Unable to load the Requirement details or Test Scenarios.',
-          );
+          if (
+            err instanceof
+            ApiError
+          ) {
+            setError(
+              err.message,
+            );
+          } else {
+            setError(
+              'Unable to load the Requirement details or Test Scenarios.',
+            );
+          }
         } finally {
-          setLoading(
-            false,
-          );
-
-          setRefreshing(
-            false,
-          );
+          setLoading(false);
+          setRefreshing(false);
         }
       },
       [requirementId],
@@ -302,18 +330,82 @@ export default function RequirementDetailsPage() {
         false,
       );
 
-      setSuccessMessage(
-        `Test Scenario "${scenario.scenarioId}" created successfully.`,
-      );
-
       setScenarios(
         (
-          currentScenarios,
+          current,
         ) => [
-          ...currentScenarios,
+          ...current,
           scenario,
         ],
       );
+
+      setSuccessMessage(
+        `Test Scenario "${scenario.scenarioId}" created successfully.`,
+      );
+    };
+
+  const handleRequirementUpdated =
+    (
+      updatedRequirement:
+        Requirement,
+    ) => {
+      setRequirement(
+        updatedRequirement,
+      );
+
+      setEditDialogOpen(
+        false,
+      );
+
+      setSuccessMessage(
+        `Requirement "${updatedRequirement.requirementId}" updated successfully.`,
+      );
+    };
+
+  const handleDelete =
+    async () => {
+      if (!requirement) {
+        return;
+      }
+
+      try {
+        setDeleting(true);
+
+        setDeleteError(
+          null,
+        );
+
+        await requirementApi
+          .deleteRequirement(
+            requirement.id,
+          );
+
+        navigate(
+          `/test-plans/${encodeURIComponent(
+            requirement.testPlanBusinessId,
+          )}`,
+        );
+      } catch (err) {
+        console.error(
+          'Failed to delete Requirement:',
+          err,
+        );
+
+        if (
+          err instanceof
+          ApiError
+        ) {
+          setDeleteError(
+            err.message,
+          );
+        } else {
+          setDeleteError(
+            'Unable to delete the Requirement. Delete its Test Scenarios first.',
+          );
+        }
+      } finally {
+        setDeleting(false);
+      }
     };
 
   if (loading) {
@@ -329,10 +421,8 @@ export default function RequirementDetailsPage() {
             spacing={2}
             sx={{
               minHeight: 320,
-
               alignItems:
                 'center',
-
               justifyContent:
                 'center',
             }}
@@ -373,7 +463,7 @@ export default function RequirementDetailsPage() {
               'flex-start',
           }}
         >
-          Back to Test Plans
+          Back
         </Button>
 
         <Alert
@@ -417,27 +507,20 @@ export default function RequirementDetailsPage() {
           {
             label:
               'Test Plans',
-
             to:
               '/test-plans',
           },
-
           {
             label:
-              requirement
-                .testPlanBusinessId,
-
+              requirement.testPlanBusinessId,
             to:
               `/test-plans/${encodeURIComponent(
-                requirement
-                  .testPlanBusinessId,
+                requirement.testPlanBusinessId,
               )}`,
           },
-
           {
             label:
-              requirement
-                .requirementId,
+              requirement.requirementId,
           },
         ]}
         actions={
@@ -465,6 +548,39 @@ export default function RequirementDetailsPage() {
               {refreshing
                 ? 'Refreshing...'
                 : 'Refresh'}
+            </Button>
+
+            <Button
+              variant="outlined"
+              startIcon={
+                <Edit />
+              }
+              onClick={() =>
+                setEditDialogOpen(
+                  true,
+                )
+              }
+            >
+              Edit
+            </Button>
+
+            <Button
+              color="error"
+              variant="outlined"
+              startIcon={
+                <Delete />
+              }
+              onClick={() => {
+                setDeleteError(
+                  null,
+                );
+
+                setDeleteDialogOpen(
+                  true,
+                );
+              }}
+            >
+              Delete
             </Button>
 
             <Button
@@ -522,15 +638,11 @@ export default function RequirementDetailsPage() {
               sx={{
                 display:
                   'flex',
-
                 justifyContent:
                   'space-between',
-
                 alignItems:
                   'flex-start',
-
                 gap: 2,
-
                 flexWrap:
                   'wrap',
               }}
@@ -538,9 +650,7 @@ export default function RequirementDetailsPage() {
               <Box>
                 <Typography
                   variant="h6"
-                  fontWeight={
-                    700
-                  }
+                  fontWeight={700}
                 >
                   Requirement
                   Information
@@ -553,7 +663,7 @@ export default function RequirementDetailsPage() {
                   Requirement
                   details and
                   automation
-                  metadata.
+                  eligibility.
                 </Typography>
               </Box>
 
@@ -611,7 +721,12 @@ export default function RequirementDetailsPage() {
                 Description
               </Typography>
 
-              <Typography>
+              <Typography
+                sx={{
+                  whiteSpace:
+                    'pre-wrap',
+                }}
+              >
                 {
                   requirement.description
                 }
@@ -641,9 +756,7 @@ export default function RequirementDetailsPage() {
                 </Typography>
 
                 <Typography
-                  fontWeight={
-                    600
-                  }
+                  fontWeight={600}
                 >
                   {
                     requirement.requirementId
@@ -703,15 +816,11 @@ export default function RequirementDetailsPage() {
       <Box
         sx={{
           display: 'flex',
-
           justifyContent:
             'space-between',
-
           alignItems:
             'center',
-
           gap: 2,
-
           flexWrap:
             'wrap',
         }}
@@ -756,13 +865,10 @@ export default function RequirementDetailsPage() {
               spacing={2}
               sx={{
                 minHeight: 250,
-
                 alignItems:
                   'center',
-
                 justifyContent:
                   'center',
-
                 textAlign:
                   'center',
               }}
@@ -823,15 +929,11 @@ export default function RequirementDetailsPage() {
                       sx={{
                         display:
                           'flex',
-
                         justifyContent:
                           'space-between',
-
                         alignItems:
                           'flex-start',
-
                         gap: 2,
-
                         flexWrap:
                           'wrap',
                       }}
@@ -856,6 +958,8 @@ export default function RequirementDetailsPage() {
                           color="text.secondary"
                           sx={{
                             mt: 0.5,
+                            whiteSpace:
+                              'pre-wrap',
                           }}
                         >
                           {
@@ -870,9 +974,6 @@ export default function RequirementDetailsPage() {
                         sx={{
                           flexWrap:
                             'wrap',
-
-                          justifyContent:
-                            'flex-end',
                         }}
                       >
                         <Chip
@@ -924,12 +1025,10 @@ export default function RequirementDetailsPage() {
                       sx={{
                         display:
                           'grid',
-
                         gridTemplateColumns: {
                           xs: '1fr',
                           sm: 'repeat(2, 1fr)',
                         },
-
                         gap: 2,
                       }}
                     >
@@ -972,7 +1071,6 @@ export default function RequirementDetailsPage() {
                       sx={{
                         display:
                           'flex',
-
                         justifyContent:
                           'flex-end',
                       }}
@@ -1014,6 +1112,56 @@ export default function RequirementDetailsPage() {
         }
         onCreated={
           handleScenarioCreated
+        }
+      />
+
+      <EditRequirementDialog
+        open={
+          editDialogOpen
+        }
+        requirement={
+          requirement
+        }
+        onClose={() =>
+          setEditDialogOpen(
+            false,
+          )
+        }
+        onUpdated={
+          handleRequirementUpdated
+        }
+      />
+
+      <DeleteConfirmationDialog
+        open={
+          deleteDialogOpen
+        }
+        title="Delete Requirement?"
+        entityName={
+          requirement.requirementId
+        }
+        description="A Requirement cannot be deleted while Test Scenarios still reference it. Delete its child lifecycle records first."
+        deleting={
+          deleting
+        }
+        error={
+          deleteError
+        }
+        onClose={() => {
+          if (deleting) {
+            return;
+          }
+
+          setDeleteDialogOpen(
+            false,
+          );
+
+          setDeleteError(
+            null,
+          );
+        }}
+        onConfirm={() =>
+          void handleDelete()
         }
       />
     </Stack>

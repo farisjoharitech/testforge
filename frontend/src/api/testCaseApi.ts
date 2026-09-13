@@ -5,15 +5,14 @@ import {
 import type {
   CreateTestCaseRequest,
   TestCase,
+  UpdateTestCaseRequest,
 } from '../types/testCase';
 
 export const testCaseApi = {
   getByScenario(
     scenarioId: string,
   ): Promise<TestCase[]> {
-    return apiClient.get<
-      TestCase[]
-    >(
+    return apiClient.get<TestCase[]>(
       `/api/scenarios/${encodeURIComponent(
         scenarioId,
       )}/test-cases`,
@@ -22,8 +21,7 @@ export const testCaseApi = {
 
   createTestCase(
     scenarioId: string,
-    request:
-      CreateTestCaseRequest,
+    request: CreateTestCaseRequest,
   ): Promise<TestCase> {
     return apiClient.post<
       TestCase,
@@ -39,9 +37,7 @@ export const testCaseApi = {
   getTestCase(
     id: number,
   ): Promise<TestCase> {
-    return apiClient.get<
-      TestCase
-    >(
+    return apiClient.get<TestCase>(
       `/api/test-cases/${id}`,
     );
   },
@@ -49,12 +45,31 @@ export const testCaseApi = {
   getTestCaseByBusinessId(
     testCaseId: string,
   ): Promise<TestCase> {
-    return apiClient.get<
-      TestCase
-    >(
+    return apiClient.get<TestCase>(
       `/api/test-cases/business/${encodeURIComponent(
         testCaseId,
       )}`,
+    );
+  },
+
+  updateTestCase(
+    id: number,
+    request: UpdateTestCaseRequest,
+  ): Promise<TestCase> {
+    return apiClient.put<
+      TestCase,
+      UpdateTestCaseRequest
+    >(
+      `/api/test-cases/${id}`,
+      request,
+    );
+  },
+
+  deleteTestCase(
+    id: number,
+  ): Promise<void> {
+    return apiClient.delete<void>(
+      `/api/test-cases/${id}`,
     );
   },
 };

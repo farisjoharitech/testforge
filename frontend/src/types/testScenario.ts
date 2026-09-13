@@ -30,23 +30,24 @@ export interface CreateTestScenarioRequest {
   status: TestScenarioStatus;
 }
 
+export interface UpdateTestScenarioRequest {
+  description: string;
+  testType: TestType;
+  automatable: boolean;
+  priority: TestScenarioPriority;
+  status: TestScenarioStatus;
+}
+
 export interface TestScenario {
   id: number;
   scenarioId: string;
-
   requirementId: number;
   requirementBusinessId: string;
-
   description: string;
-
   testType: TestType;
-
   automatable: boolean;
-
   priority: TestScenarioPriority;
-
   status: TestScenarioStatus;
-
   createdAt: string;
   updatedAt: string;
 }

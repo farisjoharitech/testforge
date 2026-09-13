@@ -8,6 +8,8 @@ import {
   Add,
   ArrowBack,
   ArrowForward,
+  Delete,
+  Edit,
   Refresh,
 } from '@mui/icons-material';
 
@@ -30,6 +32,10 @@ import {
 } from 'react-router-dom';
 
 import {
+  ApiError,
+} from '../../api/apiClient';
+
+import {
   testCaseApi,
 } from '../../api/testCaseApi';
 
@@ -37,11 +43,15 @@ import {
   testScenarioApi,
 } from '../../api/testScenarioApi';
 
+import DeleteConfirmationDialog from '../../components/common/DeleteConfirmationDialog';
+
 import {
   PageHeader,
 } from '../../components/common/PageHeader';
 
 import CreateTestCaseDialog from '../../components/test-cases/CreateTestCaseDialog';
+
+import EditTestScenarioDialog from '../../components/scenarios/EditTestScenarioDialog';
 
 import type {
   TestCase,
@@ -267,6 +277,28 @@ export default function ScenarioDetailsPage() {
     setCreateDialogOpen,
   ] = useState(false);
 
+  const [
+    editDialogOpen,
+    setEditDialogOpen,
+  ] = useState(false);
+
+  const [
+    deleteDialogOpen,
+    setDeleteDialogOpen,
+  ] = useState(false);
+
+  const [
+    deleting,
+    setDeleting,
+  ] = useState(false);
+
+  const [
+    deleteError,
+    setDeleteError,
+  ] = useState<
+    string | null
+  >(null);
+
   const loadPage =
     useCallback(
       async (
@@ -324,9 +356,18 @@ export default function ScenarioDetailsPage() {
             err,
           );
 
-          setError(
-            'Unable to load the Test Scenario details or Test Cases.',
-          );
+          if (
+            err instanceof
+            ApiError
+          ) {
+            setError(
+              err.message,
+            );
+          } else {
+            setError(
+              'Unable to load the Test Scenario details or Test Cases.',
+            );
+          }
         } finally {
           setLoading(false);
 
@@ -368,6 +409,70 @@ export default function ScenarioDetailsPage() {
       );
     };
 
+  const handleScenarioUpdated =
+    (
+      updatedScenario:
+        TestScenario,
+    ) => {
+      setScenario(
+        updatedScenario,
+      );
+
+      setEditDialogOpen(
+        false,
+      );
+
+      setSuccessMessage(
+        `Test Scenario "${updatedScenario.scenarioId}" updated successfully.`,
+      );
+    };
+
+  const handleDelete =
+    async () => {
+      if (!scenario) {
+        return;
+      }
+
+      try {
+        setDeleting(true);
+
+        setDeleteError(
+          null,
+        );
+
+        await testScenarioApi
+          .deleteTestScenario(
+            scenario.id,
+          );
+
+        navigate(
+          `/requirements/${encodeURIComponent(
+            scenario.requirementBusinessId,
+          )}`,
+        );
+      } catch (err) {
+        console.error(
+          'Failed to delete Test Scenario:',
+          err,
+        );
+
+        if (
+          err instanceof
+          ApiError
+        ) {
+          setDeleteError(
+            err.message,
+          );
+        } else {
+          setDeleteError(
+            'Unable to delete the Test Scenario. Delete its Test Cases first.',
+          );
+        }
+      } finally {
+        setDeleting(false);
+      }
+    };
+
   if (loading) {
     return (
       <Card
@@ -381,10 +486,8 @@ export default function ScenarioDetailsPage() {
             spacing={2}
             sx={{
               minHeight: 320,
-
               alignItems:
                 'center',
-
               justifyContent:
                 'center',
             }}
@@ -469,20 +572,17 @@ export default function ScenarioDetailsPage() {
           {
             label:
               'Test Plans',
-
             to:
               '/test-plans',
           },
 
           {
             label:
-              scenario
-                .requirementBusinessId,
+              scenario.requirementBusinessId,
 
             to:
               `/requirements/${encodeURIComponent(
-                scenario
-                  .requirementBusinessId,
+                scenario.requirementBusinessId,
               )}`,
           },
 
@@ -516,6 +616,39 @@ export default function ScenarioDetailsPage() {
               {refreshing
                 ? 'Refreshing...'
                 : 'Refresh'}
+            </Button>
+
+            <Button
+              variant="outlined"
+              startIcon={
+                <Edit />
+              }
+              onClick={() =>
+                setEditDialogOpen(
+                  true,
+                )
+              }
+            >
+              Edit
+            </Button>
+
+            <Button
+              color="error"
+              variant="outlined"
+              startIcon={
+                <Delete />
+              }
+              onClick={() => {
+                setDeleteError(
+                  null,
+                );
+
+                setDeleteDialogOpen(
+                  true,
+                );
+              }}
+            >
+              Delete
             </Button>
 
             <Button
@@ -589,9 +722,7 @@ export default function ScenarioDetailsPage() {
               <Box>
                 <Typography
                   variant="h6"
-                  fontWeight={
-                    700
-                  }
+                  fontWeight={700}
                 >
                   Test Scenario
                   Information
@@ -668,7 +799,12 @@ export default function ScenarioDetailsPage() {
                 Description
               </Typography>
 
-              <Typography>
+              <Typography
+                sx={{
+                  whiteSpace:
+                    'pre-wrap',
+                }}
+              >
                 {
                   scenario.description
                 }
@@ -698,9 +834,7 @@ export default function ScenarioDetailsPage() {
                 </Typography>
 
                 <Typography
-                  fontWeight={
-                    600
-                  }
+                  fontWeight={600}
                 >
                   {
                     scenario.scenarioId
@@ -760,15 +894,11 @@ export default function ScenarioDetailsPage() {
       <Box
         sx={{
           display: 'flex',
-
           justifyContent:
             'space-between',
-
           alignItems:
             'center',
-
           gap: 2,
-
           flexWrap:
             'wrap',
         }}
@@ -813,13 +943,10 @@ export default function ScenarioDetailsPage() {
               spacing={2}
               sx={{
                 minHeight: 250,
-
                 alignItems:
                   'center',
-
                 justifyContent:
                   'center',
-
                 textAlign:
                   'center',
               }}
@@ -909,9 +1036,7 @@ export default function ScenarioDetailsPage() {
                         </Typography>
 
                         <Typography
-                          fontWeight={
-                            600
-                          }
+                          fontWeight={600}
                           sx={{
                             mt: 0.5,
                           }}
@@ -1186,6 +1311,56 @@ export default function ScenarioDetailsPage() {
         }
         onCreated={
           handleTestCaseCreated
+        }
+      />
+
+      <EditTestScenarioDialog
+        open={
+          editDialogOpen
+        }
+        scenario={
+          scenario
+        }
+        onClose={() =>
+          setEditDialogOpen(
+            false,
+          )
+        }
+        onUpdated={
+          handleScenarioUpdated
+        }
+      />
+
+      <DeleteConfirmationDialog
+        open={
+          deleteDialogOpen
+        }
+        title="Delete Test Scenario?"
+        entityName={
+          scenario.scenarioId
+        }
+        description="A Test Scenario cannot be deleted while Test Cases still reference it. Delete the child lifecycle records first."
+        deleting={
+          deleting
+        }
+        error={
+          deleteError
+        }
+        onClose={() => {
+          if (deleting) {
+            return;
+          }
+
+          setDeleteDialogOpen(
+            false,
+          );
+
+          setDeleteError(
+            null,
+          );
+        }}
+        onConfirm={() =>
+          void handleDelete()
         }
       />
     </Stack>

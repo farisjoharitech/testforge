@@ -10,11 +10,13 @@ import com.testforge.testforge_backend.exception.TestPlanNotFoundException;
 import com.testforge.testforge_backend.repository.RequirementRepository;
 import com.testforge.testforge_backend.repository.TestPlanRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Transactional
 public class RequirementService {
 
     private final RequirementRepository requirementRepository;
@@ -24,25 +26,33 @@ public class RequirementService {
             RequirementRepository requirementRepository,
             TestPlanRepository testPlanRepository) {
 
-        this.requirementRepository = requirementRepository;
-        this.testPlanRepository = testPlanRepository;
+        this.requirementRepository =
+                requirementRepository;
+
+        this.testPlanRepository =
+                testPlanRepository;
     }
 
     public Requirement create(
             String testPlanBusinessId,
             CreateRequirementRequest request) {
 
-        TestPlan testPlan = testPlanRepository
-                .findByTestPlanId(testPlanBusinessId)
-                .orElseThrow(() ->
-                        new TestPlanNotFoundException(
-                                "Test Plan not found with testPlanId: "
-                                        + testPlanBusinessId
+        TestPlan testPlan =
+                testPlanRepository
+                        .findByTestPlanId(
+                                testPlanBusinessId
                         )
-                );
+                        .orElseThrow(() ->
+                                new TestPlanNotFoundException(
+                                        "Test Plan not found with testPlanId: "
+                                                + testPlanBusinessId
+                                )
+                        );
 
-        if (requirementRepository.existsByRequirementId(
-                request.getRequirementId())) {
+        if (requirementRepository
+                .existsByRequirementId(
+                        request.getRequirementId()
+                )) {
 
             throw new DuplicateRequirementException(
                     "Requirement ID already exists: "
@@ -50,13 +60,16 @@ public class RequirementService {
             );
         }
 
-        Requirement requirement = new Requirement();
+        Requirement requirement =
+                new Requirement();
 
         requirement.setRequirementId(
                 request.getRequirementId()
         );
 
-        requirement.setTestPlan(testPlan);
+        requirement.setTestPlan(
+                testPlan
+        );
 
         requirement.setDescription(
                 request.getDescription()
@@ -74,31 +87,47 @@ public class RequirementService {
                 request.getAutomatable()
         );
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now =
+                LocalDateTime.now();
 
-        requirement.setCreatedAt(now);
-        requirement.setUpdatedAt(now);
+        requirement.setCreatedAt(
+                now
+        );
 
-        return requirementRepository.save(requirement);
+        requirement.setUpdatedAt(
+                now
+        );
+
+        return requirementRepository.save(
+                requirement
+        );
     }
 
+    @Transactional(readOnly = true)
     public List<Requirement> getByTestPlan(
             String testPlanBusinessId) {
 
-        TestPlan testPlan = testPlanRepository
-                .findByTestPlanId(testPlanBusinessId)
-                .orElseThrow(() ->
-                        new TestPlanNotFoundException(
-                                "Test Plan not found with testPlanId: "
-                                        + testPlanBusinessId
+        TestPlan testPlan =
+                testPlanRepository
+                        .findByTestPlanId(
+                                testPlanBusinessId
                         )
-                );
+                        .orElseThrow(() ->
+                                new TestPlanNotFoundException(
+                                        "Test Plan not found with testPlanId: "
+                                                + testPlanBusinessId
+                                )
+                        );
 
         return requirementRepository
-                .findByTestPlanOrderByIdAsc(testPlan);
+                .findByTestPlanOrderByIdAsc(
+                        testPlan
+                );
     }
 
-    public Requirement getById(Long id) {
+    @Transactional(readOnly = true)
+    public Requirement getById(
+            Long id) {
 
         return requirementRepository
                 .findById(id)
@@ -110,11 +139,14 @@ public class RequirementService {
                 );
     }
 
+    @Transactional(readOnly = true)
     public Requirement getByRequirementId(
             String requirementId) {
 
         return requirementRepository
-                .findByRequirementId(requirementId)
+                .findByRequirementId(
+                        requirementId
+                )
                 .orElseThrow(() ->
                         new RequirementNotFoundException(
                                 "Requirement not found with requirementId: "
@@ -127,14 +159,15 @@ public class RequirementService {
             Long id,
             UpdateRequirementRequest request) {
 
-        Requirement requirement = requirementRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new RequirementNotFoundException(
-                                "Requirement not found with id: "
-                                        + id
-                        )
-                );
+        Requirement requirement =
+                requirementRepository
+                        .findById(id)
+                        .orElseThrow(() ->
+                                new RequirementNotFoundException(
+                                        "Requirement not found with id: "
+                                                + id
+                                )
+                        );
 
         requirement.setDescription(
                 request.getDescription()
@@ -156,12 +189,27 @@ public class RequirementService {
                 LocalDateTime.now()
         );
 
-        return requirementRepository.save(requirement);
+        /*
+         * No repository.save() required here.
+         *
+         * Because this method is @Transactional,
+         * requirement is still a managed JPA entity.
+         *
+         * Hibernate dirty checking automatically
+         * persists the changed fields when the
+         * transaction commits.
+         *
+         * Returning the same entity also preserves
+         * the TestPlan loaded by the EntityGraph.
+         */
+        return requirement;
     }
 
-    public void delete(Long id) {
+    public void delete(
+            Long id) {
 
-        if (!requirementRepository.existsById(id)) {
+        if (!requirementRepository
+                .existsById(id)) {
 
             throw new RequirementNotFoundException(
                     "Requirement not found with id: "
@@ -169,6 +217,7 @@ public class RequirementService {
             );
         }
 
-        requirementRepository.deleteById(id);
+        requirementRepository
+                .deleteById(id);
     }
 }
