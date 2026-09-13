@@ -10,6 +10,8 @@ import RequirementDetailsPage from '../pages/requirements/RequirementDetailsPage
 
 import ScenarioDetailsPage from '../pages/scenarios/ScenarioDetailsPage';
 
+import TestCaseDetailsPage from '../pages/test-cases/TestCaseDetailsPage';
+
 import CreateTestPlanPage from '../pages/test-plans/CreateTestPlanPage';
 
 import TestPlanDetailsPage from '../pages/test-plans/TestPlanDetailsPage';
@@ -66,6 +68,13 @@ export default function App() {
           path="/scenarios/:scenarioId"
           element={
             <ScenarioDetailsPage />
+          }
+        />
+
+        <Route
+          path="/test-cases/:testCaseId"
+          element={
+            <TestCaseDetailsPage />
           }
         />
       </Route>

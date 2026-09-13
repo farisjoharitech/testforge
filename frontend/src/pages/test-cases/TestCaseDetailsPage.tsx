@@ -1,13 +1,13 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 
 import {
   Add,
   ArrowBack,
-  ArrowForward,
   Refresh,
 } from '@mui/icons-material';
 
@@ -34,22 +34,22 @@ import {
 } from '../../api/testCaseApi';
 
 import {
-  testScenarioApi,
-} from '../../api/testScenarioApi';
+  testStepApi,
+} from '../../api/testStepApi';
 
 import {
   PageHeader,
 } from '../../components/common/PageHeader';
 
-import CreateTestCaseDialog from '../../components/test-cases/CreateTestCaseDialog';
+import CreateTestStepDialog from '../../components/test-steps/CreateTestStepDialog';
 
 import type {
   TestCase,
 } from '../../types/testCase';
 
 import type {
-  TestScenario,
-} from '../../types/testScenario';
+  TestStep,
+} from '../../types/testStep';
 
 function displayValue(
   value:
@@ -214,28 +214,28 @@ function getAutomationStatusLabel(
   }
 }
 
-export default function ScenarioDetailsPage() {
+export default function TestCaseDetailsPage() {
   const navigate =
     useNavigate();
 
   const {
-    scenarioId,
+    testCaseId,
   } = useParams<{
-    scenarioId: string;
+    testCaseId: string;
   }>();
 
   const [
-    scenario,
-    setScenario,
+    testCase,
+    setTestCase,
   ] = useState<
-    TestScenario | null
+    TestCase | null
   >(null);
 
   const [
-    testCases,
-    setTestCases,
+    testSteps,
+    setTestSteps,
   ] = useState<
-    TestCase[]
+    TestStep[]
   >([]);
 
   const [
@@ -267,14 +267,41 @@ export default function ScenarioDetailsPage() {
     setCreateDialogOpen,
   ] = useState(false);
 
+  const suggestedStepOrder =
+    useMemo(
+      () => {
+        if (
+          testSteps.length ===
+          0
+        ) {
+          return 1;
+        }
+
+        const highestOrder =
+          Math.max(
+            ...testSteps.map(
+              (
+                testStep,
+              ) =>
+                testStep.stepOrder,
+            ),
+          );
+
+        return (
+          highestOrder + 1
+        );
+      },
+      [testSteps],
+    );
+
   const loadPage =
     useCallback(
       async (
         isRefresh = false,
       ) => {
-        if (!scenarioId) {
+        if (!testCaseId) {
           setError(
-            'Scenario ID is missing.',
+            'Test Case ID is missing.',
           );
 
           setLoading(false);
@@ -296,36 +323,36 @@ export default function ScenarioDetailsPage() {
           setError(null);
 
           const [
-            scenarioResponse,
             testCaseResponse,
+            testStepResponse,
           ] =
             await Promise.all([
-              testScenarioApi
-                .getTestScenarioByBusinessId(
-                  scenarioId,
+              testCaseApi
+                .getTestCaseByBusinessId(
+                  testCaseId,
                 ),
 
-              testCaseApi
-                .getByScenario(
-                  scenarioId,
+              testStepApi
+                .getByTestCase(
+                  testCaseId,
                 ),
             ]);
 
-          setScenario(
-            scenarioResponse,
+          setTestCase(
+            testCaseResponse,
           );
 
-          setTestCases(
-            testCaseResponse,
+          setTestSteps(
+            testStepResponse,
           );
         } catch (err) {
           console.error(
-            'Failed to load Scenario details:',
+            'Failed to load Test Case details:',
             err,
           );
 
           setError(
-            'Unable to load the Test Scenario details or Test Cases.',
+            'Unable to load the Test Case details or Test Steps.',
           );
         } finally {
           setLoading(false);
@@ -335,7 +362,7 @@ export default function ScenarioDetailsPage() {
           );
         }
       },
-      [scenarioId],
+      [testCaseId],
     );
 
   useEffect(
@@ -345,26 +372,33 @@ export default function ScenarioDetailsPage() {
     [loadPage],
   );
 
-  const handleTestCaseCreated =
+  const handleTestStepCreated =
     (
-      testCase:
-        TestCase,
+      testStep:
+        TestStep,
     ) => {
       setCreateDialogOpen(
         false,
       );
 
       setSuccessMessage(
-        `Test Case "${testCase.testCaseId}" created successfully.`,
+        `Test Step "${testStep.testStepId}" created successfully.`,
       );
 
-      setTestCases(
+      setTestSteps(
         (
-          current,
+          currentSteps,
         ) => [
-          ...current,
-          testCase,
-        ],
+          ...currentSteps,
+          testStep,
+        ].sort(
+          (
+            first,
+            second,
+          ) =>
+            first.stepOrder -
+            second.stepOrder,
+        ),
       );
     };
 
@@ -381,10 +415,8 @@ export default function ScenarioDetailsPage() {
             spacing={2}
             sx={{
               minHeight: 320,
-
               alignItems:
                 'center',
-
               justifyContent:
                 'center',
             }}
@@ -395,7 +427,7 @@ export default function ScenarioDetailsPage() {
               color="text.secondary"
             >
               Loading Test
-              Scenario...
+              Case...
             </Typography>
           </Stack>
         </CardContent>
@@ -405,7 +437,7 @@ export default function ScenarioDetailsPage() {
 
   if (
     error &&
-    !scenario
+    !testCase
   ) {
     return (
       <Stack
@@ -450,7 +482,7 @@ export default function ScenarioDetailsPage() {
     );
   }
 
-  if (!scenario) {
+  if (!testCase) {
     return null;
   }
 
@@ -460,10 +492,10 @@ export default function ScenarioDetailsPage() {
     >
       <PageHeader
         title={
-          scenario.scenarioId
+          testCase.testCaseId
         }
         description={
-          scenario.description
+          testCase.name
         }
         breadcrumbs={[
           {
@@ -476,19 +508,19 @@ export default function ScenarioDetailsPage() {
 
           {
             label:
-              scenario
-                .requirementBusinessId,
+              testCase
+                .scenarioBusinessId,
 
             to:
-              `/requirements/${encodeURIComponent(
-                scenario
-                  .requirementBusinessId,
+              `/scenarios/${encodeURIComponent(
+                testCase
+                  .scenarioBusinessId,
               )}`,
           },
 
           {
             label:
-              scenario.scenarioId,
+              testCase.testCaseId,
           },
         ]}
         actions={
@@ -529,7 +561,7 @@ export default function ScenarioDetailsPage() {
                 )
               }
             >
-              Add Test Case
+              Add Test Step
             </Button>
           </Stack>
         }
@@ -593,7 +625,7 @@ export default function ScenarioDetailsPage() {
                     700
                   }
                 >
-                  Test Scenario
+                  Test Case
                   Information
                 </Typography>
 
@@ -601,8 +633,9 @@ export default function ScenarioDetailsPage() {
                   variant="body2"
                   color="text.secondary"
                 >
-                  Scenario details
-                  and automation
+                  Test Case
+                  definition and
+                  automation
                   metadata.
                 </Typography>
               </Box>
@@ -617,39 +650,39 @@ export default function ScenarioDetailsPage() {
               >
                 <Chip
                   label={getTestTypeLabel(
-                    scenario.testType,
+                    testCase.testType,
                   )}
                   variant="outlined"
                 />
 
                 <Chip
                   label={
-                    scenario.priority
+                    testCase.priority
                   }
                   color={getPriorityColor(
-                    scenario.priority,
+                    testCase.priority,
                   )}
                   variant="outlined"
                 />
 
                 <Chip
                   label={
-                    scenario.status
+                    testCase.status
                   }
                   color={getStatusColor(
-                    scenario.status,
+                    testCase.status,
                   )}
                   variant="outlined"
                 />
 
                 <Chip
                   label={
-                    scenario.automatable
+                    testCase.automatable
                       ? 'Automatable'
                       : 'Manual'
                   }
                   color={
-                    scenario.automatable
+                    testCase.automatable
                       ? 'success'
                       : 'default'
                   }
@@ -665,15 +698,74 @@ export default function ScenarioDetailsPage() {
                 variant="caption"
                 color="text.secondary"
               >
-                Description
+                Name
               </Typography>
 
               <Typography>
-                {
-                  scenario.description
-                }
+                {testCase.name}
               </Typography>
             </Box>
+
+            <Box
+              sx={{
+                display:
+                  'grid',
+
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  md: 'repeat(3, 1fr)',
+                },
+
+                gap: 3,
+              }}
+            >
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  Preconditions
+                </Typography>
+
+                <Typography>
+                  {displayValue(
+                    testCase.preconditions,
+                  )}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  Test Data
+                </Typography>
+
+                <Typography>
+                  {displayValue(
+                    testCase.testData,
+                  )}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  Expected Result
+                </Typography>
+
+                <Typography>
+                  {
+                    testCase.expectedResult
+                  }
+                </Typography>
+              </Box>
+            </Box>
+
+            <Divider />
 
             <Box
               sx={{
@@ -694,7 +786,7 @@ export default function ScenarioDetailsPage() {
                   variant="caption"
                   color="text.secondary"
                 >
-                  Scenario ID
+                  Test Case ID
                 </Typography>
 
                 <Typography
@@ -703,7 +795,7 @@ export default function ScenarioDetailsPage() {
                   }
                 >
                   {
-                    scenario.scenarioId
+                    testCase.testCaseId
                   }
                 </Typography>
               </Box>
@@ -713,13 +805,43 @@ export default function ScenarioDetailsPage() {
                   variant="caption"
                   color="text.secondary"
                 >
-                  Requirement
+                  Scenario
                 </Typography>
 
                 <Typography>
                   {
-                    scenario.requirementBusinessId
+                    testCase.scenarioBusinessId
                   }
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  Automation Type
+                </Typography>
+
+                <Typography>
+                  {getAutomationTypeLabel(
+                    testCase.automationType,
+                  )}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                >
+                  Automation Status
+                </Typography>
+
+                <Typography>
+                  {getAutomationStatusLabel(
+                    testCase.automationStatus,
+                  )}
                 </Typography>
               </Box>
 
@@ -733,7 +855,7 @@ export default function ScenarioDetailsPage() {
 
                 <Typography>
                   {formatDate(
-                    scenario.createdAt,
+                    testCase.createdAt,
                   )}
                 </Typography>
               </Box>
@@ -748,7 +870,7 @@ export default function ScenarioDetailsPage() {
 
                 <Typography>
                   {formatDate(
-                    scenario.updatedAt,
+                    testCase.updatedAt,
                   )}
                 </Typography>
               </Box>
@@ -778,20 +900,21 @@ export default function ScenarioDetailsPage() {
             variant="h5"
             fontWeight={700}
           >
-            Test Cases
+            Test Steps
           </Typography>
 
           <Typography
             color="text.secondary"
           >
-            Test Cases linked to
-            this Test Scenario.
+            Ordered execution
+            steps for this Test
+            Case.
           </Typography>
         </Box>
 
         <Chip
-          label={`${testCases.length} test case${
-            testCases.length ===
+          label={`${testSteps.length} step${
+            testSteps.length ===
             1
               ? ''
               : 's'
@@ -800,7 +923,7 @@ export default function ScenarioDetailsPage() {
         />
       </Box>
 
-      {testCases.length ===
+      {testSteps.length ===
       0 ? (
         <Card
           variant="outlined"
@@ -827,15 +950,16 @@ export default function ScenarioDetailsPage() {
               <Typography
                 variant="h6"
               >
-                No Test Cases yet
+                No Test Steps yet
               </Typography>
 
               <Typography
                 color="text.secondary"
               >
                 Create the first
-                Test Case for this
-                Scenario.
+                execution step
+                for this Test
+                Case.
               </Typography>
 
               <Button
@@ -849,7 +973,7 @@ export default function ScenarioDetailsPage() {
                   )
                 }
               >
-                Add Test Case
+                Add Test Step
               </Button>
             </Stack>
           </CardContent>
@@ -858,13 +982,13 @@ export default function ScenarioDetailsPage() {
         <Stack
           spacing={2}
         >
-          {testCases.map(
+          {testSteps.map(
             (
-              testCase,
+              testStep,
             ) => (
               <Card
                 key={
-                  testCase.id
+                  testStep.id
                 }
                 variant="outlined"
                 sx={{
@@ -894,89 +1018,58 @@ export default function ScenarioDetailsPage() {
                     >
                       <Box
                         sx={{
+                          display:
+                            'flex',
+
+                          alignItems:
+                            'center',
+
+                          gap: 2,
+
                           flex: 1,
                         }}
                       >
-                        <Typography
-                          variant="h6"
-                          fontWeight={
-                            700
-                          }
-                        >
-                          {
-                            testCase.testCaseId
-                          }
-                        </Typography>
+                        <Chip
+                          label={`Step ${testStep.stepOrder}`}
+                          color="primary"
+                        />
 
-                        <Typography
-                          fontWeight={
-                            600
-                          }
-                          sx={{
-                            mt: 0.5,
-                          }}
-                        >
-                          {
-                            testCase.name
-                          }
-                        </Typography>
+                        <Box>
+                          <Typography
+                            variant="h6"
+                            fontWeight={
+                              700
+                            }
+                          >
+                            {
+                              testStep.testStepId
+                            }
+                          </Typography>
+                        </Box>
                       </Box>
-
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        sx={{
-                          flexWrap:
-                            'wrap',
-
-                          justifyContent:
-                            'flex-end',
-                        }}
-                      >
-                        <Chip
-                          label={getTestTypeLabel(
-                            testCase.testType,
-                          )}
-                          variant="outlined"
-                        />
-
-                        <Chip
-                          label={
-                            testCase.priority
-                          }
-                          color={getPriorityColor(
-                            testCase.priority,
-                          )}
-                          variant="outlined"
-                        />
-
-                        <Chip
-                          label={
-                            testCase.status
-                          }
-                          color={getStatusColor(
-                            testCase.status,
-                          )}
-                          variant="outlined"
-                        />
-
-                        <Chip
-                          label={
-                            testCase.automatable
-                              ? 'Automatable'
-                              : 'Manual'
-                          }
-                          color={
-                            testCase.automatable
-                              ? 'success'
-                              : 'default'
-                          }
-                          variant="outlined"
-                        />
-                      </Stack>
                     </Box>
 
                     <Divider />
+
+                    <Box>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                      >
+                        Action
+                      </Typography>
+
+                      <Typography
+                        sx={{
+                          whiteSpace:
+                            'pre-wrap',
+                        }}
+                      >
+                        {
+                          testStep.action
+                        }
+                      </Typography>
+                    </Box>
 
                     <Box
                       sx={{
@@ -996,7 +1089,7 @@ export default function ScenarioDetailsPage() {
                           variant="caption"
                           color="text.secondary"
                         >
-                          Preconditions
+                          Target
                         </Typography>
 
                         <Typography
@@ -1007,7 +1100,7 @@ export default function ScenarioDetailsPage() {
                           }}
                         >
                           {displayValue(
-                            testCase.preconditions,
+                            testStep.target,
                           )}
                         </Typography>
                       </Box>
@@ -1017,7 +1110,7 @@ export default function ScenarioDetailsPage() {
                           variant="caption"
                           color="text.secondary"
                         >
-                          Test Data
+                          Input Value
                         </Typography>
 
                         <Typography
@@ -1028,7 +1121,7 @@ export default function ScenarioDetailsPage() {
                           }}
                         >
                           {displayValue(
-                            testCase.testData,
+                            testStep.inputValue,
                           )}
                         </Typography>
                       </Box>
@@ -1048,9 +1141,9 @@ export default function ScenarioDetailsPage() {
                               'pre-wrap',
                           }}
                         >
-                          {
-                            testCase.expectedResult
-                          }
+                          {displayValue(
+                            testStep.expectedResult,
+                          )}
                         </Typography>
                       </Box>
                     </Box>
@@ -1065,46 +1158,11 @@ export default function ScenarioDetailsPage() {
                         gridTemplateColumns: {
                           xs: '1fr',
                           sm: 'repeat(2, 1fr)',
-                          md: 'repeat(4, 1fr)',
                         },
 
                         gap: 2,
                       }}
                     >
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          Automation Type
-                        </Typography>
-
-                        <Typography
-                          variant="body2"
-                        >
-                          {getAutomationTypeLabel(
-                            testCase.automationType,
-                          )}
-                        </Typography>
-                      </Box>
-
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          Automation Status
-                        </Typography>
-
-                        <Typography
-                          variant="body2"
-                        >
-                          {getAutomationStatusLabel(
-                            testCase.automationStatus,
-                          )}
-                        </Typography>
-                      </Box>
-
                       <Box>
                         <Typography
                           variant="caption"
@@ -1117,7 +1175,7 @@ export default function ScenarioDetailsPage() {
                           variant="body2"
                         >
                           {formatDate(
-                            testCase.createdAt,
+                            testStep.createdAt,
                           )}
                         </Typography>
                       </Box>
@@ -1134,35 +1192,10 @@ export default function ScenarioDetailsPage() {
                           variant="body2"
                         >
                           {formatDate(
-                            testCase.updatedAt,
+                            testStep.updatedAt,
                           )}
                         </Typography>
                       </Box>
-                    </Box>
-
-                    <Box
-                      sx={{
-                        display:
-                          'flex',
-
-                        justifyContent:
-                          'flex-end',
-                      }}
-                    >
-                      <Button
-                        endIcon={
-                          <ArrowForward />
-                        }
-                        onClick={() =>
-                          navigate(
-                            `/test-cases/${encodeURIComponent(
-                              testCase.testCaseId,
-                            )}`,
-                          )
-                        }
-                      >
-                        Open Test Case
-                      </Button>
                     </Box>
                   </Stack>
                 </CardContent>
@@ -1172,12 +1205,15 @@ export default function ScenarioDetailsPage() {
         </Stack>
       )}
 
-      <CreateTestCaseDialog
+      <CreateTestStepDialog
         open={
           createDialogOpen
         }
-        scenarioId={
-          scenario.scenarioId
+        testCaseId={
+          testCase.testCaseId
+        }
+        suggestedStepOrder={
+          suggestedStepOrder
         }
         onClose={() =>
           setCreateDialogOpen(
@@ -1185,7 +1221,7 @@ export default function ScenarioDetailsPage() {
           )
         }
         onCreated={
-          handleTestCaseCreated
+          handleTestStepCreated
         }
       />
     </Stack>
