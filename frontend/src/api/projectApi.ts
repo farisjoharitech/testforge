@@ -12,6 +12,10 @@ import type {
     TestPlan,
 } from '../types/testPlan';
 
+import type {
+    ProjectMonitoring,
+} from '../types/projectMonitoring';
+
 export const projectApi = {
     getProjects(): Promise<Project[]> {
         return apiClient.get<Project[]>(
@@ -44,6 +48,16 @@ export const projectApi = {
             `/api/projects/${encodeURIComponent(
                 projectId,
             )}/test-plans`,
+        );
+    },
+
+    getProjectMonitoring(
+        projectId: string,
+    ): Promise<ProjectMonitoring> {
+        return apiClient.get<ProjectMonitoring>(
+            `/api/projects/${encodeURIComponent(
+                projectId,
+            )}/monitoring`,
         );
     },
 

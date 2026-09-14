@@ -46,10 +46,15 @@ import {
 } from '../../components/common/PageHeader';
 
 import EditProjectDialog from '../../components/projects/EditProjectDialog';
+import ProjectMonitoringPanel from '../../components/projects/ProjectMonitoringPanel';
 
 import type {
     Project,
 } from '../../types/project';
+
+import type {
+    ProjectMonitoring,
+} from '../../types/projectMonitoring';
 
 import type {
     TestPlan,
@@ -124,6 +129,13 @@ export default function ProjectDetailsPage() {
     >([]);
 
     const [
+        monitoring,
+        setMonitoring,
+    ] = useState<
+        ProjectMonitoring | null
+    >(null);
+
+    const [
         loading,
         setLoading,
     ] = useState(true);
@@ -194,6 +206,7 @@ export default function ProjectDetailsPage() {
                     const [
                         projectResponse,
                         testPlanResponse,
+                        monitoringResponse,
                     ] =
                         await Promise.all([
                             projectApi
@@ -204,6 +217,10 @@ export default function ProjectDetailsPage() {
                                 .getProjectTestPlans(
                                     projectId,
                                 ),
+                            projectApi
+                                .getProjectMonitoring(
+                                    projectId,
+                                ),
                         ]);
 
                     setProject(
@@ -212,6 +229,10 @@ export default function ProjectDetailsPage() {
 
                     setTestPlans(
                         testPlanResponse,
+                    );
+
+                    setMonitoring(
+                        monitoringResponse,
                     );
                 } catch (err) {
                     if (
@@ -495,6 +516,14 @@ export default function ProjectDetailsPage() {
                     </Stack>
                 </CardContent>
             </Card>
+
+            {monitoring && (
+                <ProjectMonitoringPanel
+                    monitoring={
+                        monitoring
+                    }
+                />
+            )}
 
             <Stack
                 direction={{

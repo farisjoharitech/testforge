@@ -4,6 +4,8 @@ import com.testforge.testforge_backend.automation.entity.AutomationExecution;
 import com.testforge.testforge_backend.automation.execution.AutomationExecutionStatus;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -70,6 +72,33 @@ public interface AutomationExecutionRepository
     boolean existsByAutomationScript_IdAndStatus(
             Long automationScriptId,
             AutomationExecutionStatus status
+    );
+
+    /*
+     * =========================================================
+     * TASK 36.22 — PROJECT MONITORING
+     * =========================================================
+     */
+
+    @Query("""
+            select execution
+            from AutomationExecution execution
+            join fetch execution.automationScript automationScript
+            join fetch execution.testCase testCase
+            join fetch testCase.testScenario testScenario
+            join fetch testScenario.requirement requirement
+            join fetch requirement.testPlan testPlan
+            join fetch testPlan.project project
+            where project.id = :projectId
+              and execution.status <> :excludedStatus
+            order by execution.startedAt desc, execution.id desc
+            """)
+    List<AutomationExecution>
+    findCompletedByProjectIdOrderByStartedAtDesc(
+            @Param("projectId")
+            Long projectId,
+            @Param("excludedStatus")
+            AutomationExecutionStatus excludedStatus
     );
 
     /*
