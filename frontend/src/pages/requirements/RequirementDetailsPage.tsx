@@ -36,6 +36,10 @@ import {
 } from '../../api/apiClient';
 
 import {
+  hierarchyMonitoringApi,
+} from '../../api/hierarchyMonitoringApi';
+
+import {
   requirementApi,
 } from '../../api/requirementApi';
 
@@ -51,7 +55,13 @@ import {
 
 import EditRequirementDialog from '../../components/requirements/EditRequirementDialog';
 
+import RequirementMonitoringPanel from '../../components/monitoring/RequirementMonitoringPanel';
+
 import CreateTestScenarioDialog from '../../components/scenarios/CreateTestScenarioDialog';
+
+import type {
+  RequirementMonitoring,
+} from '../../types/hierarchyMonitoring';
 
 import type {
   Requirement,
@@ -191,6 +201,13 @@ export default function RequirementDetailsPage() {
   >([]);
 
   const [
+    monitoring,
+    setMonitoring,
+  ] = useState<
+      RequirementMonitoring | null
+  >(null);
+
+  const [
     loading,
     setLoading,
   ] = useState(true);
@@ -268,6 +285,7 @@ export default function RequirementDetailsPage() {
               const [
                 requirementResponse,
                 scenarioResponse,
+                monitoringResponse,
               ] =
                   await Promise.all([
                     requirementApi
@@ -279,6 +297,11 @@ export default function RequirementDetailsPage() {
                         .getByRequirement(
                             requirementId,
                         ),
+
+                    hierarchyMonitoringApi
+                        .getRequirementMonitoring(
+                            requirementId,
+                        ),
                   ]);
 
               setRequirement(
@@ -287,6 +310,10 @@ export default function RequirementDetailsPage() {
 
               setScenarios(
                   scenarioResponse,
+              );
+
+              setMonitoring(
+                  monitoringResponse,
               );
             } catch (err) {
               console.error(
@@ -342,6 +369,8 @@ export default function RequirementDetailsPage() {
         setSuccessMessage(
             `Test Scenario "${scenario.scenarioId}" created successfully.`,
         );
+
+        void loadPage(true);
       };
 
   const handleRequirementUpdated =
@@ -798,6 +827,12 @@ export default function RequirementDetailsPage() {
             </Stack>
           </CardContent>
         </Card>
+
+        {monitoring && (
+            <RequirementMonitoringPanel
+                monitoring={monitoring}
+            />
+        )}
 
         <Box
             sx={{

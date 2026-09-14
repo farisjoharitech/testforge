@@ -121,4 +121,43 @@ public interface AutomationExecutionRepository
     findTop5ByStatusNotOrderByStartedAtDesc(
             AutomationExecutionStatus status
     );
+
+    /*
+     * =========================================================
+     * TASK 36.23 — TEST PLAN / REQUIREMENT MONITORING
+     * =========================================================
+     */
+
+    @Query("""
+            select execution
+            from AutomationExecution execution
+            join fetch execution.automationScript automationScript
+            join fetch execution.testCase testCase
+            join fetch testCase.testScenario testScenario
+            join fetch testScenario.requirement requirement
+            join fetch requirement.testPlan testPlan
+            where testPlan.id = :testPlanId
+              and execution.status <> :excludedStatus
+            order by execution.startedAt desc, execution.id desc
+            """)
+    List<AutomationExecution> findCompletedByTestPlanIdOrderByStartedAtDesc(
+            @Param("testPlanId") Long testPlanId,
+            @Param("excludedStatus") AutomationExecutionStatus excludedStatus
+    );
+
+    @Query("""
+            select execution
+            from AutomationExecution execution
+            join fetch execution.automationScript automationScript
+            join fetch execution.testCase testCase
+            join fetch testCase.testScenario testScenario
+            join fetch testScenario.requirement requirement
+            where requirement.id = :requirementId
+              and execution.status <> :excludedStatus
+            order by execution.startedAt desc, execution.id desc
+            """)
+    List<AutomationExecution> findCompletedByRequirementIdOrderByStartedAtDesc(
+            @Param("requirementId") Long requirementId,
+            @Param("excludedStatus") AutomationExecutionStatus excludedStatus
+    );
 }

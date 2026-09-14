@@ -83,4 +83,35 @@ public interface TestCaseRepository
     long countByAutomatableTrueAndAutomationType(
             AutomationType automationType
     );
+
+    /*
+     * =========================================================
+     * TASK 36.23 — TEST PLAN / REQUIREMENT MONITORING
+     * =========================================================
+     */
+
+    @Query("""
+            select tc
+            from TestCase tc
+            join fetch tc.testScenario ts
+            join fetch ts.requirement r
+            join fetch r.testPlan tp
+            where tp.id = :testPlanId
+            order by tc.id asc
+            """)
+    List<TestCase> findByTestPlanIdOrderByIdAsc(
+            @Param("testPlanId") Long testPlanId
+    );
+
+    @Query("""
+            select tc
+            from TestCase tc
+            join fetch tc.testScenario ts
+            join fetch ts.requirement r
+            where r.id = :requirementId
+            order by tc.id asc
+            """)
+    List<TestCase> findByRequirementIdOrderByIdAsc(
+            @Param("requirementId") Long requirementId
+    );
 }

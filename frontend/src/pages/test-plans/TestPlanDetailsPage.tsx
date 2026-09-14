@@ -35,6 +35,10 @@ import {
 } from '../../api/apiClient';
 
 import {
+  hierarchyMonitoringApi,
+} from '../../api/hierarchyMonitoringApi';
+
+import {
   requirementApi,
 } from '../../api/requirementApi';
 
@@ -50,7 +54,13 @@ import {
 
 import CreateRequirementDialog from '../../components/requirements/CreateRequirementDialog';
 
+import TestPlanMonitoringPanel from '../../components/monitoring/TestPlanMonitoringPanel';
+
 import EditTestPlanDialog from '../../components/test-plans/EditTestPlanDialog';
+
+import type {
+  TestPlanMonitoring,
+} from '../../types/hierarchyMonitoring';
 
 import type {
   Requirement,
@@ -211,6 +221,13 @@ export default function TestPlanDetailsPage() {
   >([]);
 
   const [
+    monitoring,
+    setMonitoring,
+  ] = useState<
+      TestPlanMonitoring | null
+  >(null);
+
+  const [
     loading,
     setLoading,
   ] = useState(true);
@@ -288,6 +305,7 @@ export default function TestPlanDetailsPage() {
               const [
                 testPlanResponse,
                 requirementResponse,
+                monitoringResponse,
               ] =
                   await Promise.all([
                     testPlanApi
@@ -299,6 +317,11 @@ export default function TestPlanDetailsPage() {
                         .getRequirementsByTestPlan(
                             testPlanId,
                         ),
+
+                    hierarchyMonitoringApi
+                        .getTestPlanMonitoring(
+                            testPlanId,
+                        ),
                   ]);
 
               setTestPlan(
@@ -307,6 +330,10 @@ export default function TestPlanDetailsPage() {
 
               setRequirements(
                   requirementResponse,
+              );
+
+              setMonitoring(
+                  monitoringResponse,
               );
             } catch (err) {
               console.error(
@@ -362,6 +389,8 @@ export default function TestPlanDetailsPage() {
         setSuccessMessage(
             `Requirement "${requirement.requirementId}" created successfully.`,
         );
+
+        void loadPage(true);
       };
 
   const handleTestPlanUpdated =
@@ -857,6 +886,12 @@ export default function TestPlanDetailsPage() {
             </Stack>
           </CardContent>
         </Card>
+
+        {monitoring && (
+            <TestPlanMonitoringPanel
+                monitoring={monitoring}
+            />
+        )}
 
         <Box
             sx={{
