@@ -1,31 +1,30 @@
 export type TestScenarioPriority =
-  | 'LOW'
-  | 'MEDIUM'
-  | 'HIGH'
-  | 'CRITICAL';
+    | 'LOW'
+    | 'MEDIUM'
+    | 'HIGH'
+    | 'CRITICAL';
 
 export type TestScenarioStatus =
-  | 'DRAFT'
-  | 'ACTIVE'
-  | 'APPROVED'
-  | 'REJECTED'
-  | 'ARCHIVED';
+    | 'DRAFT'
+    | 'ACTIVE'
+    | 'APPROVED'
+    | 'REJECTED'
+    | 'ARCHIVED';
 
 export type TestType =
-  | 'SMOKE'
-  | 'SANITY'
-  | 'REGRESSION'
-  | 'FUNCTIONAL'
-  | 'INTEGRATION'
-  | 'END_TO_END'
-  | 'POSITIVE'
-  | 'NEGATIVE';
+    | 'SMOKE'
+    | 'SANITY'
+    | 'REGRESSION'
+    | 'FUNCTIONAL'
+    | 'INTEGRATION'
+    | 'END_TO_END'
+    | 'POSITIVE'
+    | 'NEGATIVE';
 
 export interface CreateTestScenarioRequest {
   scenarioId: string;
   description: string;
   testType: TestType;
-  automatable: boolean;
   priority: TestScenarioPriority;
   status: TestScenarioStatus;
 }
@@ -33,7 +32,6 @@ export interface CreateTestScenarioRequest {
 export interface UpdateTestScenarioRequest {
   description: string;
   testType: TestType;
-  automatable: boolean;
   priority: TestScenarioPriority;
   status: TestScenarioStatus;
 }
@@ -45,7 +43,6 @@ export interface TestScenario {
   requirementBusinessId: string;
   description: string;
   testType: TestType;
-  automatable: boolean;
   priority: TestScenarioPriority;
   status: TestScenarioStatus;
   createdAt: string;

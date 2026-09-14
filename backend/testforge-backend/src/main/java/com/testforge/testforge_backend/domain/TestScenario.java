@@ -58,11 +58,6 @@ public class TestScenario {
     )
     private TestType testType;
 
-    @Column(
-            name = "automatable",
-            nullable = false
-    )
-    private boolean automatable;
 
     @Enumerated(EnumType.STRING)
     @Column(
@@ -139,15 +134,6 @@ public class TestScenario {
         this.testType = testType;
     }
 
-    public boolean isAutomatable() {
-        return automatable;
-    }
-
-    public void setAutomatable(
-            boolean automatable
-    ) {
-        this.automatable = automatable;
-    }
 
     public TestScenarioPriority getPriority() {
         return priority;

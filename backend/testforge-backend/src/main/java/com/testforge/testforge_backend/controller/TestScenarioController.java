@@ -167,9 +167,6 @@ public class TestScenarioController {
                 scenario.getTestType()
         );
 
-        response.setAutomatable(
-                scenario.isAutomatable()
-        );
 
         response.setPriority(
                 scenario.getPriority()

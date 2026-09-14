@@ -21,8 +21,6 @@ public class UpdateRequirementRequest {
     @NotNull(message = "Status is required")
     private RequirementStatus status;
 
-    @NotNull(message = "Automatable is required")
-    private Boolean automatable;
 
     public String getDescription() {
         return description;
@@ -54,13 +52,4 @@ public class UpdateRequirementRequest {
         this.status = status;
     }
 
-    public Boolean getAutomatable() {
-        return automatable;
-    }
-
-    public void setAutomatable(
-            Boolean automatable
-    ) {
-        this.automatable = automatable;
-    }
 }

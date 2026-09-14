@@ -1022,9 +1022,6 @@ class AutomationIntegrationTest {
                 RequirementStatus.DRAFT
         );
 
-        requirement.setAutomatable(
-                true
-        );
 
         LocalDateTime now =
                 LocalDateTime.now();
@@ -1067,9 +1064,6 @@ class AutomationIntegrationTest {
                 TestType.FUNCTIONAL
         );
 
-        testScenario.setAutomatable(
-                true
-        );
 
         testScenario.setPriority(
                 TestScenarioPriority.HIGH

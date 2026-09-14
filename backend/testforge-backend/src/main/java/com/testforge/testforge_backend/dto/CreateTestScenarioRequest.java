@@ -26,8 +26,6 @@ public class CreateTestScenarioRequest {
     @NotNull(message = "Test Type is required")
     private TestType testType;
 
-    @NotNull(message = "Automatable is required")
-    private Boolean automatable;
 
     @NotNull(message = "Priority is required")
     private TestScenarioPriority priority;
@@ -65,15 +63,6 @@ public class CreateTestScenarioRequest {
         this.testType = testType;
     }
 
-    public Boolean getAutomatable() {
-        return automatable;
-    }
-
-    public void setAutomatable(
-            Boolean automatable
-    ) {
-        this.automatable = automatable;
-    }
 
     public TestScenarioPriority getPriority() {
         return priority;

@@ -1,29 +1,27 @@
 export type RequirementPriority =
-  | 'LOW'
-  | 'MEDIUM'
-  | 'HIGH'
-  | 'CRITICAL';
+    | 'LOW'
+    | 'MEDIUM'
+    | 'HIGH'
+    | 'CRITICAL';
 
 export type RequirementStatus =
-  | 'DRAFT'
-  | 'ACTIVE'
-  | 'APPROVED'
-  | 'REJECTED'
-  | 'ARCHIVED';
+    | 'DRAFT'
+    | 'ACTIVE'
+    | 'APPROVED'
+    | 'REJECTED'
+    | 'ARCHIVED';
 
 export interface CreateRequirementRequest {
   requirementId: string;
   description: string;
   priority: RequirementPriority;
   status: RequirementStatus;
-  automatable: boolean;
 }
 
 export interface UpdateRequirementRequest {
   description: string;
   priority: RequirementPriority;
   status: RequirementStatus;
-  automatable: boolean;
 }
 
 export interface Requirement {
@@ -34,7 +32,6 @@ export interface Requirement {
   description: string;
   priority: RequirementPriority;
   status: RequirementStatus;
-  automatable: boolean;
   createdAt: string;
   updatedAt: string;
 }

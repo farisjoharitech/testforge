@@ -165,9 +165,6 @@ public class RequirementController {
                 requirement.getStatus()
         );
 
-        response.setAutomatable(
-                requirement.isAutomatable()
-        );
 
         response.setCreatedAt(
                 requirement.getCreatedAt()

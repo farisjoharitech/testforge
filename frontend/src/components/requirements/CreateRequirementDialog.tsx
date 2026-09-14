@@ -11,14 +11,12 @@ import {
 import {
   Alert,
   Button,
-  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
-  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
@@ -47,16 +45,16 @@ interface CreateRequirementDialogProps {
   onClose: () => void;
 
   onCreated: (
-    requirement: Requirement,
+      requirement: Requirement,
   ) => void;
 }
 
 export default function CreateRequirementDialog({
-  open,
-  testPlanId,
-  onClose,
-  onCreated,
-}: CreateRequirementDialogProps) {
+                                                  open,
+                                                  testPlanId,
+                                                  onClose,
+                                                  onCreated,
+                                                }: CreateRequirementDialogProps) {
   const [
     requirementId,
     setRequirementId,
@@ -71,22 +69,18 @@ export default function CreateRequirementDialog({
     priority,
     setPriority,
   ] =
-    useState<RequirementPriority>(
-      'MEDIUM',
-    );
+      useState<RequirementPriority>(
+          'MEDIUM',
+      );
 
   const [
     status,
     setStatus,
   ] =
-    useState<RequirementStatus>(
-      'DRAFT',
-    );
+      useState<RequirementStatus>(
+          'DRAFT',
+      );
 
-  const [
-    automatable,
-    setAutomatable,
-  ] = useState(false);
 
   const [
     submitting,
@@ -97,7 +91,7 @@ export default function CreateRequirementDialog({
     error,
     setError,
   ] = useState<
-    string | null
+      string | null
   >(null);
 
   const resetForm = () => {
@@ -105,17 +99,16 @@ export default function CreateRequirementDialog({
     setDescription('');
     setPriority('MEDIUM');
     setStatus('DRAFT');
-    setAutomatable(false);
     setError(null);
   };
 
   useEffect(
-    () => {
-      if (open) {
-        resetForm();
-      }
-    },
-    [open],
+      () => {
+        if (open) {
+          resetForm();
+        }
+      },
+      [open],
   );
 
   const handleClose = () => {
@@ -128,394 +121,372 @@ export default function CreateRequirementDialog({
   };
 
   const handleSubmit =
-    async (
-      event:
-        FormEvent<HTMLFormElement>,
-    ) => {
-      event.preventDefault();
+      async (
+          event:
+          FormEvent<HTMLFormElement>,
+      ) => {
+        event.preventDefault();
 
-      setError(null);
+        setError(null);
 
-      const trimmedRequirementId =
-        requirementId.trim();
+        const trimmedRequirementId =
+            requirementId.trim();
 
-      const trimmedDescription =
-        description.trim();
+        const trimmedDescription =
+            description.trim();
 
-      if (!trimmedRequirementId) {
-        setError(
-          'Requirement ID is required.',
-        );
+        if (!trimmedRequirementId) {
+          setError(
+              'Requirement ID is required.',
+          );
 
-        return;
-      }
+          return;
+        }
 
-      if (
-        trimmedRequirementId.length >
-        50
-      ) {
-        setError(
-          'Requirement ID must not exceed 50 characters.',
-        );
+        if (
+            trimmedRequirementId.length >
+            50
+        ) {
+          setError(
+              'Requirement ID must not exceed 50 characters.',
+          );
 
-        return;
-      }
+          return;
+        }
 
-      if (!trimmedDescription) {
-        setError(
-          'Description is required.',
-        );
+        if (!trimmedDescription) {
+          setError(
+              'Description is required.',
+          );
 
-        return;
-      }
+          return;
+        }
 
-      if (
-        trimmedDescription.length >
-        1000
-      ) {
-        setError(
-          'Description must not exceed 1000 characters.',
-        );
+        if (
+            trimmedDescription.length >
+            1000
+        ) {
+          setError(
+              'Description must not exceed 1000 characters.',
+          );
 
-        return;
-      }
+          return;
+        }
 
-      try {
-        setSubmitting(true);
+        try {
+          setSubmitting(true);
 
-        const createdRequirement =
-          await requirementApi
-            .createRequirement(
-              testPlanId,
-              {
-                requirementId:
-                  trimmedRequirementId,
+          const createdRequirement =
+              await requirementApi
+                  .createRequirement(
+                      testPlanId,
+                      {
+                        requirementId:
+                        trimmedRequirementId,
 
-                description:
-                  trimmedDescription,
+                        description:
+                        trimmedDescription,
 
-                priority,
+                        priority,
 
-                status,
+                        status,
 
-                automatable,
-              },
+                      },
+                  );
+
+          resetForm();
+
+          onCreated(
+              createdRequirement,
+          );
+        } catch (err) {
+          console.error(
+              'Failed to create requirement:',
+              err,
+          );
+
+          if (
+              err instanceof
+              ApiError
+          ) {
+            setError(
+                err.message ||
+                `Backend returned HTTP ${err.status}.`,
             );
 
-        resetForm();
+            return;
+          }
 
-        onCreated(
-          createdRequirement,
-        );
-      } catch (err) {
-        console.error(
-          'Failed to create requirement:',
-          err,
-        );
+          if (
+              err instanceof
+              TypeError
+          ) {
+            setError(
+                'Unable to connect to the backend.',
+            );
 
-        if (
-          err instanceof
-          ApiError
-        ) {
+            return;
+          }
+
           setError(
-            err.message ||
-              `Backend returned HTTP ${err.status}.`,
+              'An unexpected error occurred while creating the requirement.',
           );
-
-          return;
+        } finally {
+          setSubmitting(false);
         }
-
-        if (
-          err instanceof
-          TypeError
-        ) {
-          setError(
-            'Unable to connect to the backend.',
-          );
-
-          return;
-        }
-
-        setError(
-          'An unexpected error occurred while creating the requirement.',
-        );
-      } finally {
-        setSubmitting(false);
-      }
-    };
+      };
 
   return (
-    <Dialog
-      open={open}
-      onClose={
-        handleClose
-      }
-      fullWidth
-      maxWidth="sm"
-    >
-      <DialogTitle>
-        Add Requirement
-      </DialogTitle>
-
-      <DialogContent>
-        <form
-          id="create-requirement-form"
-          onSubmit={
-            handleSubmit
+      <Dialog
+          open={open}
+          onClose={
+            handleClose
           }
-        >
-          <Stack
-            spacing={3}
-            sx={{
-              pt: 1,
-            }}
+          fullWidth
+          maxWidth="sm"
+      >
+        <DialogTitle>
+          Add Requirement
+        </DialogTitle>
+
+        <DialogContent>
+          <form
+              id="create-requirement-form"
+              onSubmit={
+                handleSubmit
+              }
           >
-            {error && (
-              <Alert
-                severity="error"
-                onClose={() =>
-                  setError(null)
-                }
-              >
-                {error}
-              </Alert>
-            )}
-
-            <TextField
-              label="Requirement ID"
-              required
-              fullWidth
-              value={
-                requirementId
-              }
-              disabled={
-                submitting
-              }
-              inputProps={{
-                maxLength: 50,
-              }}
-              placeholder="Example: REQ-001"
-              onChange={(
-                event,
-              ) =>
-                setRequirementId(
-                  event.target
-                    .value,
-                )
-              }
-              helperText="Requirement ID must be unique."
-            />
-
-            <TextField
-              label="Description"
-              required
-              fullWidth
-              multiline
-              minRows={4}
-              value={
-                description
-              }
-              disabled={
-                submitting
-              }
-              inputProps={{
-                maxLength: 1000,
-              }}
-              placeholder="Describe the requirement"
-              onChange={(
-                event,
-              ) =>
-                setDescription(
-                  event.target
-                    .value,
-                )
-              }
-            />
-
-            <FormControl
-              fullWidth
+            <Stack
+                spacing={3}
+                sx={{
+                  pt: 1,
+                }}
             >
-              <InputLabel>
-                Priority
-              </InputLabel>
+              {error && (
+                  <Alert
+                      severity="error"
+                      onClose={() =>
+                          setError(null)
+                      }
+                  >
+                    {error}
+                  </Alert>
+              )}
 
-              <Select
-                value={
-                  priority
-                }
-                label="Priority"
-                disabled={
-                  submitting
-                }
-                onChange={(
-                  event,
-                ) =>
-                  setPriority(
-                    event.target
-                      .value as RequirementPriority,
-                  )
-                }
-              >
-                <MenuItem
-                  value="LOW"
-                >
-                  Low
-                </MenuItem>
-
-                <MenuItem
-                  value="MEDIUM"
-                >
-                  Medium
-                </MenuItem>
-
-                <MenuItem
-                  value="HIGH"
-                >
-                  High
-                </MenuItem>
-
-                <MenuItem
-                  value="CRITICAL"
-                >
-                  Critical
-                </MenuItem>
-              </Select>
-            </FormControl>
-
-            <FormControl
-              fullWidth
-            >
-              <InputLabel>
-                Status
-              </InputLabel>
-
-              <Select
-                value={
-                  status
-                }
-                label="Status"
-                disabled={
-                  submitting
-                }
-                onChange={(
-                  event,
-                ) =>
-                  setStatus(
-                    event.target
-                      .value as RequirementStatus,
-                  )
-                }
-              >
-                <MenuItem
-                  value="DRAFT"
-                >
-                  Draft
-                </MenuItem>
-
-                <MenuItem
-                  value="ACTIVE"
-                >
-                  Active
-                </MenuItem>
-
-                <MenuItem
-                  value="APPROVED"
-                >
-                  Approved
-                </MenuItem>
-
-                <MenuItem
-                  value="REJECTED"
-                >
-                  Rejected
-                </MenuItem>
-
-                <MenuItem
-                  value="ARCHIVED"
-                >
-                  Archived
-                </MenuItem>
-              </Select>
-            </FormControl>
-
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={
-                    automatable
+              <TextField
+                  label="Requirement ID"
+                  required
+                  fullWidth
+                  value={
+                    requirementId
                   }
                   disabled={
                     submitting
                   }
+                  inputProps={{
+                    maxLength: 50,
+                  }}
+                  placeholder="Example: REQ-001"
                   onChange={(
-                    event,
+                      event,
                   ) =>
-                    setAutomatable(
-                      event.target
-                        .checked,
-                    )
+                      setRequirementId(
+                          event.target
+                              .value,
+                      )
                   }
-                />
-              }
-              label="Automatable"
-            />
-
-            <Alert
-              severity="info"
-              variant="outlined"
-            >
-              Requirement will
-              be created under
-              Test Plan{' '}
-              <strong>
-                {testPlanId}
-              </strong>
-              .
-            </Alert>
-          </Stack>
-        </form>
-      </DialogContent>
-
-      <DialogActions
-        sx={{
-          px: 3,
-          pb: 3,
-        }}
-      >
-        <Button
-          disabled={
-            submitting
-          }
-          onClick={
-            handleClose
-          }
-        >
-          Cancel
-        </Button>
-
-        <Button
-          type="submit"
-          form="create-requirement-form"
-          variant="contained"
-          startIcon={
-            submitting ? (
-              <CircularProgress
-                size={18}
-                color="inherit"
+                  helperText="Requirement ID must be unique."
               />
-            ) : (
-              <Add />
-            )
-          }
-          disabled={
-            submitting
-          }
+
+              <TextField
+                  label="Description"
+                  required
+                  fullWidth
+                  multiline
+                  minRows={4}
+                  value={
+                    description
+                  }
+                  disabled={
+                    submitting
+                  }
+                  inputProps={{
+                    maxLength: 1000,
+                  }}
+                  placeholder="Describe the requirement"
+                  onChange={(
+                      event,
+                  ) =>
+                      setDescription(
+                          event.target
+                              .value,
+                      )
+                  }
+              />
+
+              <FormControl
+                  fullWidth
+              >
+                <InputLabel>
+                  Priority
+                </InputLabel>
+
+                <Select
+                    value={
+                      priority
+                    }
+                    label="Priority"
+                    disabled={
+                      submitting
+                    }
+                    onChange={(
+                        event,
+                    ) =>
+                        setPriority(
+                            event.target
+                                .value as RequirementPriority,
+                        )
+                    }
+                >
+                  <MenuItem
+                      value="LOW"
+                  >
+                    Low
+                  </MenuItem>
+
+                  <MenuItem
+                      value="MEDIUM"
+                  >
+                    Medium
+                  </MenuItem>
+
+                  <MenuItem
+                      value="HIGH"
+                  >
+                    High
+                  </MenuItem>
+
+                  <MenuItem
+                      value="CRITICAL"
+                  >
+                    Critical
+                  </MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControl
+                  fullWidth
+              >
+                <InputLabel>
+                  Status
+                </InputLabel>
+
+                <Select
+                    value={
+                      status
+                    }
+                    label="Status"
+                    disabled={
+                      submitting
+                    }
+                    onChange={(
+                        event,
+                    ) =>
+                        setStatus(
+                            event.target
+                                .value as RequirementStatus,
+                        )
+                    }
+                >
+                  <MenuItem
+                      value="DRAFT"
+                  >
+                    Draft
+                  </MenuItem>
+
+                  <MenuItem
+                      value="ACTIVE"
+                  >
+                    Active
+                  </MenuItem>
+
+                  <MenuItem
+                      value="APPROVED"
+                  >
+                    Approved
+                  </MenuItem>
+
+                  <MenuItem
+                      value="REJECTED"
+                  >
+                    Rejected
+                  </MenuItem>
+
+                  <MenuItem
+                      value="ARCHIVED"
+                  >
+                    Archived
+                  </MenuItem>
+                </Select>
+              </FormControl>
+
+
+              <Alert
+                  severity="info"
+                  variant="outlined"
+              >
+                Requirement will
+                be created under
+                Test Plan{' '}
+                <strong>
+                  {testPlanId}
+                </strong>
+                .
+              </Alert>
+            </Stack>
+          </form>
+        </DialogContent>
+
+        <DialogActions
+            sx={{
+              px: 3,
+              pb: 3,
+            }}
         >
-          {submitting
-            ? 'Creating...'
-            : 'Create Requirement'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          <Button
+              disabled={
+                submitting
+              }
+              onClick={
+                handleClose
+              }
+          >
+            Cancel
+          </Button>
+
+          <Button
+              type="submit"
+              form="create-requirement-form"
+              variant="contained"
+              startIcon={
+                submitting ? (
+                    <CircularProgress
+                        size={18}
+                        color="inherit"
+                    />
+                ) : (
+                    <Add />
+                )
+              }
+              disabled={
+                submitting
+              }
+          >
+            {submitting
+                ? 'Creating...'
+                : 'Create Requirement'}
+          </Button>
+        </DialogActions>
+      </Dialog>
   );
 }

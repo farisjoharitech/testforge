@@ -65,11 +65,6 @@ public class Requirement {
     )
     private RequirementStatus status;
 
-    @Column(
-            name = "automatable",
-            nullable = false
-    )
-    private boolean automatable;
 
     @Column(
             name = "created_at",
@@ -142,15 +137,6 @@ public class Requirement {
         this.status = status;
     }
 
-    public boolean isAutomatable() {
-        return automatable;
-    }
-
-    public void setAutomatable(
-            boolean automatable
-    ) {
-        this.automatable = automatable;
-    }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

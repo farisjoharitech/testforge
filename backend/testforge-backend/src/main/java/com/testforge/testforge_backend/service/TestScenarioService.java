@@ -82,9 +82,6 @@ public class TestScenarioService {
                 request.getTestType()
         );
 
-        scenario.setAutomatable(
-                request.getAutomatable()
-        );
 
         scenario.setPriority(
                 request.getPriority()
@@ -184,9 +181,6 @@ public class TestScenarioService {
                 request.getTestType()
         );
 
-        scenario.setAutomatable(
-                request.getAutomatable()
-        );
 
         scenario.setPriority(
                 request.getPriority()

@@ -83,9 +83,6 @@ public class RequirementService {
                 request.getStatus()
         );
 
-        requirement.setAutomatable(
-                request.getAutomatable()
-        );
 
         LocalDateTime now =
                 LocalDateTime.now();
@@ -181,9 +178,6 @@ public class RequirementService {
                 request.getStatus()
         );
 
-        requirement.setAutomatable(
-                request.getAutomatable()
-        );
 
         requirement.setUpdatedAt(
                 LocalDateTime.now()

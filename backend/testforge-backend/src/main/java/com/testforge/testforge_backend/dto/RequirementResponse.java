@@ -21,8 +21,6 @@ public class RequirementResponse {
 
     private RequirementStatus status;
 
-    private boolean automatable;
-
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -95,15 +93,6 @@ public class RequirementResponse {
         this.status = status;
     }
 
-    public boolean isAutomatable() {
-        return automatable;
-    }
-
-    public void setAutomatable(
-            boolean automatable
-    ) {
-        this.automatable = automatable;
-    }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

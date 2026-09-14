@@ -1,71 +1,69 @@
 import {
-  useEffect,
-  useState,
-  type FormEvent,
+    useEffect,
+    useState,
+    type FormEvent,
 } from 'react';
 
 import {
-  Save,
+    Save,
 } from '@mui/icons-material';
 
 import {
-  Alert,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControlLabel,
-  MenuItem,
-  Stack,
-  Switch,
-  TextField,
+    Alert,
+    Button,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    MenuItem,
+    Stack,
+    TextField,
 } from '@mui/material';
 
 import {
-  ApiError,
+    ApiError,
 } from '../../api/apiClient';
 
 import {
-  testScenarioApi,
+    testScenarioApi,
 } from '../../api/testScenarioApi';
 
 import type {
-  TestScenario,
-  TestScenarioPriority,
-  TestScenarioStatus,
-  TestType,
+    TestScenario,
+    TestScenarioPriority,
+    TestScenarioStatus,
+    TestType,
 } from '../../types/testScenario';
 
 interface EditTestScenarioDialogProps {
-  open: boolean;
-  scenario: TestScenario;
-  onClose: () => void;
-  onUpdated: (
-    scenario: TestScenario,
-  ) => void;
+    open: boolean;
+    scenario: TestScenario;
+    onClose: () => void;
+    onUpdated: (
+        scenario: TestScenario,
+    ) => void;
 }
 
 const priorities:
-  TestScenarioPriority[] = [
+    TestScenarioPriority[] = [
     'LOW',
     'MEDIUM',
     'HIGH',
     'CRITICAL',
-  ];
+];
 
 const statuses:
-  TestScenarioStatus[] = [
+    TestScenarioStatus[] = [
     'DRAFT',
     'ACTIVE',
     'APPROVED',
     'REJECTED',
     'ARCHIVED',
-  ];
+];
 
 const testTypes:
-  TestType[] = [
+    TestType[] = [
     'SMOKE',
     'SANITY',
     'REGRESSION',
@@ -74,389 +72,360 @@ const testTypes:
     'END_TO_END',
     'POSITIVE',
     'NEGATIVE',
-  ];
+];
 
 export default function EditTestScenarioDialog({
-  open,
-  scenario,
-  onClose,
-  onUpdated,
-}: EditTestScenarioDialogProps) {
-  const [
-    description,
-    setDescription,
-  ] = useState('');
+                                                   open,
+                                                   scenario,
+                                                   onClose,
+                                                   onUpdated,
+                                               }: EditTestScenarioDialogProps) {
+    const [
+        description,
+        setDescription,
+    ] = useState('');
 
-  const [
-    testType,
-    setTestType,
-  ] = useState<TestType>(
-    'FUNCTIONAL',
-  );
+    const [
+        testType,
+        setTestType,
+    ] = useState<TestType>(
+        'FUNCTIONAL',
+    );
 
-  const [
-    automatable,
-    setAutomatable,
-  ] = useState(false);
 
-  const [
-    priority,
-    setPriority,
-  ] = useState<TestScenarioPriority>(
-    'MEDIUM',
-  );
+    const [
+        priority,
+        setPriority,
+    ] = useState<TestScenarioPriority>(
+        'MEDIUM',
+    );
 
-  const [
-    status,
-    setStatus,
-  ] = useState<TestScenarioStatus>(
-    'DRAFT',
-  );
+    const [
+        status,
+        setStatus,
+    ] = useState<TestScenarioStatus>(
+        'DRAFT',
+    );
 
-  const [
-    submitting,
-    setSubmitting,
-  ] = useState(false);
+    const [
+        submitting,
+        setSubmitting,
+    ] = useState(false);
 
-  const [
-    error,
-    setError,
-  ] = useState<
-    string | null
-  >(null);
+    const [
+        error,
+        setError,
+    ] = useState<
+        string | null
+    >(null);
 
-  useEffect(
-    () => {
-      if (!open) {
-        return;
-      }
+    useEffect(
+        () => {
+            if (!open) {
+                return;
+            }
 
-      setDescription(
-        scenario.description,
-      );
-
-      setTestType(
-        scenario.testType,
-      );
-
-      setAutomatable(
-        scenario.automatable,
-      );
-
-      setPriority(
-        scenario.priority,
-      );
-
-      setStatus(
-        scenario.status,
-      );
-
-      setError(null);
-    },
-    [
-      open,
-      scenario,
-    ],
-  );
-
-  const handleSubmit =
-    async (
-      event:
-        FormEvent<HTMLFormElement>,
-    ) => {
-      event.preventDefault();
-
-      const trimmed =
-        description.trim();
-
-      if (!trimmed) {
-        setError(
-          'Description is required.',
-        );
-
-        return;
-      }
-
-      try {
-        setSubmitting(true);
-        setError(null);
-
-        const updated =
-          await testScenarioApi
-            .updateTestScenario(
-              scenario.id,
-              {
-                description:
-                  trimmed,
-                testType,
-                automatable,
-                priority,
-                status,
-              },
+            setDescription(
+                scenario.description,
             );
 
-        onUpdated(updated);
-      } catch (err) {
-        if (
-          err instanceof
-          ApiError
-        ) {
-          setError(
-            err.message,
-          );
-        } else {
-          setError(
-            'Unable to update Test Scenario.',
-          );
-        }
-      } finally {
-        setSubmitting(false);
-      }
-    };
+            setTestType(
+                scenario.testType,
+            );
 
-  return (
-    <Dialog
-      open={open}
-      onClose={
-        submitting
-          ? undefined
-          : onClose
-      }
-      fullWidth
-      maxWidth="md"
-    >
-      <DialogTitle>
-        Edit Test Scenario
-      </DialogTitle>
 
-      <DialogContent>
-        <form
-          id="edit-test-scenario-form"
-          onSubmit={
-            handleSubmit
-          }
-        >
-          <Stack
-            spacing={3}
-            sx={{
-              pt: 1,
-            }}
-          >
-            {error && (
-              <Alert
-                severity="error"
-              >
-                {error}
-              </Alert>
-            )}
+            setPriority(
+                scenario.priority,
+            );
 
-            <Alert
-              severity="info"
-              variant="outlined"
-            >
-              Scenario ID{' '}
-              <strong>
-                {
-                  scenario.scenarioId
+            setStatus(
+                scenario.status,
+            );
+
+            setError(null);
+        },
+        [
+            open,
+            scenario,
+        ],
+    );
+
+    const handleSubmit =
+        async (
+            event:
+            FormEvent<HTMLFormElement>,
+        ) => {
+            event.preventDefault();
+
+            const trimmed =
+                description.trim();
+
+            if (!trimmed) {
+                setError(
+                    'Description is required.',
+                );
+
+                return;
+            }
+
+            try {
+                setSubmitting(true);
+                setError(null);
+
+                const updated =
+                    await testScenarioApi
+                        .updateTestScenario(
+                            scenario.id,
+                            {
+                                description:
+                                trimmed,
+                                testType,
+                                priority,
+                                status,
+                            },
+                        );
+
+                onUpdated(updated);
+            } catch (err) {
+                if (
+                    err instanceof
+                    ApiError
+                ) {
+                    setError(
+                        err.message,
+                    );
+                } else {
+                    setError(
+                        'Unable to update Test Scenario.',
+                    );
                 }
-              </strong>{' '}
-              cannot be changed.
-            </Alert>
+            } finally {
+                setSubmitting(false);
+            }
+        };
 
-            <TextField
-              label="Description"
-              required
-              multiline
-              minRows={4}
-              value={
-                description
-              }
-              inputProps={{
-                maxLength:
-                  1000,
-              }}
-              disabled={
+    return (
+        <Dialog
+            open={open}
+            onClose={
                 submitting
-              }
-              onChange={(
-                event,
-              ) =>
-                setDescription(
-                  event.target.value,
-                )
-              }
-            />
-
-            <TextField
-              select
-              label="Test Type"
-              value={testType}
-              disabled={
-                submitting
-              }
-              onChange={(
-                event,
-              ) =>
-                setTestType(
-                  event.target
-                    .value as
-                    TestType,
-                )
-              }
-            >
-              {testTypes.map(
-                (
-                  option,
-                ) => (
-                  <MenuItem
-                    key={
-                      option
-                    }
-                    value={
-                      option
-                    }
-                  >
-                    {option}
-                  </MenuItem>
-                ),
-              )}
-            </TextField>
-
-            <TextField
-              select
-              label="Priority"
-              value={priority}
-              disabled={
-                submitting
-              }
-              onChange={(
-                event,
-              ) =>
-                setPriority(
-                  event.target
-                    .value as
-                    TestScenarioPriority,
-                )
-              }
-            >
-              {priorities.map(
-                (
-                  option,
-                ) => (
-                  <MenuItem
-                    key={
-                      option
-                    }
-                    value={
-                      option
-                    }
-                  >
-                    {option}
-                  </MenuItem>
-                ),
-              )}
-            </TextField>
-
-            <TextField
-              select
-              label="Status"
-              value={status}
-              disabled={
-                submitting
-              }
-              onChange={(
-                event,
-              ) =>
-                setStatus(
-                  event.target
-                    .value as
-                    TestScenarioStatus,
-                )
-              }
-            >
-              {statuses.map(
-                (
-                  option,
-                ) => (
-                  <MenuItem
-                    key={
-                      option
-                    }
-                    value={
-                      option
-                    }
-                  >
-                    {option}
-                  </MenuItem>
-                ),
-              )}
-            </TextField>
-
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={
-                    automatable
-                  }
-                  disabled={
-                    submitting
-                  }
-                  onChange={(
-                    event,
-                  ) =>
-                    setAutomatable(
-                      event.target
-                        .checked,
-                    )
-                  }
-                />
-              }
-              label="Automatable"
-            />
-          </Stack>
-        </form>
-      </DialogContent>
-
-      <DialogActions
-        sx={{
-          px: 3,
-          pb: 3,
-        }}
-      >
-        <Button
-          disabled={
-            submitting
-          }
-          onClick={
-            onClose
-          }
+                    ? undefined
+                    : onClose
+            }
+            fullWidth
+            maxWidth="md"
         >
-          Cancel
-        </Button>
+            <DialogTitle>
+                Edit Test Scenario
+            </DialogTitle>
 
-        <Button
-          type="submit"
-          form="edit-test-scenario-form"
-          variant="contained"
-          disabled={
-            submitting
-          }
-          startIcon={
-            submitting ? (
-              <CircularProgress
-                size={18}
-                color="inherit"
-              />
-            ) : (
-              <Save />
-            )
-          }
-        >
-          {submitting
-            ? 'Saving...'
-            : 'Save Changes'}
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
+            <DialogContent>
+                <form
+                    id="edit-test-scenario-form"
+                    onSubmit={
+                        handleSubmit
+                    }
+                >
+                    <Stack
+                        spacing={3}
+                        sx={{
+                            pt: 1,
+                        }}
+                    >
+                        {error && (
+                            <Alert
+                                severity="error"
+                            >
+                                {error}
+                            </Alert>
+                        )}
+
+                        <Alert
+                            severity="info"
+                            variant="outlined"
+                        >
+                            Scenario ID{' '}
+                            <strong>
+                                {
+                                    scenario.scenarioId
+                                }
+                            </strong>{' '}
+                            cannot be changed.
+                        </Alert>
+
+                        <TextField
+                            label="Description"
+                            required
+                            multiline
+                            minRows={4}
+                            value={
+                                description
+                            }
+                            inputProps={{
+                                maxLength:
+                                    1000,
+                            }}
+                            disabled={
+                                submitting
+                            }
+                            onChange={(
+                                event,
+                            ) =>
+                                setDescription(
+                                    event.target.value,
+                                )
+                            }
+                        />
+
+                        <TextField
+                            select
+                            label="Test Type"
+                            value={testType}
+                            disabled={
+                                submitting
+                            }
+                            onChange={(
+                                event,
+                            ) =>
+                                setTestType(
+                                    event.target
+                                        .value as
+                                        TestType,
+                                )
+                            }
+                        >
+                            {testTypes.map(
+                                (
+                                    option,
+                                ) => (
+                                    <MenuItem
+                                        key={
+                                            option
+                                        }
+                                        value={
+                                            option
+                                        }
+                                    >
+                                        {option}
+                                    </MenuItem>
+                                ),
+                            )}
+                        </TextField>
+
+                        <TextField
+                            select
+                            label="Priority"
+                            value={priority}
+                            disabled={
+                                submitting
+                            }
+                            onChange={(
+                                event,
+                            ) =>
+                                setPriority(
+                                    event.target
+                                        .value as
+                                        TestScenarioPriority,
+                                )
+                            }
+                        >
+                            {priorities.map(
+                                (
+                                    option,
+                                ) => (
+                                    <MenuItem
+                                        key={
+                                            option
+                                        }
+                                        value={
+                                            option
+                                        }
+                                    >
+                                        {option}
+                                    </MenuItem>
+                                ),
+                            )}
+                        </TextField>
+
+                        <TextField
+                            select
+                            label="Status"
+                            value={status}
+                            disabled={
+                                submitting
+                            }
+                            onChange={(
+                                event,
+                            ) =>
+                                setStatus(
+                                    event.target
+                                        .value as
+                                        TestScenarioStatus,
+                                )
+                            }
+                        >
+                            {statuses.map(
+                                (
+                                    option,
+                                ) => (
+                                    <MenuItem
+                                        key={
+                                            option
+                                        }
+                                        value={
+                                            option
+                                        }
+                                    >
+                                        {option}
+                                    </MenuItem>
+                                ),
+                            )}
+                        </TextField>
+
+                    </Stack>
+                </form>
+            </DialogContent>
+
+            <DialogActions
+                sx={{
+                    px: 3,
+                    pb: 3,
+                }}
+            >
+                <Button
+                    disabled={
+                        submitting
+                    }
+                    onClick={
+                        onClose
+                    }
+                >
+                    Cancel
+                </Button>
+
+                <Button
+                    type="submit"
+                    form="edit-test-scenario-form"
+                    variant="contained"
+                    disabled={
+                        submitting
+                    }
+                    startIcon={
+                        submitting ? (
+                            <CircularProgress
+                                size={18}
+                                color="inherit"
+                            />
+                        ) : (
+                            <Save />
+                        )
+                    }
+                >
+                    {submitting
+                        ? 'Saving...'
+                        : 'Save Changes'}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
 }
