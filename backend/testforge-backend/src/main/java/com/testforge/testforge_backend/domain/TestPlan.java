@@ -6,9 +6,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
@@ -21,39 +24,81 @@ public class TestPlan {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "test_plan_id", nullable = false, unique = true, length = 50)
+    @Column(
+            name = "test_plan_id",
+            nullable = false,
+            unique = true,
+            length = 50
+    )
     private String testPlanId;
 
-    @Column(name = "name", nullable = false, length = 255)
+    @ManyToOne(
+            fetch = FetchType.LAZY,
+            optional = false
+    )
+    @JoinColumn(
+            name = "project_id",
+            nullable = false
+    )
+    private Project project;
+
+    @Column(
+            name = "name",
+            nullable = false,
+            length = 255
+    )
     private String name;
 
-    @Column(name = "version", length = 50)
+    @Column(
+            name = "version",
+            length = 50
+    )
     private String version;
 
-    @Column(name = "project", length = 255)
-    private String project;
-
-    @Column(name = "application", length = 255)
+    @Column(
+            name = "application",
+            length = 255
+    )
     private String application;
 
-    @Column(name = "environment", length = 100)
+    @Column(
+            name = "environment",
+            length = 100
+    )
     private String environment;
 
-    @Column(name = "prepared_by", length = 255)
+    @Column(
+            name = "prepared_by",
+            length = 255
+    )
     private String preparedBy;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 50)
+    @Column(
+            name = "status",
+            nullable = false,
+            length = 50
+    )
     private TestPlanStatus status;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "approval_status", nullable = false, length = 50)
+    @Column(
+            name = "approval_status",
+            nullable = false,
+            length = 50
+    )
     private ApprovalStatus approvalStatus;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(
+            name = "created_at",
+            nullable = false
+    )
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(
+            name = "updated_at",
+            nullable = false
+    )
     private LocalDateTime updatedAt;
 
     public TestPlan() {
@@ -63,7 +108,9 @@ public class TestPlan {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(
+            Long id
+    ) {
         this.id = id;
     }
 
@@ -71,15 +118,29 @@ public class TestPlan {
         return testPlanId;
     }
 
-    public void setTestPlanId(String testPlanId) {
+    public void setTestPlanId(
+            String testPlanId
+    ) {
         this.testPlanId = testPlanId;
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+    public void setProject(
+            Project project
+    ) {
+        this.project = project;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(
+            String name
+    ) {
         this.name = name;
     }
 
@@ -87,23 +148,19 @@ public class TestPlan {
         return version;
     }
 
-    public void setVersion(String version) {
+    public void setVersion(
+            String version
+    ) {
         this.version = version;
-    }
-
-    public String getProject() {
-        return project;
-    }
-
-    public void setProject(String project) {
-        this.project = project;
     }
 
     public String getApplication() {
         return application;
     }
 
-    public void setApplication(String application) {
+    public void setApplication(
+            String application
+    ) {
         this.application = application;
     }
 
@@ -111,7 +168,9 @@ public class TestPlan {
         return environment;
     }
 
-    public void setEnvironment(String environment) {
+    public void setEnvironment(
+            String environment
+    ) {
         this.environment = environment;
     }
 
@@ -119,7 +178,9 @@ public class TestPlan {
         return preparedBy;
     }
 
-    public void setPreparedBy(String preparedBy) {
+    public void setPreparedBy(
+            String preparedBy
+    ) {
         this.preparedBy = preparedBy;
     }
 
@@ -127,7 +188,9 @@ public class TestPlan {
         return status;
     }
 
-    public void setStatus(TestPlanStatus status) {
+    public void setStatus(
+            TestPlanStatus status
+    ) {
         this.status = status;
     }
 
@@ -135,7 +198,9 @@ public class TestPlan {
         return approvalStatus;
     }
 
-    public void setApprovalStatus(ApprovalStatus approvalStatus) {
+    public void setApprovalStatus(
+            ApprovalStatus approvalStatus
+    ) {
         this.approvalStatus = approvalStatus;
     }
 
@@ -143,7 +208,9 @@ public class TestPlan {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(
+            LocalDateTime createdAt
+    ) {
         this.createdAt = createdAt;
     }
 
@@ -151,7 +218,9 @@ public class TestPlan {
         return updatedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
+    public void setUpdatedAt(
+            LocalDateTime updatedAt
+    ) {
         this.updatedAt = updatedAt;
     }
 }

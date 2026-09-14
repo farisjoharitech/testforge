@@ -10,9 +10,9 @@ export type ApprovalStatus =
     | 'REJECTED';
 
 export interface CreateTestPlanRequest {
+  projectId: string;
   name: string;
   version?: string;
-  project?: string;
   application?: string;
   environment?: string;
   preparedBy?: string;
@@ -21,9 +21,9 @@ export interface CreateTestPlanRequest {
 }
 
 export interface UpdateTestPlanRequest {
+  projectId: string;
   name: string;
   version?: string;
-  project?: string;
   application?: string;
   environment?: string;
   preparedBy?: string;
@@ -34,9 +34,11 @@ export interface UpdateTestPlanRequest {
 export interface TestPlan {
   id: number;
   testPlanId: string;
+  projectId: number;
+  projectBusinessId: string;
+  projectName: string;
   name: string;
   version?: string | null;
-  project?: string | null;
   application?: string | null;
   environment?: string | null;
   preparedBy?: string | null;

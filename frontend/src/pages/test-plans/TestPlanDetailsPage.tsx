@@ -774,7 +774,7 @@ export default function TestPlanDetailsPage() {
 
                   <Typography>
                     {displayValue(
-                        testPlan.project,
+                        `${testPlan.projectName} (${testPlan.projectBusinessId})`,
                     )}
                   </Typography>
                 </Box>

@@ -1,181 +1,200 @@
 import {
-  Navigate,
-  Route,
-  Routes,
+    Navigate,
+    Route,
+    Routes,
 } from 'react-router-dom';
 
 import AppLayout
-  from '../components/layout/AppLayout';
+    from '../components/layout/AppLayout';
+
+import ProjectListPage
+    from '../pages/projects/ProjectListPage';
+
+import CreateProjectPage
+    from '../pages/projects/CreateProjectPage';
+
+import ProjectDetailsPage
+    from '../pages/projects/ProjectDetailsPage';
 
 import TestPlanListPage
-  from '../pages/test-plans/TestPlanListPage';
+    from '../pages/test-plans/TestPlanListPage';
 
 import CreateTestPlanPage
-  from '../pages/test-plans/CreateTestPlanPage';
+    from '../pages/test-plans/CreateTestPlanPage';
 
 import TestPlanDetailsPage
-  from '../pages/test-plans/TestPlanDetailsPage';
+    from '../pages/test-plans/TestPlanDetailsPage';
 
 import RequirementDetailsPage
-  from '../pages/requirements/RequirementDetailsPage';
+    from '../pages/requirements/RequirementDetailsPage';
 
 import ScenarioDetailsPage
-  from '../pages/scenarios/ScenarioDetailsPage';
+    from '../pages/scenarios/ScenarioDetailsPage';
 
 import TestCaseDetailsPage
-  from '../pages/test-cases/TestCaseDetailsPage';
+    from '../pages/test-cases/TestCaseDetailsPage';
 
 import AutomationSelectionPage
-  from '../pages/automation/AutomationSelectionPage';
+    from '../pages/automation/AutomationSelectionPage';
 
 import AutomationBuilderPage
-  from '../pages/automation/AutomationBuilderPage';
+    from '../pages/automation/AutomationBuilderPage';
 
 import ScriptGenerationPage
-  from '../pages/automation/ScriptGenerationPage';
+    from '../pages/automation/ScriptGenerationPage';
 
 import AutomationExecutionPage
-  from '../pages/automation/AutomationExecutionPage';
+    from '../pages/automation/AutomationExecutionPage';
 
 import AutomationResultsPage
-  from '../pages/results/AutomationResultsPage';
+    from '../pages/results/AutomationResultsPage';
 
 import AutomationResultDetailsPage
-  from '../pages/results/AutomationResultDetailsPage';
+    from '../pages/results/AutomationResultDetailsPage';
 
 import DashboardPage
-  from '../pages/dashboard/DashboardPage';
+    from '../pages/dashboard/DashboardPage';
 
 export default function App() {
+    return (
+        <Routes>
+            <Route
+                element={
+                    <AppLayout />
+                }
+            >
+                <Route
+                    index
+                    element={
+                        <Navigate
+                            to="/projects"
+                            replace
+                        />
+                    }
+                />
 
-  return (
-    <Routes>
+                <Route
+                    path="/projects"
+                    element={
+                        <ProjectListPage />
+                    }
+                />
 
-      <Route
-        element={
-          <AppLayout />
-        }
-      >
+                <Route
+                    path="/projects/new"
+                    element={
+                        <CreateProjectPage />
+                    }
+                />
 
-        <Route
-          index
-          element={
-            <Navigate
-              to="/test-plans"
-              replace
-            />
-          }
-        />
+                <Route
+                    path="/projects/:projectId"
+                    element={
+                        <ProjectDetailsPage />
+                    }
+                />
 
-        <Route
-          path="/test-plans"
-          element={
-            <TestPlanListPage />
-          }
-        />
+                <Route
+                    path="/test-plans"
+                    element={
+                        <TestPlanListPage />
+                    }
+                />
 
-        <Route
-          path="/test-plans/new"
-          element={
-            <CreateTestPlanPage />
-          }
-        />
+                <Route
+                    path="/test-plans/new"
+                    element={
+                        <CreateTestPlanPage />
+                    }
+                />
 
-        <Route
-          path="/test-plans/:testPlanId"
-          element={
-            <TestPlanDetailsPage />
-          }
-        />
+                <Route
+                    path="/test-plans/:testPlanId"
+                    element={
+                        <TestPlanDetailsPage />
+                    }
+                />
 
-        <Route
-          path="/requirements/:requirementId"
-          element={
-            <RequirementDetailsPage />
-          }
-        />
+                <Route
+                    path="/requirements/:requirementId"
+                    element={
+                        <RequirementDetailsPage />
+                    }
+                />
 
-        <Route
-          path="/scenarios/:scenarioId"
-          element={
-            <ScenarioDetailsPage />
-          }
-        />
+                <Route
+                    path="/scenarios/:scenarioId"
+                    element={
+                        <ScenarioDetailsPage />
+                    }
+                />
 
-        <Route
-          path="/test-cases/:testCaseId"
-          element={
-            <TestCaseDetailsPage />
-          }
-        />
+                <Route
+                    path="/test-cases/:testCaseId"
+                    element={
+                        <TestCaseDetailsPage />
+                    }
+                />
 
-        <Route
-          path="/automation"
-          element={
-            <AutomationSelectionPage />
-          }
-        />
+                <Route
+                    path="/automation"
+                    element={
+                        <AutomationSelectionPage />
+                    }
+                />
 
-        <Route
-          path="/automation/:testCaseId"
-          element={
-            <AutomationBuilderPage />
-          }
-        />
+                <Route
+                    path="/automation/:testCaseId"
+                    element={
+                        <AutomationBuilderPage />
+                    }
+                />
 
-        <Route
-          path="/automation/:testCaseId/script"
-          element={
-            <ScriptGenerationPage />
-          }
-        />
+                <Route
+                    path="/automation/:testCaseId/script"
+                    element={
+                        <ScriptGenerationPage />
+                    }
+                />
 
-        <Route
-          path="/automation/:testCaseId/execute"
-          element={
-            <AutomationExecutionPage />
-          }
-        />
+                <Route
+                    path="/automation/:testCaseId/execute"
+                    element={
+                        <AutomationExecutionPage />
+                    }
+                />
 
-        <Route
-          path="/results"
-          element={
-            <AutomationResultsPage />
-          }
-        />
+                <Route
+                    path="/results"
+                    element={
+                        <AutomationResultsPage />
+                    }
+                />
 
-        <Route
-          path="/results/:executionId"
-          element={
-            <AutomationResultDetailsPage />
-          }
-        />
+                <Route
+                    path="/results/:executionId"
+                    element={
+                        <AutomationResultDetailsPage />
+                    }
+                />
 
-        {/*
-         * ===============================================
-         * TASK 36.13 — DASHBOARD
-         * ===============================================
-         */}
+                <Route
+                    path="/dashboard"
+                    element={
+                        <DashboardPage />
+                    }
+                />
 
-        <Route
-          path="/dashboard"
-          element={
-            <DashboardPage />
-          }
-        />
-
-        <Route
-          path="*"
-          element={
-            <Navigate
-              to="/test-plans"
-              replace
-            />
-          }
-        />
-
-      </Route>
-
-    </Routes>
-  );
+                <Route
+                    path="*"
+                    element={
+                        <Navigate
+                            to="/projects"
+                            replace
+                        />
+                    }
+                />
+            </Route>
+        </Routes>
+    );
 }

@@ -14,6 +14,13 @@ public class BusinessIdGeneratorService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    public String generateProjectId() {
+        return generate(
+                "project_business_id_seq",
+                "PRJ"
+        );
+    }
+
     public String generateTestPlanId() {
         return generate(
                 "test_plan_business_id_seq",
@@ -53,12 +60,17 @@ public class BusinessIdGeneratorService {
             String sequenceName,
             String prefix
     ) {
-        Long nextValue = jdbcTemplate.queryForObject(
-                "SELECT nextval('" + sequenceName + "')",
-                Long.class
-        );
+        Long nextValue =
+                jdbcTemplate.queryForObject(
+                        "SELECT nextval('"
+                                + sequenceName
+                                + "')",
+                        Long.class
+                );
 
-        if (nextValue == null) {
+        if (
+                nextValue == null
+        ) {
             throw new IllegalStateException(
                     "Unable to generate business ID for prefix: "
                             + prefix

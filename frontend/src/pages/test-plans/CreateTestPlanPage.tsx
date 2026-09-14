@@ -1,625 +1,610 @@
 import {
-  useMemo,
-  useState,
-  type FormEvent,
+    useEffect,
+    useState,
+    type FormEvent,
 } from 'react';
 
 import {
-  ArrowBack,
-  Save,
+    ArrowBack,
+    Save,
 } from '@mui/icons-material';
 
 import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  Typography,
+    Alert,
+    Button,
+    Card,
+    CardContent,
+    CircularProgress,
+    MenuItem,
+    Stack,
+    TextField,
 } from '@mui/material';
 
 import {
-  useNavigate,
+    useNavigate,
+    useSearchParams,
 } from 'react-router-dom';
 
 import {
-  ApiError,
+    ApiError,
 } from '../../api/apiClient';
 
 import {
-  testPlanApi,
+    projectApi,
+} from '../../api/projectApi';
+
+import {
+    testPlanApi,
 } from '../../api/testPlanApi';
 
+import {
+    PageHeader,
+} from '../../components/common/PageHeader';
+
 import type {
-  ApprovalStatus,
-  CreateTestPlanRequest,
-  TestPlanStatus,
+    Project,
+} from '../../types/project';
+
+import type {
+    ApprovalStatus,
+    TestPlanStatus,
 } from '../../types/testPlan';
 
-const DEFAULT_APPROVAL_STATUS:
-    ApprovalStatus =
-    'PENDING';
+const statuses:
+    TestPlanStatus[] = [
+    'DRAFT',
+    'ACTIVE',
+    'COMPLETED',
+    'ARCHIVED',
+];
 
-
-function optionalValue(
-    value: string,
-): string | undefined {
-  const trimmedValue =
-      value.trim();
-
-  return trimmedValue ||
-      undefined;
-}
+const approvalStatuses:
+    ApprovalStatus[] = [
+    'PENDING',
+    'APPROVED',
+    'REJECTED',
+];
 
 export default function CreateTestPlanPage() {
-  const navigate =
-      useNavigate();
+    const navigate =
+        useNavigate();
 
-  const [
-    name,
-    setName,
-  ] = useState('');
+    const [
+        searchParams,
+    ] = useSearchParams();
 
-  const [
-    version,
-    setVersion,
-  ] = useState('');
+    const [
+        projects,
+        setProjects,
+    ] = useState<Project[]>(
+        [],
+    );
 
-  const [
-    project,
-    setProject,
-  ] = useState('');
+    const [
+        projectsLoading,
+        setProjectsLoading,
+    ] = useState(true);
 
-  const [
-    application,
-    setApplication,
-  ] = useState('');
+    const [
+        projectId,
+        setProjectId,
+    ] = useState(
+        searchParams.get(
+            'projectId',
+        ) ?? '',
+    );
 
-  const [
-    environment,
-    setEnvironment,
-  ] = useState('');
+    const [
+        name,
+        setName,
+    ] = useState('');
 
-  const [
-    preparedBy,
-    setPreparedBy,
-  ] = useState('');
+    const [
+        version,
+        setVersion,
+    ] = useState('');
 
-  const [
-    status,
-    setStatus,
-  ] =
-      useState<TestPlanStatus>(
-          'DRAFT',
-      );
+    const [
+        application,
+        setApplication,
+    ] = useState('');
 
-  const [
-    submitting,
-    setSubmitting,
-  ] = useState(false);
+    const [
+        environment,
+        setEnvironment,
+    ] = useState('');
 
-  const [
-    error,
-    setError,
-  ] = useState<
-      string | null
-  >(null);
+    const [
+        preparedBy,
+        setPreparedBy,
+    ] = useState('');
 
-  const trimmedName =
-      name.trim();
+    const [
+        status,
+        setStatus,
+    ] = useState<TestPlanStatus>(
+        'DRAFT',
+    );
 
-  const nameError =
-      useMemo(
-          () => {
-            if (!trimmedName) {
-              return 'Test Plan Name is required.';
-            }
+    const [
+        approvalStatus,
+        setApprovalStatus,
+    ] = useState<ApprovalStatus>(
+        'PENDING',
+    );
 
-            if (
-                trimmedName.length >
-                255
-            ) {
-              return 'Test Plan Name must not exceed 255 characters.';
-            }
+    const [
+        submitting,
+        setSubmitting,
+    ] = useState(false);
 
-            return '';
-          },
-          [trimmedName],
-      );
+    const [
+        error,
+        setError,
+    ] = useState<
+        string | null
+    >(null);
 
-  const handleSubmit =
-      async (
-          event:
-          FormEvent<HTMLFormElement>,
-      ) => {
-        event.preventDefault();
+    useEffect(
+        () => {
+            let active = true;
 
-        setError(null);
+            void projectApi
+                .getProjects()
+                .then(
+                    response => {
+                        if (!active) {
+                            return;
+                        }
 
-        if (nameError) {
-          setError(
-              nameError,
-          );
+                        setProjects(
+                            response,
+                        );
 
-          return;
-        }
+                        setProjectId(
+                            current => {
+                                if (
+                                    current
+                                    && response.some(
+                                        project =>
+                                            project.projectId
+                                            === current,
+                                    )
+                                ) {
+                                    return current;
+                                }
 
-        const request:
-            CreateTestPlanRequest =
-            {
-              name:
-              trimmedName,
-
-              version:
-                  optionalValue(
-                      version,
-                  ),
-
-              project:
-                  optionalValue(
-                      project,
-                  ),
-
-              application:
-                  optionalValue(
-                      application,
-                  ),
-
-              environment:
-                  optionalValue(
-                      environment,
-                  ),
-
-              preparedBy:
-                  optionalValue(
-                      preparedBy,
-                  ),
-
-              status,
-
-              approvalStatus:
-              DEFAULT_APPROVAL_STATUS,
-            };
-
-        try {
-          setSubmitting(
-              true,
-          );
-
-          const createdTestPlan =
-              await testPlanApi
-                  .createTestPlan(
-                      request,
-                  );
-
-          navigate(
-              '/test-plans',
-              {
-                replace: true,
-
-                state: {
-                  message:
-                      `Test plan "${createdTestPlan.name}" created successfully.`,
-                },
-              },
-          );
-        } catch (err) {
-          console.error(
-              'Failed to create test plan:',
-              err,
-          );
-
-          if (
-              err instanceof
-              ApiError
-          ) {
-            if (
-                err.status ===
-                400
-            ) {
-              setError(
-                  err.message ||
-                  'Please check the form values.',
-              );
-
-              return;
-            }
-
-            setError(
-                err.message ||
-                `Backend returned HTTP ${err.status}.`,
-            );
-
-            return;
-          }
-
-          if (
-              err instanceof
-              TypeError
-          ) {
-            setError(
-                'Unable to connect to the backend. Make sure TestForge backend is running on port 8080.',
-            );
-
-            return;
-          }
-
-          setError(
-              'An unexpected error occurred while creating the test plan.',
-          );
-        } finally {
-          setSubmitting(
-              false,
-          );
-        }
-      };
-
-  return (
-      <Box
-          sx={{
-            maxWidth: 900,
-            mx: 'auto',
-          }}
-      >
-        <Button
-            startIcon={
-              <ArrowBack />
-            }
-            disabled={
-              submitting
-            }
-            onClick={() =>
-                navigate(
-                    '/test-plans',
+                                return response[0]
+                                        ?.projectId
+                                    ?? '';
+                            },
+                        );
+                    },
                 )
+                .catch(
+                    err => {
+                        console.error(
+                            'Failed to load Projects:',
+                            err,
+                        );
+
+                        if (active) {
+                            setError(
+                                'Unable to load Projects.',
+                            );
+                        }
+                    },
+                )
+                .finally(
+                    () => {
+                        if (active) {
+                            setProjectsLoading(
+                                false,
+                            );
+                        }
+                    },
+                );
+
+            return () => {
+                active = false;
+            };
+        },
+        [],
+    );
+
+    const optionalValue = (
+        value: string,
+    ): string | undefined => {
+        const trimmed =
+            value.trim();
+
+        return trimmed
+            || undefined;
+    };
+
+    const handleSubmit =
+        async (
+            event:
+            FormEvent<HTMLFormElement>,
+        ) => {
+            event.preventDefault();
+
+            if (!projectId) {
+                setError(
+                    'Project is required.',
+                );
+                return;
             }
-            sx={{
-              mb: 2,
-            }}
-        >
-          Back to Test Plans
-        </Button>
 
-        <Box
-            sx={{
-              mb: 3,
-            }}
-        >
-          <Typography
-              variant="h4"
-              fontWeight={700}
-              gutterBottom
-          >
-            Create Test Plan
-          </Typography>
+            const trimmedName =
+                name.trim();
 
-          <Typography
-              color="text.secondary"
-          >
-            Create the test plan
-            that will contain
-            requirements,
-            scenarios,
-            test cases and
-            automation.
-          </Typography>
-        </Box>
+            if (!trimmedName) {
+                setError(
+                    'Name is required.',
+                );
+                return;
+            }
 
-        {error && (
-            <Alert
-                severity="error"
-                sx={{
-                  mb: 3,
-                }}
-                onClose={() =>
-                    setError(null)
-                }
-            >
-              {error}
-            </Alert>
-        )}
+            try {
+                setSubmitting(true);
+                setError(null);
 
-        <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-            }}
-        >
-          <CardContent
-              sx={{
-                p: 4,
-              }}
-          >
-            <Box
-                component="form"
-                onSubmit={
-                  handleSubmit
-                }
-            >
-              <Stack
-                  spacing={3}
-              >
-                <TextField
-                    label="Test Plan Name"
-                    required
-                    fullWidth
-                    disabled={
-                      submitting
-                    }
-                    value={name}
-                    inputProps={{
-                      maxLength: 255,
-                    }}
-                    onChange={(
-                        event,
-                    ) =>
-                        setName(
-                            event
-                                .target
-                                .value,
-                        )
-                    }
-                    placeholder="Example: Customer Portal Regression"
-                    error={
-                      Boolean(
-                          name &&
-                          nameError,
-                      )
-                    }
-                    helperText={
-                      name &&
-                      nameError
-                          ? nameError
-                          : undefined
-                    }
-                />
+                const created =
+                    await testPlanApi
+                        .createTestPlan({
+                            projectId,
+                            name:
+                            trimmedName,
+                            version:
+                                optionalValue(
+                                    version,
+                                ),
+                            application:
+                                optionalValue(
+                                    application,
+                                ),
+                            environment:
+                                optionalValue(
+                                    environment,
+                                ),
+                            preparedBy:
+                                optionalValue(
+                                    preparedBy,
+                                ),
+                            status,
+                            approvalStatus,
+                        });
 
-                <TextField
-                    label="Version"
-                    fullWidth
-                    disabled={
-                      submitting
-                    }
-                    value={
-                      version
-                    }
-                    inputProps={{
-                      maxLength: 50,
-                    }}
-                    onChange={(
-                        event,
-                    ) =>
-                        setVersion(
-                            event
-                                .target
-                                .value,
-                        )
-                    }
-                    placeholder="Example: 1.0"
-                />
-
-                <TextField
-                    label="Project"
-                    fullWidth
-                    disabled={
-                      submitting
-                    }
-                    value={
-                      project
-                    }
-                    inputProps={{
-                      maxLength: 255,
-                    }}
-                    onChange={(
-                        event,
-                    ) =>
-                        setProject(
-                            event
-                                .target
-                                .value,
-                        )
-                    }
-                    placeholder="Example: TestForge"
-                />
-
-                <TextField
-                    label="Application"
-                    fullWidth
-                    disabled={
-                      submitting
-                    }
-                    value={
-                      application
-                    }
-                    inputProps={{
-                      maxLength: 255,
-                    }}
-                    onChange={(
-                        event,
-                    ) =>
-                        setApplication(
-                            event
-                                .target
-                                .value,
-                        )
-                    }
-                    placeholder="Example: TestForge"
-                />
-
-                <TextField
-                    label="Environment"
-                    fullWidth
-                    disabled={
-                      submitting
-                    }
-                    value={
-                      environment
-                    }
-                    inputProps={{
-                      maxLength: 100,
-                    }}
-                    onChange={(
-                        event,
-                    ) =>
-                        setEnvironment(
-                            event
-                                .target
-                                .value,
-                        )
-                    }
-                    placeholder="Example: LOCAL, DEV, QA"
-                />
-
-                <TextField
-                    label="Prepared By"
-                    fullWidth
-                    disabled={
-                      submitting
-                    }
-                    value={
-                      preparedBy
-                    }
-                    inputProps={{
-                      maxLength: 255,
-                    }}
-                    onChange={(
-                        event,
-                    ) =>
-                        setPreparedBy(
-                            event
-                                .target
-                                .value,
-                        )
-                    }
-                    placeholder="Example: QA Team"
-                />
-
-                <FormControl
-                    fullWidth
-                >
-                  <InputLabel>
-                    Status
-                  </InputLabel>
-
-                  <Select
-                      value={
-                        status
-                      }
-                      label="Status"
-                      disabled={
-                        submitting
-                      }
-                      onChange={(
-                          event,
-                      ) =>
-                          setStatus(
-                              event
-                                  .target
-                                  .value as TestPlanStatus,
-                          )
-                      }
-                  >
-                    <MenuItem
-                        value="DRAFT"
-                    >
-                      Draft
-                    </MenuItem>
-
-                    <MenuItem
-                        value="ACTIVE"
-                    >
-                      Active
-                    </MenuItem>
-
-                    <MenuItem
-                        value="COMPLETED"
-                    >
-                      Completed
-                    </MenuItem>
-
-                    <MenuItem
-                        value="ARCHIVED"
-                    >
-                      Archived
-                    </MenuItem>
-                  </Select>
-                </FormControl>
-
-                <Alert
-                    severity="info"
-                    variant="outlined"
-                >
-                  New Test Plans
-                  start with approval
-                  status{' '}
-                  <strong>
+                navigate(
+                    `/test-plans/${encodeURIComponent(
+                        created.testPlanId,
+                    )}`,
                     {
-                      DEFAULT_APPROVAL_STATUS
-                    }
-                  </strong>
-                  .
-                </Alert>
+                        replace: true,
+                    },
+                );
+            } catch (err) {
+                if (
+                    err instanceof
+                    ApiError
+                ) {
+                    setError(
+                        err.message,
+                    );
+                } else {
+                    setError(
+                        'Unable to create Test Plan.',
+                    );
+                }
+            } finally {
+                setSubmitting(false);
+            }
+        };
 
-                <Box
-                    sx={{
-                      display:
-                          'flex',
+    return (
+        <Stack
+            spacing={3}
+        >
+            <PageHeader
+                title="Create Test Plan"
+                subtitle="Create a Test Plan inside a Project."
+                actions={
+                    <Button
+                        startIcon={
+                            <ArrowBack />
+                        }
+                        onClick={() =>
+                            navigate(
+                                '/test-plans',
+                            )
+                        }
+                    >
+                        Back to Test Plans
+                    </Button>
+                }
+            />
 
-                      justifyContent:
-                          'flex-end',
-
-                      gap: 2,
-
-                      pt: 2,
-                    }}
-                >
-                  <Button
-                      variant="outlined"
-                      disabled={
-                        submitting
-                      }
-                      onClick={() =>
-                          navigate(
-                              '/test-plans',
-                          )
-                      }
-                  >
-                    Cancel
-                  </Button>
-
-                  <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={
-                        submitting
-                      }
-                      startIcon={
-                        submitting ? (
-                            <CircularProgress
-                                size={18}
+            {projects.length ===
+                0
+                && !projectsLoading && (
+                    <Alert
+                        severity="warning"
+                        action={
+                            <Button
                                 color="inherit"
+                                size="small"
+                                onClick={() =>
+                                    navigate(
+                                        '/projects/new',
+                                    )
+                                }
+                            >
+                                Create Project
+                            </Button>
+                        }
+                    >
+                        A Project is required before you can create a Test Plan.
+                    </Alert>
+                )}
+
+            <Card
+                variant="outlined"
+            >
+                <CardContent>
+                    <form
+                        onSubmit={
+                            handleSubmit
+                        }
+                    >
+                        <Stack
+                            spacing={3}
+                        >
+                            {error && (
+                                <Alert
+                                    severity="error"
+                                >
+                                    {error}
+                                </Alert>
+                            )}
+
+                            <Alert
+                                severity="info"
+                                variant="outlined"
+                            >
+                                Test Plan ID is generated automatically by the backend.
+                            </Alert>
+
+                            <TextField
+                                select
+                                required
+                                label="Project"
+                                value={
+                                    projectId
+                                }
+                                disabled={
+                                    submitting
+                                    || projectsLoading
+                                    || projects.length
+                                    === 0
+                                }
+                                onChange={
+                                    event =>
+                                        setProjectId(
+                                            event.target.value,
+                                        )
+                                }
+                                helperText={
+                                    projectsLoading
+                                        ? 'Loading Projects...'
+                                        : 'Every Test Plan belongs to one Project.'
+                                }
+                            >
+                                {projects.map(
+                                    project => (
+                                        <MenuItem
+                                            key={
+                                                project.projectId
+                                            }
+                                            value={
+                                                project.projectId
+                                            }
+                                        >
+                                            {project.name}{' '}
+                                            ({project.projectId})
+                                        </MenuItem>
+                                    ),
+                                )}
+                            </TextField>
+
+                            <TextField
+                                label="Name"
+                                required
+                                value={name}
+                                disabled={
+                                    submitting
+                                }
+                                inputProps={{
+                                    maxLength: 255,
+                                }}
+                                onChange={
+                                    event =>
+                                        setName(
+                                            event.target.value,
+                                        )
+                                }
                             />
-                        ) : (
-                            <Save />
-                        )
-                      }
-                  >
-                    {submitting
-                        ? 'Creating...'
-                        : 'Create Test Plan'}
-                  </Button>
-                </Box>
-              </Stack>
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
-  );
+
+                            <TextField
+                                label="Version"
+                                value={version}
+                                disabled={
+                                    submitting
+                                }
+                                inputProps={{
+                                    maxLength: 50,
+                                }}
+                                onChange={
+                                    event =>
+                                        setVersion(
+                                            event.target.value,
+                                        )
+                                }
+                            />
+
+                            <TextField
+                                label="Application"
+                                value={
+                                    application
+                                }
+                                disabled={
+                                    submitting
+                                }
+                                inputProps={{
+                                    maxLength: 255,
+                                }}
+                                onChange={
+                                    event =>
+                                        setApplication(
+                                            event.target.value,
+                                        )
+                                }
+                            />
+
+                            <TextField
+                                label="Environment"
+                                value={
+                                    environment
+                                }
+                                disabled={
+                                    submitting
+                                }
+                                inputProps={{
+                                    maxLength: 100,
+                                }}
+                                onChange={
+                                    event =>
+                                        setEnvironment(
+                                            event.target.value,
+                                        )
+                                }
+                            />
+
+                            <TextField
+                                label="Prepared By"
+                                value={
+                                    preparedBy
+                                }
+                                disabled={
+                                    submitting
+                                }
+                                inputProps={{
+                                    maxLength: 255,
+                                }}
+                                onChange={
+                                    event =>
+                                        setPreparedBy(
+                                            event.target.value,
+                                        )
+                                }
+                            />
+
+                            <TextField
+                                select
+                                label="Status"
+                                value={status}
+                                disabled={
+                                    submitting
+                                }
+                                onChange={
+                                    event =>
+                                        setStatus(
+                                            (event.target.value as TestPlanStatus),
+                                        )
+                                }
+                            >
+                                {statuses.map(
+                                    option => (
+                                        <MenuItem
+                                            key={
+                                                option
+                                            }
+                                            value={
+                                                option
+                                            }
+                                        >
+                                            {option}
+                                        </MenuItem>
+                                    ),
+                                )}
+                            </TextField>
+
+                            <TextField
+                                select
+                                label="Approval Status"
+                                value={
+                                    approvalStatus
+                                }
+                                disabled={
+                                    submitting
+                                }
+                                onChange={
+                                    event =>
+                                        setApprovalStatus(
+                                            (event.target.value as ApprovalStatus),
+                                        )
+                                }
+                            >
+                                {approvalStatuses.map(
+                                    option => (
+                                        <MenuItem
+                                            key={
+                                                option
+                                            }
+                                            value={
+                                                option
+                                            }
+                                        >
+                                            {option}
+                                        </MenuItem>
+                                    ),
+                                )}
+                            </TextField>
+
+                            <Button
+                                type="submit"
+                                variant="contained"
+                                disabled={
+                                    submitting
+                                    || projectsLoading
+                                    || projects.length
+                                    === 0
+                                }
+                                startIcon={
+                                    submitting
+                                        ? (
+                                            <CircularProgress
+                                                size={18}
+                                                color="inherit"
+                                            />
+                                        )
+                                        : (
+                                            <Save />
+                                        )
+                                }
+                                sx={{
+                                    alignSelf:
+                                        'flex-start',
+                                }}
+                            >
+                                {submitting
+                                    ? 'Creating...'
+                                    : 'Create Test Plan'}
+                            </Button>
+                        </Stack>
+                    </form>
+                </CardContent>
+            </Card>
+        </Stack>
+    );
 }

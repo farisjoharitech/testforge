@@ -26,8 +26,16 @@ import {
 } from '../../api/apiClient';
 
 import {
+  projectApi,
+} from '../../api/projectApi';
+
+import {
   testPlanApi,
 } from '../../api/testPlanApi';
+
+import type {
+  Project,
+} from '../../types/project';
 
 import type {
   ApprovalStatus,
@@ -40,31 +48,48 @@ interface EditTestPlanDialogProps {
   testPlan: TestPlan;
   onClose: () => void;
   onUpdated: (
-    testPlan: TestPlan,
+      testPlan: TestPlan,
   ) => void;
 }
 
 const statuses:
-  TestPlanStatus[] = [
-    'DRAFT',
-    'ACTIVE',
-    'COMPLETED',
-    'ARCHIVED',
-  ];
+    TestPlanStatus[] = [
+  'DRAFT',
+  'ACTIVE',
+  'COMPLETED',
+  'ARCHIVED',
+];
 
 const approvalStatuses:
-  ApprovalStatus[] = [
-    'PENDING',
-    'APPROVED',
-    'REJECTED',
-  ];
+    ApprovalStatus[] = [
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+];
 
 export default function EditTestPlanDialog({
-  open,
-  testPlan,
-  onClose,
-  onUpdated,
-}: EditTestPlanDialogProps) {
+                                             open,
+                                             testPlan,
+                                             onClose,
+                                             onUpdated,
+                                           }: EditTestPlanDialogProps) {
+  const [
+    projects,
+    setProjects,
+  ] = useState<Project[]>(
+      [],
+  );
+
+  const [
+    projectsLoading,
+    setProjectsLoading,
+  ] = useState(false);
+
+  const [
+    projectId,
+    setProjectId,
+  ] = useState('');
+
   const [
     name,
     setName,
@@ -73,11 +98,6 @@ export default function EditTestPlanDialog({
   const [
     version,
     setVersion,
-  ] = useState('');
-
-  const [
-    project,
-    setProject,
   ] = useState('');
 
   const [
@@ -99,14 +119,14 @@ export default function EditTestPlanDialog({
     status,
     setStatus,
   ] = useState<TestPlanStatus>(
-    'DRAFT',
+      'DRAFT',
   );
 
   const [
     approvalStatus,
     setApprovalStatus,
   ] = useState<ApprovalStatus>(
-    'PENDING',
+      'PENDING',
   );
 
   const [
@@ -118,434 +138,455 @@ export default function EditTestPlanDialog({
     error,
     setError,
   ] = useState<
-    string | null
+      string | null
   >(null);
 
   useEffect(
-    () => {
-      if (!open) {
-        return;
-      }
+      () => {
+        if (!open) {
+          return;
+        }
 
-      setName(
-        testPlan.name,
-      );
+        setProjectId(
+            testPlan.projectBusinessId,
+        );
 
-      setVersion(
-        testPlan.version ?? '',
-      );
+        setName(
+            testPlan.name,
+        );
 
-      setProject(
-        testPlan.project ?? '',
-      );
+        setVersion(
+            testPlan.version
+            ?? '',
+        );
 
-      setApplication(
-        testPlan.application ?? '',
-      );
+        setApplication(
+            testPlan.application
+            ?? '',
+        );
 
-      setEnvironment(
-        testPlan.environment ?? '',
-      );
+        setEnvironment(
+            testPlan.environment
+            ?? '',
+        );
 
-      setPreparedBy(
-        testPlan.preparedBy ?? '',
-      );
+        setPreparedBy(
+            testPlan.preparedBy
+            ?? '',
+        );
 
-      setStatus(
-        testPlan.status,
-      );
+        setStatus(
+            testPlan.status,
+        );
 
-      setApprovalStatus(
-        testPlan.approvalStatus,
-      );
+        setApprovalStatus(
+            testPlan.approvalStatus,
+        );
 
-      setError(null);
-    },
-    [
-      open,
-      testPlan,
-    ],
+        setError(null);
+
+        setProjectsLoading(
+            true,
+        );
+
+        void projectApi
+            .getProjects()
+            .then(
+                response =>
+                    setProjects(
+                        response,
+                    ),
+            )
+            .catch(
+                err => {
+                  console.error(
+                      'Failed to load Projects:',
+                      err,
+                  );
+
+                  setError(
+                      'Unable to load Projects.',
+                  );
+                },
+            )
+            .finally(
+                () =>
+                    setProjectsLoading(
+                        false,
+                    ),
+            );
+      },
+      [
+        open,
+        testPlan,
+      ],
   );
 
   const optionalValue = (
-    value: string,
+      value: string,
   ): string | undefined => {
     const trimmed =
-      value.trim();
+        value.trim();
 
-    return trimmed ||
-      undefined;
+    return trimmed
+        || undefined;
   };
 
   const handleSubmit =
-    async (
-      event:
-        FormEvent<HTMLFormElement>,
-    ) => {
-      event.preventDefault();
+      async (
+          event:
+          FormEvent<HTMLFormElement>,
+      ) => {
+        event.preventDefault();
 
-      const trimmedName =
-        name.trim();
-
-      if (!trimmedName) {
-        setError(
-          'Name is required.',
-        );
-
-        return;
-      }
-
-      if (
-        trimmedName.length > 255
-      ) {
-        setError(
-          'Name must not exceed 255 characters.',
-        );
-
-        return;
-      }
-
-      try {
-        setSubmitting(true);
-        setError(null);
-
-        const updated =
-          await testPlanApi
-            .updateTestPlan(
-              testPlan.id,
-              {
-                name:
-                  trimmedName,
-
-                version:
-                  optionalValue(
-                    version,
-                  ),
-
-                project:
-                  optionalValue(
-                    project,
-                  ),
-
-                application:
-                  optionalValue(
-                    application,
-                  ),
-
-                environment:
-                  optionalValue(
-                    environment,
-                  ),
-
-                preparedBy:
-                  optionalValue(
-                    preparedBy,
-                  ),
-
-                status,
-
-                approvalStatus,
-              },
-            );
-
-        onUpdated(updated);
-      } catch (err) {
-        if (
-          err instanceof
-          ApiError
-        ) {
+        if (!projectId) {
           setError(
-            err.message,
+              'Project is required.',
           );
-        } else {
-          setError(
-            'Unable to update Test Plan.',
-          );
+          return;
         }
-      } finally {
-        setSubmitting(false);
-      }
-    };
+
+        const trimmedName =
+            name.trim();
+
+        if (!trimmedName) {
+          setError(
+              'Name is required.',
+          );
+          return;
+        }
+
+        try {
+          setSubmitting(true);
+          setError(null);
+
+          const updated =
+              await testPlanApi
+                  .updateTestPlan(
+                      testPlan.id,
+                      {
+                        projectId,
+                        name:
+                        trimmedName,
+                        version:
+                            optionalValue(
+                                version,
+                            ),
+                        application:
+                            optionalValue(
+                                application,
+                            ),
+                        environment:
+                            optionalValue(
+                                environment,
+                            ),
+                        preparedBy:
+                            optionalValue(
+                                preparedBy,
+                            ),
+                        status,
+                        approvalStatus,
+                      },
+                  );
+
+          onUpdated(
+              updated,
+          );
+        } catch (err) {
+          if (
+              err instanceof
+              ApiError
+          ) {
+            setError(
+                err.message,
+            );
+          } else {
+            setError(
+                'Unable to update Test Plan.',
+            );
+          }
+        } finally {
+          setSubmitting(false);
+        }
+      };
 
   return (
-    <Dialog
-      open={open}
-      onClose={
-        submitting
-          ? undefined
-          : onClose
-      }
-      fullWidth
-      maxWidth="md"
-    >
-      <DialogTitle>
-        Edit Test Plan
-      </DialogTitle>
-
-      <DialogContent>
-        <form
-          id="edit-test-plan-form"
-          onSubmit={
-            handleSubmit
+      <Dialog
+          open={open}
+          onClose={
+            submitting
+                ? undefined
+                : onClose
           }
-        >
-          <Stack
-            spacing={3}
-            sx={{
-              pt: 1,
-            }}
-          >
-            {error && (
-              <Alert
-                severity="error"
-              >
-                {error}
-              </Alert>
-            )}
-
-            <Alert
-              severity="info"
-              variant="outlined"
-            >
-              Test Plan ID{' '}
-              <strong>
-                {
-                  testPlan.testPlanId
-                }
-              </strong>{' '}
-              cannot be changed.
-            </Alert>
-
-            <TextField
-              label="Name"
-              required
-              value={name}
-              disabled={
-                submitting
-              }
-              inputProps={{
-                maxLength: 255,
-              }}
-              onChange={(
-                event,
-              ) =>
-                setName(
-                  event.target.value,
-                )
-              }
-            />
-
-            <TextField
-              label="Version"
-              value={version}
-              disabled={
-                submitting
-              }
-              inputProps={{
-                maxLength: 50,
-              }}
-              onChange={(
-                event,
-              ) =>
-                setVersion(
-                  event.target.value,
-                )
-              }
-            />
-
-            <TextField
-              label="Project"
-              value={project}
-              disabled={
-                submitting
-              }
-              inputProps={{
-                maxLength: 255,
-              }}
-              onChange={(
-                event,
-              ) =>
-                setProject(
-                  event.target.value,
-                )
-              }
-            />
-
-            <TextField
-              label="Application"
-              value={
-                application
-              }
-              disabled={
-                submitting
-              }
-              inputProps={{
-                maxLength: 255,
-              }}
-              onChange={(
-                event,
-              ) =>
-                setApplication(
-                  event.target.value,
-                )
-              }
-            />
-
-            <TextField
-              label="Environment"
-              value={
-                environment
-              }
-              disabled={
-                submitting
-              }
-              inputProps={{
-                maxLength: 100,
-              }}
-              onChange={(
-                event,
-              ) =>
-                setEnvironment(
-                  event.target.value,
-                )
-              }
-            />
-
-            <TextField
-              label="Prepared By"
-              value={
-                preparedBy
-              }
-              disabled={
-                submitting
-              }
-              inputProps={{
-                maxLength: 255,
-              }}
-              onChange={(
-                event,
-              ) =>
-                setPreparedBy(
-                  event.target.value,
-                )
-              }
-            />
-
-            <TextField
-              select
-              label="Status"
-              value={status}
-              disabled={
-                submitting
-              }
-              onChange={(
-                event,
-              ) =>
-                setStatus(
-                  event.target
-                    .value as
-                    TestPlanStatus,
-                )
-              }
-            >
-              {statuses.map(
-                (
-                  option,
-                ) => (
-                  <MenuItem
-                    key={
-                      option
-                    }
-                    value={
-                      option
-                    }
-                  >
-                    {option}
-                  </MenuItem>
-                ),
-              )}
-            </TextField>
-
-            <TextField
-              select
-              label="Approval Status"
-              value={
-                approvalStatus
-              }
-              disabled={
-                submitting
-              }
-              onChange={(
-                event,
-              ) =>
-                setApprovalStatus(
-                  event.target
-                    .value as
-                    ApprovalStatus,
-                )
-              }
-            >
-              {approvalStatuses.map(
-                (
-                  option,
-                ) => (
-                  <MenuItem
-                    key={
-                      option
-                    }
-                    value={
-                      option
-                    }
-                  >
-                    {option}
-                  </MenuItem>
-                ),
-              )}
-            </TextField>
-          </Stack>
-        </form>
-      </DialogContent>
-
-      <DialogActions
-        sx={{
-          px: 3,
-          pb: 3,
-        }}
+          fullWidth
+          maxWidth="md"
       >
-        <Button
-          disabled={
-            submitting
-          }
-          onClick={
-            onClose
-          }
-        >
-          Cancel
-        </Button>
+        <DialogTitle>
+          Edit Test Plan
+        </DialogTitle>
 
-        <Button
-          type="submit"
-          form="edit-test-plan-form"
-          variant="contained"
-          disabled={
-            submitting
-          }
-          startIcon={
-            submitting ? (
-              <CircularProgress
-                size={18}
-                color="inherit"
+        <DialogContent>
+          <form
+              id="edit-test-plan-form"
+              onSubmit={
+                handleSubmit
+              }
+          >
+            <Stack
+                spacing={3}
+                sx={{
+                  pt: 1,
+                }}
+            >
+              {error && (
+                  <Alert
+                      severity="error"
+                  >
+                    {error}
+                  </Alert>
+              )}
+
+              <Alert
+                  severity="info"
+                  variant="outlined"
+              >
+                Test Plan ID{' '}
+                <strong>
+                  {testPlan.testPlanId}
+                </strong>{' '}
+                cannot be changed.
+              </Alert>
+
+              <TextField
+                  select
+                  required
+                  label="Project"
+                  value={
+                    projectId
+                  }
+                  disabled={
+                      submitting
+                      || projectsLoading
+                  }
+                  onChange={
+                    event =>
+                        setProjectId(
+                            event.target.value,
+                        )
+                  }
+              >
+                {projects.map(
+                    project => (
+                        <MenuItem
+                            key={
+                              project.projectId
+                            }
+                            value={
+                              project.projectId
+                            }
+                        >
+                          {project.name}{' '}
+                          ({project.projectId})
+                        </MenuItem>
+                    ),
+                )}
+              </TextField>
+
+              <TextField
+                  label="Name"
+                  required
+                  value={name}
+                  disabled={
+                    submitting
+                  }
+                  inputProps={{
+                    maxLength: 255,
+                  }}
+                  onChange={
+                    event =>
+                        setName(
+                            event.target.value,
+                        )
+                  }
               />
-            ) : (
-              <Save />
-            )
-          }
-        >
-          {submitting
-            ? 'Saving...'
-            : 'Save Changes'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+
+              <TextField
+                  label="Version"
+                  value={version}
+                  disabled={
+                    submitting
+                  }
+                  inputProps={{
+                    maxLength: 50,
+                  }}
+                  onChange={
+                    event =>
+                        setVersion(
+                            event.target.value,
+                        )
+                  }
+              />
+
+              <TextField
+                  label="Application"
+                  value={
+                    application
+                  }
+                  disabled={
+                    submitting
+                  }
+                  inputProps={{
+                    maxLength: 255,
+                  }}
+                  onChange={
+                    event =>
+                        setApplication(
+                            event.target.value,
+                        )
+                  }
+              />
+
+              <TextField
+                  label="Environment"
+                  value={
+                    environment
+                  }
+                  disabled={
+                    submitting
+                  }
+                  inputProps={{
+                    maxLength: 100,
+                  }}
+                  onChange={
+                    event =>
+                        setEnvironment(
+                            event.target.value,
+                        )
+                  }
+              />
+
+              <TextField
+                  label="Prepared By"
+                  value={
+                    preparedBy
+                  }
+                  disabled={
+                    submitting
+                  }
+                  inputProps={{
+                    maxLength: 255,
+                  }}
+                  onChange={
+                    event =>
+                        setPreparedBy(
+                            event.target.value,
+                        )
+                  }
+              />
+
+              <TextField
+                  select
+                  label="Status"
+                  value={status}
+                  disabled={
+                    submitting
+                  }
+                  onChange={
+                    event =>
+                        setStatus(
+                            (event.target.value as TestPlanStatus),
+                        )
+                  }
+              >
+                {statuses.map(
+                    option => (
+                        <MenuItem
+                            key={
+                              option
+                            }
+                            value={
+                              option
+                            }
+                        >
+                          {option}
+                        </MenuItem>
+                    ),
+                )}
+              </TextField>
+
+              <TextField
+                  select
+                  label="Approval Status"
+                  value={
+                    approvalStatus
+                  }
+                  disabled={
+                    submitting
+                  }
+                  onChange={
+                    event =>
+                        setApprovalStatus(
+                            (event.target.value as ApprovalStatus),
+                        )
+                  }
+              >
+                {approvalStatuses.map(
+                    option => (
+                        <MenuItem
+                            key={
+                              option
+                            }
+                            value={
+                              option
+                            }
+                        >
+                          {option}
+                        </MenuItem>
+                    ),
+                )}
+              </TextField>
+            </Stack>
+          </form>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+              disabled={
+                submitting
+              }
+              onClick={
+                onClose
+              }
+          >
+            Cancel
+          </Button>
+
+          <Button
+              type="submit"
+              form="edit-test-plan-form"
+              variant="contained"
+              disabled={
+                  submitting
+                  || projectsLoading
+              }
+              startIcon={
+                submitting
+                    ? (
+                        <CircularProgress
+                            size={18}
+                            color="inherit"
+                        />
+                    )
+                    : (
+                        <Save />
+                    )
+              }
+          >
+            {submitting
+                ? 'Saving...'
+                : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
   );
 }

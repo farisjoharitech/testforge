@@ -15,6 +15,55 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+
+    @ExceptionHandler(
+            ProjectNotFoundException.class
+    )
+    public ResponseEntity<ApiError>
+    handleProjectNotFound(
+            ProjectNotFoundException exception,
+            HttpServletRequest request) {
+
+        return buildError(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage(),
+                request,
+                null
+        );
+    }
+
+    @ExceptionHandler(
+            DuplicateProjectException.class
+    )
+    public ResponseEntity<ApiError>
+    handleDuplicateProject(
+            DuplicateProjectException exception,
+            HttpServletRequest request) {
+
+        return buildError(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request,
+                null
+        );
+    }
+
+    @ExceptionHandler(
+            ProjectInUseException.class
+    )
+    public ResponseEntity<ApiError>
+    handleProjectInUse(
+            ProjectInUseException exception,
+            HttpServletRequest request) {
+
+        return buildError(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request,
+                null
+        );
+    }
+
     @ExceptionHandler(
             TestPlanNotFoundException.class
     )

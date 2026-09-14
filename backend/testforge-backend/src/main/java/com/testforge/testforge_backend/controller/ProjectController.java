@@ -1,9 +1,11 @@
 package com.testforge.testforge_backend.controller;
 
-import com.testforge.testforge_backend.domain.TestPlan;
-import com.testforge.testforge_backend.dto.CreateTestPlanRequest;
+import com.testforge.testforge_backend.domain.Project;
+import com.testforge.testforge_backend.dto.CreateProjectRequest;
+import com.testforge.testforge_backend.dto.ProjectResponse;
 import com.testforge.testforge_backend.dto.TestPlanResponse;
-import com.testforge.testforge_backend.dto.UpdateTestPlanRequest;
+import com.testforge.testforge_backend.dto.UpdateProjectRequest;
+import com.testforge.testforge_backend.service.ProjectService;
 import com.testforge.testforge_backend.service.TestPlanService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -20,63 +22,60 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/test-plans")
-public class TestPlanController {
+@RequestMapping("/api/projects")
+public class ProjectController {
 
+    private final ProjectService projectService;
     private final TestPlanService testPlanService;
 
-    public TestPlanController(
+    public ProjectController(
+            ProjectService projectService,
             TestPlanService testPlanService
     ) {
+        this.projectService = projectService;
         this.testPlanService = testPlanService;
     }
 
     @PostMapping
-    public ResponseEntity<TestPlanResponse> create(
+    public ResponseEntity<ProjectResponse> create(
             @Valid
             @RequestBody
-            CreateTestPlanRequest request
+            CreateProjectRequest request
     ) {
-        TestPlan createdTestPlan =
-                testPlanService.create(
-                        request
-                );
-
         return ResponseEntity
                 .status(
                         HttpStatus.CREATED
                 )
                 .body(
                         toResponse(
-                                createdTestPlan
+                                projectService.create(
+                                        request
+                                )
                         )
                 );
     }
 
     @GetMapping
-    public ResponseEntity<List<TestPlanResponse>> getAll() {
-        List<TestPlanResponse> response =
-                testPlanService
+    public ResponseEntity<List<ProjectResponse>> getAll() {
+        return ResponseEntity.ok(
+                projectService
                         .getAll()
                         .stream()
                         .map(
-                                TestPlanController::toResponse
+                                this::toResponse
                         )
-                        .toList();
-
-        return ResponseEntity.ok(
-                response
+                        .toList()
         );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TestPlanResponse> getById(
+    public ResponseEntity<ProjectResponse> getById(
             @PathVariable
             Long id
     ) {
         return ResponseEntity.ok(
                 toResponse(
-                        testPlanService
+                        projectService
                                 .getById(
                                         id
                                 )
@@ -84,32 +83,50 @@ public class TestPlanController {
         );
     }
 
-    @GetMapping("/business/{testPlanId}")
-    public ResponseEntity<TestPlanResponse> getByTestPlanId(
+    @GetMapping("/business/{projectId}")
+    public ResponseEntity<ProjectResponse> getByProjectId(
             @PathVariable
-            String testPlanId
+            String projectId
     ) {
         return ResponseEntity.ok(
                 toResponse(
-                        testPlanService
-                                .getByTestPlanId(
-                                        testPlanId
+                        projectService
+                                .getByProjectId(
+                                        projectId
                                 )
                 )
         );
     }
 
+    @GetMapping("/{projectId}/test-plans")
+    public ResponseEntity<List<TestPlanResponse>> getTestPlans(
+            @PathVariable
+            String projectId
+    ) {
+        return ResponseEntity.ok(
+                testPlanService
+                        .getByProjectBusinessId(
+                                projectId
+                        )
+                        .stream()
+                        .map(
+                                TestPlanController::toResponse
+                        )
+                        .toList()
+        );
+    }
+
     @PutMapping("/{id}")
-    public ResponseEntity<TestPlanResponse> update(
+    public ResponseEntity<ProjectResponse> update(
             @PathVariable
             Long id,
             @Valid
             @RequestBody
-            UpdateTestPlanRequest request
+            UpdateProjectRequest request
     ) {
         return ResponseEntity.ok(
                 toResponse(
-                        testPlanService.update(
+                        projectService.update(
                                 id,
                                 request
                         )
@@ -122,7 +139,7 @@ public class TestPlanController {
             @PathVariable
             Long id
     ) {
-        testPlanService.delete(
+        projectService.delete(
                 id
         );
 
@@ -131,74 +148,38 @@ public class TestPlanController {
                 .build();
     }
 
-    public static TestPlanResponse toResponse(
-            TestPlan testPlan
+    private ProjectResponse toResponse(
+            Project project
     ) {
-        TestPlanResponse response =
-                new TestPlanResponse();
+        ProjectResponse response =
+                new ProjectResponse();
 
         response.setId(
-                testPlan.getId()
-        );
-
-        response.setTestPlanId(
-                testPlan.getTestPlanId()
+                project.getId()
         );
 
         response.setProjectId(
-                testPlan.getProject()
-                        .getId()
-        );
-
-        response.setProjectBusinessId(
-                testPlan.getProject()
-                        .getProjectId()
-        );
-
-        response.setProjectName(
-                testPlan.getProject()
-                        .getName()
-        );
-
-        response.setProject(
-                testPlan.getProject()
-                        .getName()
+                project.getProjectId()
         );
 
         response.setName(
-                testPlan.getName()
+                project.getName()
         );
 
-        response.setVersion(
-                testPlan.getVersion()
-        );
-
-        response.setApplication(
-                testPlan.getApplication()
-        );
-
-        response.setEnvironment(
-                testPlan.getEnvironment()
-        );
-
-        response.setPreparedBy(
-                testPlan.getPreparedBy()
+        response.setDescription(
+                project.getDescription()
         );
 
         response.setStatus(
-                testPlan.getStatus()
-        );
-
-        response.setApprovalStatus(
-                testPlan.getApprovalStatus()
+                project.getStatus()
         );
 
         response.setCreatedAt(
-                testPlan.getCreatedAt()
+                project.getCreatedAt()
         );
 
         response.setUpdatedAt(
-                testPlan.getUpdatedAt()
+                project.getUpdatedAt()
         );
 
         return response;

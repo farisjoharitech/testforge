@@ -2,53 +2,129 @@ package com.testforge.testforge_backend.dto;
 
 import com.testforge.testforge_backend.domain.enums.ApprovalStatus;
 import com.testforge.testforge_backend.domain.enums.TestPlanStatus;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class CreateTestPlanRequest {
 
-    @Size(max = 50, message = "Test Plan ID must not exceed 50 characters")
+    @Size(
+            max = 50,
+            message = "Test Plan ID must not exceed 50 characters"
+    )
     private String testPlanId;
 
-    @NotBlank(message = "Name is required")
-    @Size(max = 255, message = "Name must not exceed 255 characters")
-    private String name;
+    @Size(
+            max = 50,
+            message = "Project ID must not exceed 50 characters"
+    )
+    private String projectId;
 
-    @Size(max = 50, message = "Version must not exceed 50 characters")
-    private String version;
-
-    @Size(max = 255, message = "Project must not exceed 255 characters")
+    /*
+     * Temporary compatibility input for the pre-36.21
+     * regression/demo scripts. New UI code sends projectId.
+     * This field is not persisted on TestPlan.
+     */
+    @Size(
+            max = 255,
+            message = "Project must not exceed 255 characters"
+    )
     private String project;
 
-    @Size(max = 255, message = "Application must not exceed 255 characters")
+    @NotBlank(
+            message = "Name is required"
+    )
+    @Size(
+            max = 255,
+            message = "Name must not exceed 255 characters"
+    )
+    private String name;
+
+    @Size(
+            max = 50,
+            message = "Version must not exceed 50 characters"
+    )
+    private String version;
+
+    @Size(
+            max = 255,
+            message = "Application must not exceed 255 characters"
+    )
     private String application;
 
-    @Size(max = 100, message = "Environment must not exceed 100 characters")
+    @Size(
+            max = 100,
+            message = "Environment must not exceed 100 characters"
+    )
     private String environment;
 
-    @Size(max = 255, message = "Prepared By must not exceed 255 characters")
+    @Size(
+            max = 255,
+            message = "Prepared By must not exceed 255 characters"
+    )
     private String preparedBy;
 
-    @NotNull(message = "Status is required")
+    @NotNull(
+            message = "Status is required"
+    )
     private TestPlanStatus status;
 
-    @NotNull(message = "Approval Status is required")
+    @NotNull(
+            message = "Approval Status is required"
+    )
     private ApprovalStatus approvalStatus;
 
     public String getTestPlanId() {
         return testPlanId;
     }
 
-    public void setTestPlanId(String testPlanId) {
+    public void setTestPlanId(
+            String testPlanId
+    ) {
         this.testPlanId = testPlanId;
+    }
+
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(
+            String projectId
+    ) {
+        this.projectId = projectId;
+    }
+
+    public String getProject() {
+        return project;
+    }
+
+    public void setProject(
+            String project
+    ) {
+        this.project = project;
+    }
+
+    @AssertTrue(
+            message = "Project ID is required"
+    )
+    public boolean isProjectReferencePresent() {
+        return (
+                projectId != null
+                        && !projectId.isBlank()
+        ) || (
+                project != null
+                        && !project.isBlank()
+        );
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(
+            String name
+    ) {
         this.name = name;
     }
 
@@ -56,23 +132,19 @@ public class CreateTestPlanRequest {
         return version;
     }
 
-    public void setVersion(String version) {
+    public void setVersion(
+            String version
+    ) {
         this.version = version;
-    }
-
-    public String getProject() {
-        return project;
-    }
-
-    public void setProject(String project) {
-        this.project = project;
     }
 
     public String getApplication() {
         return application;
     }
 
-    public void setApplication(String application) {
+    public void setApplication(
+            String application
+    ) {
         this.application = application;
     }
 
@@ -80,7 +152,9 @@ public class CreateTestPlanRequest {
         return environment;
     }
 
-    public void setEnvironment(String environment) {
+    public void setEnvironment(
+            String environment
+    ) {
         this.environment = environment;
     }
 
@@ -88,7 +162,9 @@ public class CreateTestPlanRequest {
         return preparedBy;
     }
 
-    public void setPreparedBy(String preparedBy) {
+    public void setPreparedBy(
+            String preparedBy
+    ) {
         this.preparedBy = preparedBy;
     }
 
@@ -96,7 +172,9 @@ public class CreateTestPlanRequest {
         return status;
     }
 
-    public void setStatus(TestPlanStatus status) {
+    public void setStatus(
+            TestPlanStatus status
+    ) {
         this.status = status;
     }
 
@@ -104,7 +182,9 @@ public class CreateTestPlanRequest {
         return approvalStatus;
     }
 
-    public void setApprovalStatus(ApprovalStatus approvalStatus) {
+    public void setApprovalStatus(
+            ApprovalStatus approvalStatus
+    ) {
         this.approvalStatus = approvalStatus;
     }
 }

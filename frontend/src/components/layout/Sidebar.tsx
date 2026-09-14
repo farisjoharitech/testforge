@@ -6,6 +6,7 @@ import {
   Assessment,
   Dashboard,
   Description,
+  Folder,
   Science,
 } from '@mui/icons-material';
 
@@ -27,103 +28,130 @@ import {
 
 interface NavigationItem {
   label:
-    string;
+      string;
 
   path:
-    string;
+      string;
 
   icon:
-    ReactNode;
+      ReactNode;
 }
 
 interface NavigationSection {
   title:
-    string;
+      string;
 
   items:
-    NavigationItem[];
+      NavigationItem[];
 }
 
 const navigationSections:
-  NavigationSection[] = [
+    NavigationSection[] = [
 
-    {
-      title:
+  {
+    title:
         'Test Management',
 
-      items: [
+    items: [
 
-        {
-          label:
+      {
+        label:
+            'Projects',
+
+        path:
+            '/projects',
+
+        icon:
+            <Folder />,
+      },
+
+      {
+        label:
             'Test Plans',
 
-          path:
+        path:
             '/test-plans',
 
-          icon:
+        icon:
             <Description />,
-        },
+      },
 
-      ],
-    },
+    ],
+  },
 
-    {
-      title:
+  {
+    title:
         'Automation',
 
-      items: [
+    items: [
 
-        {
-          label:
+      {
+        label:
             'Automation',
 
-          path:
+        path:
             '/automation',
 
-          icon:
+        icon:
             <Science />,
-        },
+      },
 
-        {
-          label:
+      {
+        label:
             'Results',
 
-          path:
+        path:
             '/results',
 
-          icon:
+        icon:
             <Assessment />,
-        },
+      },
 
-      ],
-    },
+    ],
+  },
 
-    {
-      title:
+  {
+    title:
         'Reporting',
 
-      items: [
+    items: [
 
-        {
-          label:
+      {
+        label:
             'Dashboard',
 
-          path:
+        path:
             '/dashboard',
 
-          icon:
+        icon:
             <Dashboard />,
-        },
+      },
 
-      ],
-    },
+    ],
+  },
 
-  ];
+];
 
 function isNavigationItemActive(
-  pathname: string,
-  path: string,
+    pathname: string,
+    path: string,
 ): boolean {
+
+  /*
+   * Project hierarchy.
+   */
+  if (
+      path === '/projects'
+  ) {
+
+    return (
+        pathname === '/projects'
+
+        || pathname.startsWith(
+            '/projects/',
+        )
+    );
+  }
 
   /*
    * Test Management hierarchy:
@@ -136,27 +164,27 @@ function isNavigationItemActive(
    * /test-cases/:testCaseId
    */
   if (
-    path === '/test-plans'
+      path === '/test-plans'
   ) {
 
     return (
-      pathname === '/test-plans'
+        pathname === '/test-plans'
 
-      || pathname.startsWith(
-        '/test-plans/',
-      )
+        || pathname.startsWith(
+            '/test-plans/',
+        )
 
-      || pathname.startsWith(
-        '/requirements/',
-      )
+        || pathname.startsWith(
+            '/requirements/',
+        )
 
-      || pathname.startsWith(
-        '/scenarios/',
-      )
+        || pathname.startsWith(
+            '/scenarios/',
+        )
 
-      || pathname.startsWith(
-        '/test-cases/',
-      )
+        || pathname.startsWith(
+            '/test-cases/',
+        )
     );
   }
 
@@ -164,15 +192,15 @@ function isNavigationItemActive(
    * Automation hierarchy.
    */
   if (
-    path === '/automation'
+      path === '/automation'
   ) {
 
     return (
-      pathname === '/automation'
+        pathname === '/automation'
 
-      || pathname.startsWith(
-        '/automation/',
-      )
+        || pathname.startsWith(
+            '/automation/',
+        )
     );
   }
 
@@ -180,15 +208,15 @@ function isNavigationItemActive(
    * Results hierarchy.
    */
   if (
-    path === '/results'
+      path === '/results'
   ) {
 
     return (
-      pathname === '/results'
+        pathname === '/results'
 
-      || pathname.startsWith(
-        '/results/',
-      )
+        || pathname.startsWith(
+            '/results/',
+        )
     );
   }
 
@@ -196,273 +224,273 @@ function isNavigationItemActive(
    * Dashboard hierarchy.
    */
   if (
-    path === '/dashboard'
+      path === '/dashboard'
   ) {
 
     return (
-      pathname === '/dashboard'
+        pathname === '/dashboard'
 
-      || pathname.startsWith(
-        '/dashboard/',
-      )
+        || pathname.startsWith(
+            '/dashboard/',
+        )
     );
   }
 
   return (
-    pathname === path
+      pathname === path
 
-    || pathname.startsWith(
-      `${path}/`,
-    )
+      || pathname.startsWith(
+          `${path}/`,
+      )
   );
 }
 
 export default function Sidebar() {
 
   const navigate =
-    useNavigate();
+      useNavigate();
 
   const location =
-    useLocation();
+      useLocation();
 
   return (
-    <Box
-      component="aside"
-      sx={{
-        width: 260,
+      <Box
+          component="aside"
+          sx={{
+            width: 260,
 
-        minWidth: 260,
+            minWidth: 260,
 
-        height: '100vh',
+            height: '100vh',
 
-        position:
-          'sticky',
+            position:
+                'sticky',
 
-        top: 0,
+            top: 0,
 
-        display:
-          'flex',
+            display:
+                'flex',
 
-        flexDirection:
-          'column',
+            flexDirection:
+                'column',
 
-        borderRight:
-          '1px solid',
+            borderRight:
+                '1px solid',
 
-        borderColor:
-          'divider',
+            borderColor:
+                'divider',
 
-        bgcolor:
-          'background.paper',
-      }}
-    >
+            bgcolor:
+                'background.paper',
+          }}
+      >
 
-      {/*
+        {/*
        * ===============================================
        * BRAND
        * ===============================================
        */}
 
-      <Box
-        sx={{
-          px: 3,
-          py: 2.5,
-        }}
-      >
-        <Stack
-          spacing={0.25}
-        >
-          <Typography
-            variant="h5"
-            fontWeight={800}
+        <Box
             sx={{
-              letterSpacing:
-                '-0.04em',
+              px: 3,
+              py: 2.5,
             }}
+        >
+          <Stack
+              spacing={0.25}
           >
-            TestForge
-          </Typography>
+            <Typography
+                variant="h5"
+                fontWeight={800}
+                sx={{
+                  letterSpacing:
+                      '-0.04em',
+                }}
+            >
+              TestForge
+            </Typography>
 
-          <Typography
-            variant="caption"
-            color="text.secondary"
-          >
-            Test Management Platform
-          </Typography>
-        </Stack>
-      </Box>
+            <Typography
+                variant="caption"
+                color="text.secondary"
+            >
+              Test Management Platform
+            </Typography>
+          </Stack>
+        </Box>
 
-      <Divider />
+        <Divider />
 
-      {/*
+        {/*
        * ===============================================
        * NAVIGATION
        * ===============================================
        */}
 
-      <Box
-        sx={{
-          flex: 1,
+        <Box
+            sx={{
+              flex: 1,
 
-          overflowY:
-            'auto',
+              overflowY:
+                  'auto',
 
-          px: 1.5,
+              px: 1.5,
 
-          py: 2,
-        }}
-      >
-        <Stack
-          spacing={2.5}
+              py: 2,
+            }}
         >
-          {navigationSections.map(
-            section => (
+          <Stack
+              spacing={2.5}
+          >
+            {navigationSections.map(
+                section => (
 
-              <Box
-                key={
-                  section.title
-                }
-              >
-                <Typography
-                  variant="overline"
-                  color="text.secondary"
-                  sx={{
-                    display:
-                      'block',
-
-                    px: 1.5,
-
-                    mb: 0.5,
-
-                    fontSize: 11,
-
-                    fontWeight: 700,
-
-                    letterSpacing:
-                      '0.08em',
-                  }}
-                >
-                  {
-                    section.title
-                  }
-                </Typography>
-
-                <List
-                  disablePadding
-                >
-                  {section.items.map(
-                    item => {
-
-                      const active =
-                        isNavigationItemActive(
-                          location.pathname,
-                          item.path,
-                        );
-
-                      return (
-                        <ListItemButton
-                          key={
-                            item.path
-                          }
-                          selected={
-                            active
-                          }
-                          onClick={() =>
-                            navigate(
-                              item.path,
-                            )
-                          }
+                    <Box
+                        key={
+                          section.title
+                        }
+                    >
+                      <Typography
+                          variant="overline"
+                          color="text.secondary"
                           sx={{
-                            minHeight: 44,
+                            display:
+                                'block',
+
+                            px: 1.5,
 
                             mb: 0.5,
 
-                            borderRadius:
-                              1.5,
+                            fontSize: 11,
 
-                            '&.Mui-selected':
-                              {
-                                bgcolor:
-                                  'action.selected',
-                              },
+                            fontWeight: 700,
 
-                            '&.Mui-selected:hover':
-                              {
-                                bgcolor:
-                                  'action.selected',
-                              },
+                            letterSpacing:
+                                '0.08em',
                           }}
-                        >
-                          <ListItemIcon
-                            sx={{
-                              minWidth: 38,
+                      >
+                        {
+                          section.title
+                        }
+                      </Typography>
 
-                              color:
-                                active
-                                  ? 'primary.main'
-                                  : 'text.secondary',
-                            }}
-                          >
-                            {
-                              item.icon
-                            }
-                          </ListItemIcon>
+                      <List
+                          disablePadding
+                      >
+                        {section.items.map(
+                            item => {
 
-                          <ListItemText
-                            primary={
-                              item.label
-                            }
-                            primaryTypographyProps={{
-                              fontSize: 14,
+                              const active =
+                                  isNavigationItemActive(
+                                      location.pathname,
+                                      item.path,
+                                  );
 
-                              fontWeight:
-                                active
-                                  ? 700
-                                  : 500,
-                            }}
-                          />
-                        </ListItemButton>
-                      );
-                    },
-                  )}
-                </List>
-              </Box>
+                              return (
+                                  <ListItemButton
+                                      key={
+                                        item.path
+                                      }
+                                      selected={
+                                        active
+                                      }
+                                      onClick={() =>
+                                          navigate(
+                                              item.path,
+                                          )
+                                      }
+                                      sx={{
+                                        minHeight: 44,
 
-            ),
-          )}
-        </Stack>
-      </Box>
+                                        mb: 0.5,
 
-      <Divider />
+                                        borderRadius:
+                                            1.5,
 
-      {/*
+                                        '&.Mui-selected':
+                                            {
+                                              bgcolor:
+                                                  'action.selected',
+                                            },
+
+                                        '&.Mui-selected:hover':
+                                            {
+                                              bgcolor:
+                                                  'action.selected',
+                                            },
+                                      }}
+                                  >
+                                    <ListItemIcon
+                                        sx={{
+                                          minWidth: 38,
+
+                                          color:
+                                              active
+                                                  ? 'primary.main'
+                                                  : 'text.secondary',
+                                        }}
+                                    >
+                                      {
+                                        item.icon
+                                      }
+                                    </ListItemIcon>
+
+                                    <ListItemText
+                                        primary={
+                                          item.label
+                                        }
+                                        primaryTypographyProps={{
+                                          fontSize: 14,
+
+                                          fontWeight:
+                                              active
+                                                  ? 700
+                                                  : 500,
+                                        }}
+                                    />
+                                  </ListItemButton>
+                              );
+                            },
+                        )}
+                      </List>
+                    </Box>
+
+                ),
+            )}
+          </Stack>
+        </Box>
+
+        <Divider />
+
+        {/*
        * ===============================================
        * FOOTER
        * ===============================================
        */}
 
-      <Box
-        sx={{
-          px: 3,
-          py: 2,
-        }}
-      >
-        <Typography
-          variant="caption"
-          color="text.secondary"
+        <Box
+            sx={{
+              px: 3,
+              py: 2,
+            }}
         >
-          TestForge POC
-        </Typography>
+          <Typography
+              variant="caption"
+              color="text.secondary"
+          >
+            TestForge POC
+          </Typography>
 
-        <Typography
-          display="block"
-          variant="caption"
-          color="text.disabled"
-        >
-          Playwright + Java
-        </Typography>
+          <Typography
+              display="block"
+              variant="caption"
+              color="text.disabled"
+          >
+            Playwright + Java
+          </Typography>
+        </Box>
+
       </Box>
-
-    </Box>
   );
 }
