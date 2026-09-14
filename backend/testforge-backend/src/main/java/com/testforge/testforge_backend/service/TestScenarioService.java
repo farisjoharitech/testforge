@@ -25,15 +25,22 @@ public class TestScenarioService {
     private final RequirementRepository
             requirementRepository;
 
+    private final BusinessIdGeneratorService
+            businessIdGeneratorService;
+
     public TestScenarioService(
             TestScenarioRepository testScenarioRepository,
-            RequirementRepository requirementRepository) {
+            RequirementRepository requirementRepository,
+            BusinessIdGeneratorService businessIdGeneratorService) {
 
         this.testScenarioRepository =
                 testScenarioRepository;
 
         this.requirementRepository =
                 requirementRepository;
+
+        this.businessIdGeneratorService =
+                businessIdGeneratorService;
     }
 
     public TestScenario create(
@@ -52,14 +59,18 @@ public class TestScenarioService {
                                 )
                         );
 
+        String scenarioId = resolveScenarioId(
+                request.getScenarioId()
+        );
+
         if (testScenarioRepository
                 .existsByScenarioId(
-                        request.getScenarioId()
+                        scenarioId
                 )) {
 
             throw new DuplicateTestScenarioException(
                     "Scenario ID already exists: "
-                            + request.getScenarioId()
+                            + scenarioId
             );
         }
 
@@ -67,7 +78,7 @@ public class TestScenarioService {
                 new TestScenario();
 
         scenario.setScenarioId(
-                request.getScenarioId()
+                scenarioId
         );
 
         scenario.setRequirement(
@@ -215,5 +226,24 @@ public class TestScenarioService {
 
         testScenarioRepository
                 .deleteById(id);
+    }
+
+    private String resolveScenarioId(
+            String requestedScenarioId) {
+
+        if (
+                requestedScenarioId != null
+                        && !requestedScenarioId.isBlank()
+        ) {
+            return requestedScenarioId.trim();
+        }
+
+        String generatedId = businessIdGeneratorService.generateScenarioId();
+
+        while (testScenarioRepository.existsByScenarioId(generatedId)) {
+            generatedId = businessIdGeneratorService.generateScenarioId();
+        }
+
+        return generatedId;
     }
 }

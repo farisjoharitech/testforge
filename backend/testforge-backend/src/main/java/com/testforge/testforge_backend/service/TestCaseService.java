@@ -28,15 +28,22 @@ public class TestCaseService {
     private final TestScenarioRepository
             testScenarioRepository;
 
+    private final BusinessIdGeneratorService
+            businessIdGeneratorService;
+
     public TestCaseService(
             TestCaseRepository testCaseRepository,
-            TestScenarioRepository testScenarioRepository
+            TestScenarioRepository testScenarioRepository,
+            BusinessIdGeneratorService businessIdGeneratorService
     ) {
         this.testCaseRepository =
                 testCaseRepository;
 
         this.testScenarioRepository =
                 testScenarioRepository;
+
+        this.businessIdGeneratorService =
+                businessIdGeneratorService;
     }
 
     public TestCase create(
@@ -56,15 +63,19 @@ public class TestCaseService {
                                         )
                         );
 
+        String testCaseId = resolveTestCaseId(
+                request.getTestCaseId()
+        );
+
         if (
                 testCaseRepository
                         .existsByTestCaseId(
-                                request.getTestCaseId()
+                                testCaseId
                         )
         ) {
             throw new DuplicateTestCaseException(
                     "Test Case ID already exists: "
-                            + request.getTestCaseId()
+                            + testCaseId
             );
         }
 
@@ -77,7 +88,7 @@ public class TestCaseService {
                 new TestCase();
 
         testCase.setTestCaseId(
-                request.getTestCaseId()
+                testCaseId
         );
 
         testCase.setTestScenario(
@@ -415,6 +426,26 @@ public class TestCaseService {
                 .deleteById(
                         id
                 );
+    }
+
+
+    private String resolveTestCaseId(
+            String requestedTestCaseId
+    ) {
+        if (
+                requestedTestCaseId != null
+                        && !requestedTestCaseId.isBlank()
+        ) {
+            return requestedTestCaseId.trim();
+        }
+
+        String generatedId = businessIdGeneratorService.generateTestCaseId();
+
+        while (testCaseRepository.existsByTestCaseId(generatedId)) {
+            generatedId = businessIdGeneratorService.generateTestCaseId();
+        }
+
+        return generatedId;
     }
 
     private void validateAutomationType(

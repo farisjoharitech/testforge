@@ -1,6 +1,4 @@
 export interface CreateTestStepRequest {
-  testStepId: string;
-  stepOrder: number;
   action: string;
   target?: string;
   inputValue?: string;

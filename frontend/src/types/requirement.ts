@@ -12,7 +12,6 @@ export type RequirementStatus =
     | 'ARCHIVED';
 
 export interface CreateRequirementRequest {
-  requirementId: string;
   description: string;
   priority: RequirementPriority;
   status: RequirementStatus;

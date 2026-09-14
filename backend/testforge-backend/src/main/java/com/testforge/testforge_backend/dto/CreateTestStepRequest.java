@@ -2,19 +2,16 @@ package com.testforge.testforge_backend.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class CreateTestStepRequest {
 
-    @NotBlank(message = "Test Step ID is required")
     @Size(
             max = 50,
             message = "Test Step ID must not exceed 50 characters"
     )
     private String testStepId;
 
-    @NotNull(message = "Step Order is required")
     @Min(
             value = 1,
             message = "Step Order must be at least 1"

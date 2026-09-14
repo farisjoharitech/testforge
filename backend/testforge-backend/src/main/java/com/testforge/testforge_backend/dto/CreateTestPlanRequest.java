@@ -8,7 +8,6 @@ import jakarta.validation.constraints.Size;
 
 public class CreateTestPlanRequest {
 
-    @NotBlank(message = "Test Plan ID is required")
     @Size(max = 50, message = "Test Plan ID must not exceed 50 characters")
     private String testPlanId;
 

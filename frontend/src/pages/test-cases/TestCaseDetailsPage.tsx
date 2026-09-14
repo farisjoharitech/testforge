@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useState,
 } from 'react';
 
@@ -64,32 +63,32 @@ import type {
 } from '../../types/testStep';
 
 function displayValue(
-  value:
-    | string
-    | null
-    | undefined,
+    value:
+        | string
+        | null
+        | undefined,
 ): string {
   return value?.trim() ||
-    'Not specified';
+      'Not specified';
 }
 
 function formatDate(
-  value:
-    | string
-    | null
-    | undefined,
+    value:
+        | string
+        | null
+        | undefined,
 ): string {
   if (!value) {
     return 'Not specified';
   }
 
   const date =
-    new Date(value);
+      new Date(value);
 
   if (
-    Number.isNaN(
-      date.getTime(),
-    )
+      Number.isNaN(
+          date.getTime(),
+      )
   ) {
     return value;
   }
@@ -98,12 +97,12 @@ function formatDate(
 }
 
 function getPriorityColor(
-  priority: string,
+    priority: string,
 ):
-  | 'default'
-  | 'primary'
-  | 'warning'
-  | 'error' {
+    | 'default'
+    | 'primary'
+    | 'warning'
+    | 'error' {
   switch (priority) {
     case 'CRITICAL':
       return 'error';
@@ -120,13 +119,13 @@ function getPriorityColor(
 }
 
 function getStatusColor(
-  status: string,
+    status: string,
 ):
-  | 'default'
-  | 'primary'
-  | 'success'
-  | 'warning'
-  | 'error' {
+    | 'default'
+    | 'primary'
+    | 'success'
+    | 'warning'
+    | 'error' {
   switch (status) {
     case 'ACTIVE':
       return 'primary';
@@ -146,7 +145,7 @@ function getStatusColor(
 }
 
 function getTestTypeLabel(
-  testType: string,
+    testType: string,
 ): string {
   switch (testType) {
     case 'END_TO_END':
@@ -179,7 +178,7 @@ function getTestTypeLabel(
 }
 
 function getAutomationTypeLabel(
-  automationType: string,
+    automationType: string,
 ): string {
   switch (automationType) {
     case 'UI_API':
@@ -200,7 +199,7 @@ function getAutomationTypeLabel(
 }
 
 function getAutomationStatusLabel(
-  automationStatus: string,
+    automationStatus: string,
 ): string {
   switch (automationStatus) {
     case 'NOT_APPLICABLE':
@@ -228,7 +227,7 @@ function getAutomationStatusLabel(
 
 export default function TestCaseDetailsPage() {
   const navigate =
-    useNavigate();
+      useNavigate();
 
   const {
     testCaseId,
@@ -240,14 +239,14 @@ export default function TestCaseDetailsPage() {
     testCase,
     setTestCase,
   ] = useState<
-    TestCase | null
+      TestCase | null
   >(null);
 
   const [
     testSteps,
     setTestSteps,
   ] = useState<
-    TestStep[]
+      TestStep[]
   >([]);
 
   const [
@@ -264,14 +263,14 @@ export default function TestCaseDetailsPage() {
     error,
     setError,
   ] = useState<
-    string | null
+      string | null
   >(null);
 
   const [
     successMessage,
     setSuccessMessage,
   ] = useState<
-    string | null
+      string | null
   >(null);
 
   const [
@@ -298,21 +297,21 @@ export default function TestCaseDetailsPage() {
     deleteError,
     setDeleteError,
   ] = useState<
-    string | null
+      string | null
   >(null);
 
   const [
     editingTestStep,
     setEditingTestStep,
   ] = useState<
-    TestStep | null
+      TestStep | null
   >(null);
 
   const [
     deletingTestStep,
     setDeletingTestStep,
   ] = useState<
-    TestStep | null
+      TestStep | null
   >(null);
 
   const [
@@ -324,400 +323,373 @@ export default function TestCaseDetailsPage() {
     deleteStepError,
     setDeleteStepError,
   ] = useState<
-    string | null
+      string | null
   >(null);
 
-  const suggestedStepOrder =
-    useMemo(
-      () => {
-        if (
-          testSteps.length ===
-          0
-        ) {
-          return 1;
-        }
-
-        const highestOrder =
-          Math.max(
-            ...testSteps.map(
-              (
-                testStep,
-              ) =>
-                testStep.stepOrder,
-            ),
-          );
-
-        return (
-          highestOrder + 1
-        );
-      },
-      [testSteps],
-    );
-
   const loadPage =
-    useCallback(
-      async (
-        isRefresh = false,
+      useCallback(
+          async (
+              isRefresh = false,
+          ) => {
+            if (!testCaseId) {
+              setError(
+                  'Test Case ID is missing.',
+              );
+
+              setLoading(false);
+
+              return;
+            }
+
+            try {
+              if (isRefresh) {
+                setRefreshing(
+                    true,
+                );
+              } else {
+                setLoading(
+                    true,
+                );
+              }
+
+              setError(null);
+
+              const [
+                testCaseResponse,
+                testStepResponse,
+              ] =
+                  await Promise.all([
+                    testCaseApi
+                        .getTestCaseByBusinessId(
+                            testCaseId,
+                        ),
+
+                    testStepApi
+                        .getByTestCase(
+                            testCaseId,
+                        ),
+                  ]);
+
+              setTestCase(
+                  testCaseResponse,
+              );
+
+              setTestSteps(
+                  testStepResponse,
+              );
+            } catch (err) {
+              console.error(
+                  'Failed to load Test Case details:',
+                  err,
+              );
+
+              if (
+                  err instanceof
+                  ApiError
+              ) {
+                setError(
+                    err.message,
+                );
+              } else {
+                setError(
+                    'Unable to load the Test Case details or Test Steps.',
+                );
+              }
+            } finally {
+              setLoading(false);
+
+              setRefreshing(
+                  false,
+              );
+            }
+          },
+          [testCaseId],
+      );
+
+  useEffect(
+      () => {
+        void loadPage();
+      },
+      [loadPage],
+  );
+
+  const handleTestStepCreated =
+      (
+          testStep:
+          TestStep,
       ) => {
-        if (!testCaseId) {
-          setError(
-            'Test Case ID is missing.',
-          );
+        setCreateDialogOpen(
+            false,
+        );
 
-          setLoading(false);
+        setSuccessMessage(
+            `Test Step "${testStep.testStepId}" created successfully.`,
+        );
 
+        setTestSteps(
+            (
+                currentSteps,
+            ) =>
+                [
+                  ...currentSteps,
+                  testStep,
+                ].sort(
+                    (
+                        first,
+                        second,
+                    ) =>
+                        first.stepOrder -
+                        second.stepOrder,
+                ),
+        );
+      };
+
+  const handleTestCaseUpdated =
+      (
+          updatedTestCase:
+          TestCase,
+      ) => {
+        setTestCase(
+            updatedTestCase,
+        );
+
+        setEditDialogOpen(
+            false,
+        );
+
+        setSuccessMessage(
+            `Test Case "${updatedTestCase.testCaseId}" updated successfully.`,
+        );
+      };
+
+  const handleDeleteTestCase =
+      async () => {
+        if (!testCase) {
           return;
         }
 
         try {
-          if (isRefresh) {
-            setRefreshing(
-              true,
-            );
-          } else {
-            setLoading(
-              true,
-            );
-          }
+          setDeleting(true);
 
-          setError(null);
-
-          const [
-            testCaseResponse,
-            testStepResponse,
-          ] =
-            await Promise.all([
-              testCaseApi
-                .getTestCaseByBusinessId(
-                  testCaseId,
-                ),
-
-              testStepApi
-                .getByTestCase(
-                  testCaseId,
-                ),
-            ]);
-
-          setTestCase(
-            testCaseResponse,
+          setDeleteError(
+              null,
           );
 
-          setTestSteps(
-            testStepResponse,
+          await testCaseApi
+              .deleteTestCase(
+                  testCase.id,
+              );
+
+          navigate(
+              `/scenarios/${encodeURIComponent(
+                  testCase.scenarioBusinessId,
+              )}`,
           );
         } catch (err) {
           console.error(
-            'Failed to load Test Case details:',
-            err,
+              'Failed to delete Test Case:',
+              err,
           );
 
           if (
-            err instanceof
-            ApiError
+              err instanceof
+              ApiError
           ) {
-            setError(
-              err.message,
+            setDeleteError(
+                err.message,
             );
           } else {
-            setError(
-              'Unable to load the Test Case details or Test Steps.',
+            setDeleteError(
+                'Unable to delete the Test Case. Delete its Test Steps or related automation records first.',
             );
           }
         } finally {
-          setLoading(false);
-
-          setRefreshing(
-            false,
-          );
+          setDeleting(false);
         }
-      },
-      [testCaseId],
-    );
-
-  useEffect(
-    () => {
-      void loadPage();
-    },
-    [loadPage],
-  );
-
-  const handleTestStepCreated =
-    (
-      testStep:
-        TestStep,
-    ) => {
-      setCreateDialogOpen(
-        false,
-      );
-
-      setSuccessMessage(
-        `Test Step "${testStep.testStepId}" created successfully.`,
-      );
-
-      setTestSteps(
-        (
-          currentSteps,
-        ) =>
-          [
-            ...currentSteps,
-            testStep,
-          ].sort(
-            (
-              first,
-              second,
-            ) =>
-              first.stepOrder -
-              second.stepOrder,
-          ),
-      );
-    };
-
-  const handleTestCaseUpdated =
-    (
-      updatedTestCase:
-        TestCase,
-    ) => {
-      setTestCase(
-        updatedTestCase,
-      );
-
-      setEditDialogOpen(
-        false,
-      );
-
-      setSuccessMessage(
-        `Test Case "${updatedTestCase.testCaseId}" updated successfully.`,
-      );
-    };
-
-  const handleDeleteTestCase =
-    async () => {
-      if (!testCase) {
-        return;
-      }
-
-      try {
-        setDeleting(true);
-
-        setDeleteError(
-          null,
-        );
-
-        await testCaseApi
-          .deleteTestCase(
-            testCase.id,
-          );
-
-        navigate(
-          `/scenarios/${encodeURIComponent(
-            testCase.scenarioBusinessId,
-          )}`,
-        );
-      } catch (err) {
-        console.error(
-          'Failed to delete Test Case:',
-          err,
-        );
-
-        if (
-          err instanceof
-          ApiError
-        ) {
-          setDeleteError(
-            err.message,
-          );
-        } else {
-          setDeleteError(
-            'Unable to delete the Test Case. Delete its Test Steps or related automation records first.',
-          );
-        }
-      } finally {
-        setDeleting(false);
-      }
-    };
+      };
 
   const handleTestStepUpdated =
-    (
-      updatedTestStep:
-        TestStep,
-    ) => {
-      setTestSteps(
-        (
-          current,
-        ) =>
-          current
-            .map(
-              (
-                step,
-              ) =>
-                step.id ===
-                updatedTestStep.id
-                  ? updatedTestStep
-                  : step,
-            )
-            .sort(
-              (
-                first,
-                second,
-              ) =>
-                first.stepOrder -
-                second.stepOrder,
-            ),
-      );
-
-      setEditingTestStep(
-        null,
-      );
-
-      setSuccessMessage(
-        `Test Step "${updatedTestStep.testStepId}" updated successfully.`,
-      );
-    };
-
-  const handleDeleteTestStep =
-    async () => {
-      if (
-        !deletingTestStep
-      ) {
-        return;
-      }
-
-      try {
-        setDeletingStep(
-          true,
-        );
-
-        setDeleteStepError(
-          null,
-        );
-
-        await testStepApi
-          .deleteTestStep(
-            deletingTestStep.id,
-          );
-
+      (
+          updatedTestStep:
+          TestStep,
+      ) => {
         setTestSteps(
-          (
-            current,
-          ) =>
-            current.filter(
-              (
-                step,
-              ) =>
-                step.id !==
-                deletingTestStep.id,
-            ),
+            (
+                current,
+            ) =>
+                current
+                    .map(
+                        (
+                            step,
+                        ) =>
+                            step.id ===
+                            updatedTestStep.id
+                                ? updatedTestStep
+                                : step,
+                    )
+                    .sort(
+                        (
+                            first,
+                            second,
+                        ) =>
+                            first.stepOrder -
+                            second.stepOrder,
+                    ),
+        );
+
+        setEditingTestStep(
+            null,
         );
 
         setSuccessMessage(
-          `Test Step "${deletingTestStep.testStepId}" deleted successfully.`,
+            `Test Step "${updatedTestStep.testStepId}" updated successfully.`,
         );
+      };
 
-        setDeletingTestStep(
-          null,
-        );
-      } catch (err) {
-        console.error(
-          'Failed to delete Test Step:',
-          err,
-        );
-
+  const handleDeleteTestStep =
+      async () => {
         if (
-          err instanceof
-          ApiError
+            !deletingTestStep
         ) {
-          setDeleteStepError(
-            err.message,
+          return;
+        }
+
+        try {
+          setDeletingStep(
+              true,
           );
-        } else {
+
           setDeleteStepError(
-            'Unable to delete the Test Step.',
+              null,
+          );
+
+          await testStepApi
+              .deleteTestStep(
+                  deletingTestStep.id,
+              );
+
+          setTestSteps(
+              (
+                  current,
+              ) =>
+                  current.filter(
+                      (
+                          step,
+                      ) =>
+                          step.id !==
+                          deletingTestStep.id,
+                  ),
+          );
+
+          setSuccessMessage(
+              `Test Step "${deletingTestStep.testStepId}" deleted successfully.`,
+          );
+
+          setDeletingTestStep(
+              null,
+          );
+        } catch (err) {
+          console.error(
+              'Failed to delete Test Step:',
+              err,
+          );
+
+          if (
+              err instanceof
+              ApiError
+          ) {
+            setDeleteStepError(
+                err.message,
+            );
+          } else {
+            setDeleteStepError(
+                'Unable to delete the Test Step.',
+            );
+          }
+        } finally {
+          setDeletingStep(
+              false,
           );
         }
-      } finally {
-        setDeletingStep(
-          false,
-        );
-      }
-    };
+      };
 
   if (loading) {
     return (
-      <Card
-        variant="outlined"
-        sx={{
-          borderRadius: 3,
-        }}
-      >
-        <CardContent>
-          <Stack
-            spacing={2}
+        <Card
+            variant="outlined"
             sx={{
-              minHeight: 320,
-              alignItems:
-                'center',
-              justifyContent:
-                'center',
+              borderRadius: 3,
             }}
-          >
-            <CircularProgress />
-
-            <Typography
-              color="text.secondary"
+        >
+          <CardContent>
+            <Stack
+                spacing={2}
+                sx={{
+                  minHeight: 320,
+                  alignItems:
+                      'center',
+                  justifyContent:
+                      'center',
+                }}
             >
-              Loading Test
-              Case...
-            </Typography>
-          </Stack>
-        </CardContent>
-      </Card>
+              <CircularProgress />
+
+              <Typography
+                  color="text.secondary"
+              >
+                Loading Test
+                Case...
+              </Typography>
+            </Stack>
+          </CardContent>
+        </Card>
     );
   }
 
   if (
-    error &&
-    !testCase
+      error &&
+      !testCase
   ) {
     return (
-      <Stack
-        spacing={3}
-      >
-        <Button
-          startIcon={
-            <ArrowBack />
-          }
-          onClick={() =>
-            navigate(
-              '/test-plans',
-            )
-          }
-          sx={{
-            alignSelf:
-              'flex-start',
-          }}
+        <Stack
+            spacing={3}
         >
-          Back
-        </Button>
+          <Button
+              startIcon={
+                <ArrowBack />
+              }
+              onClick={() =>
+                  navigate(
+                      '/test-plans',
+                  )
+              }
+              sx={{
+                alignSelf:
+                    'flex-start',
+              }}
+          >
+            Back
+          </Button>
 
-        <Alert
-          severity="error"
-        >
-          {error}
-        </Alert>
+          <Alert
+              severity="error"
+          >
+            {error}
+          </Alert>
 
-        <Button
-          variant="contained"
-          onClick={() =>
-            void loadPage()
-          }
-          sx={{
-            alignSelf:
-              'flex-start',
-          }}
-        >
-          Try Again
-        </Button>
-      </Stack>
+          <Button
+              variant="contained"
+              onClick={() =>
+                  void loadPage()
+              }
+              sx={{
+                alignSelf:
+                    'flex-start',
+              }}
+          >
+            Try Again
+          </Button>
+        </Stack>
     );
   }
 
@@ -726,923 +698,920 @@ export default function TestCaseDetailsPage() {
   }
 
   return (
-    <Stack
-      spacing={3}
-    >
-      <PageHeader
-        title={
-          testCase.testCaseId
-        }
-        description={
-          testCase.name
-        }
-        breadcrumbs={[
-          {
-            label:
-              'Test Plans',
-            to:
-              '/test-plans',
-          },
+      <Stack
+          spacing={3}
+      >
+        <PageHeader
+            title={
+              testCase.testCaseId
+            }
+            description={
+              testCase.name
+            }
+            breadcrumbs={[
+              {
+                label:
+                    'Test Plans',
+                to:
+                    '/test-plans',
+              },
 
-          {
-            label:
-              testCase.scenarioBusinessId,
-
-            to:
-              `/scenarios/${encodeURIComponent(
+              {
+                label:
                 testCase.scenarioBusinessId,
-              )}`,
-          },
 
-          {
-            label:
-              testCase.testCaseId,
-          },
-        ]}
-        actions={
-          <Stack
-            direction={{
-              xs: 'column',
-              sm: 'row',
-            }}
-            spacing={1}
-          >
-            <Button
-              variant="outlined"
-              startIcon={
-                <Refresh />
-              }
-              disabled={
-                refreshing
-              }
-              onClick={() =>
-                void loadPage(
-                  true,
-                )
-              }
-            >
-              {refreshing
-                ? 'Refreshing...'
-                : 'Refresh'}
-            </Button>
+                to:
+                    `/scenarios/${encodeURIComponent(
+                        testCase.scenarioBusinessId,
+                    )}`,
+              },
 
-            <Button
-              variant="outlined"
-              startIcon={
-                <Edit />
-              }
-              onClick={() =>
-                setEditDialogOpen(
-                  true,
-                )
-              }
-            >
-              Edit
-            </Button>
-
-            <Button
-              color="error"
-              variant="outlined"
-              startIcon={
-                <Delete />
-              }
-              onClick={() => {
-                setDeleteError(
-                  null,
-                );
-
-                setDeleteDialogOpen(
-                  true,
-                );
-              }}
-            >
-              Delete
-            </Button>
-
-            <Button
-              variant="contained"
-              startIcon={
-                <Add />
-              }
-              onClick={() =>
-                setCreateDialogOpen(
-                  true,
-                )
-              }
-            >
-              Add Test Step
-            </Button>
-          </Stack>
-        }
-      />
-
-      {successMessage && (
-        <Alert
-          severity="success"
-          onClose={() =>
-            setSuccessMessage(
-              null,
-            )
-          }
-        >
-          {successMessage}
-        </Alert>
-      )}
-
-      {error && (
-        <Alert
-          severity="error"
-          onClose={() =>
-            setError(null)
-          }
-        >
-          {error}
-        </Alert>
-      )}
-
-      <Card
-        variant="outlined"
-        sx={{
-          borderRadius: 3,
-        }}
-      >
-        <CardContent>
-          <Stack
-            spacing={3}
-          >
-            <Box
-              sx={{
-                display:
-                  'flex',
-
-                justifyContent:
-                  'space-between',
-
-                alignItems:
-                  'flex-start',
-
-                gap: 2,
-
-                flexWrap:
-                  'wrap',
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="h6"
-                  fontWeight={700}
-                >
-                  Test Case
-                  Information
-                </Typography>
-
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                >
-                  Test Case
-                  definition and
-                  automation
-                  metadata.
-                </Typography>
-              </Box>
-
+              {
+                label:
+                testCase.testCaseId,
+              },
+            ]}
+            actions={
               <Stack
-                direction="row"
-                spacing={1}
-                sx={{
-                  flexWrap:
-                    'wrap',
-                }}
+                  direction={{
+                    xs: 'column',
+                    sm: 'row',
+                  }}
+                  spacing={1}
               >
-                <Chip
-                  label={getTestTypeLabel(
-                    testCase.testType,
-                  )}
-                  variant="outlined"
-                />
+                <Button
+                    variant="outlined"
+                    startIcon={
+                      <Refresh />
+                    }
+                    disabled={
+                      refreshing
+                    }
+                    onClick={() =>
+                        void loadPage(
+                            true,
+                        )
+                    }
+                >
+                  {refreshing
+                      ? 'Refreshing...'
+                      : 'Refresh'}
+                </Button>
 
-                <Chip
-                  label={
-                    testCase.priority
-                  }
-                  color={getPriorityColor(
-                    testCase.priority,
-                  )}
-                  variant="outlined"
-                />
+                <Button
+                    variant="outlined"
+                    startIcon={
+                      <Edit />
+                    }
+                    onClick={() =>
+                        setEditDialogOpen(
+                            true,
+                        )
+                    }
+                >
+                  Edit
+                </Button>
 
-                <Chip
-                  label={
-                    testCase.status
-                  }
-                  color={getStatusColor(
-                    testCase.status,
-                  )}
-                  variant="outlined"
-                />
+                <Button
+                    color="error"
+                    variant="outlined"
+                    startIcon={
+                      <Delete />
+                    }
+                    onClick={() => {
+                      setDeleteError(
+                          null,
+                      );
 
-                <Chip
-                  label={
-                    testCase.automatable
-                      ? 'Automatable'
-                      : 'Manual'
-                  }
-                  color={
-                    testCase.automatable
-                      ? 'success'
-                      : 'default'
-                  }
-                  variant="outlined"
-                />
+                      setDeleteDialogOpen(
+                          true,
+                      );
+                    }}
+                >
+                  Delete
+                </Button>
+
+                <Button
+                    variant="contained"
+                    startIcon={
+                      <Add />
+                    }
+                    onClick={() =>
+                        setCreateDialogOpen(
+                            true,
+                        )
+                    }
+                >
+                  Add Test Step
+                </Button>
               </Stack>
-            </Box>
-
-            <Divider />
-
-            <Box>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-              >
-                Name
-              </Typography>
-
-              <Typography>
-                {testCase.name}
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                display:
-                  'grid',
-
-                gridTemplateColumns: {
-                  xs: '1fr',
-                  md: 'repeat(3, 1fr)',
-                },
-
-                gap: 3,
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                >
-                  Preconditions
-                </Typography>
-
-                <Typography
-                  sx={{
-                    whiteSpace:
-                      'pre-wrap',
-                  }}
-                >
-                  {displayValue(
-                    testCase.preconditions,
-                  )}
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                >
-                  Test Data
-                </Typography>
-
-                <Typography
-                  sx={{
-                    whiteSpace:
-                      'pre-wrap',
-                  }}
-                >
-                  {displayValue(
-                    testCase.testData,
-                  )}
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                >
-                  Expected Result
-                </Typography>
-
-                <Typography
-                  sx={{
-                    whiteSpace:
-                      'pre-wrap',
-                  }}
-                >
-                  {
-                    testCase.expectedResult
-                  }
-                </Typography>
-              </Box>
-            </Box>
-
-            <Divider />
-
-            <Box
-              sx={{
-                display:
-                  'grid',
-
-                gridTemplateColumns: {
-                  xs: '1fr',
-                  sm: 'repeat(2, 1fr)',
-                  md: 'repeat(4, 1fr)',
-                },
-
-                gap: 3,
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                >
-                  Test Case ID
-                </Typography>
-
-                <Typography
-                  fontWeight={600}
-                >
-                  {
-                    testCase.testCaseId
-                  }
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                >
-                  Scenario
-                </Typography>
-
-                <Typography>
-                  {
-                    testCase.scenarioBusinessId
-                  }
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                >
-                  Automation Type
-                </Typography>
-
-                <Typography>
-                  {getAutomationTypeLabel(
-                    testCase.automationType,
-                  )}
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                >
-                  Automation Status
-                </Typography>
-
-                <Typography>
-                  {getAutomationStatusLabel(
-                    testCase.automationStatus,
-                  )}
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                >
-                  Created
-                </Typography>
-
-                <Typography>
-                  {formatDate(
-                    testCase.createdAt,
-                  )}
-                </Typography>
-              </Box>
-
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                >
-                  Updated
-                </Typography>
-
-                <Typography>
-                  {formatDate(
-                    testCase.updatedAt,
-                  )}
-                </Typography>
-              </Box>
-            </Box>
-          </Stack>
-        </CardContent>
-      </Card>
-
-      <Box
-        sx={{
-          display: 'flex',
-
-          justifyContent:
-            'space-between',
-
-          alignItems:
-            'center',
-
-          gap: 2,
-
-          flexWrap:
-            'wrap',
-        }}
-      >
-        <Box>
-          <Typography
-            variant="h5"
-            fontWeight={700}
-          >
-            Test Steps
-          </Typography>
-
-          <Typography
-            color="text.secondary"
-          >
-            Ordered execution
-            steps for this Test
-            Case.
-          </Typography>
-        </Box>
-
-        <Chip
-          label={`${testSteps.length} step${
-            testSteps.length ===
-            1
-              ? ''
-              : 's'
-          }`}
-          variant="outlined"
+            }
         />
-      </Box>
 
-      {testSteps.length ===
-      0 ? (
+        {successMessage && (
+            <Alert
+                severity="success"
+                onClose={() =>
+                    setSuccessMessage(
+                        null,
+                    )
+                }
+            >
+              {successMessage}
+            </Alert>
+        )}
+
+        {error && (
+            <Alert
+                severity="error"
+                onClose={() =>
+                    setError(null)
+                }
+            >
+              {error}
+            </Alert>
+        )}
+
         <Card
-          variant="outlined"
-          sx={{
-            borderRadius: 3,
-          }}
+            variant="outlined"
+            sx={{
+              borderRadius: 3,
+            }}
         >
           <CardContent>
             <Stack
-              spacing={2}
-              sx={{
-                minHeight: 250,
-
-                alignItems:
-                  'center',
-
-                justifyContent:
-                  'center',
-
-                textAlign:
-                  'center',
-              }}
+                spacing={3}
             >
-              <Typography
-                variant="h6"
-              >
-                No Test Steps yet
-              </Typography>
+              <Box
+                  sx={{
+                    display:
+                        'flex',
 
-              <Typography
-                color="text.secondary"
-              >
-                Create the first
-                execution step
-                for this Test
-                Case.
-              </Typography>
+                    justifyContent:
+                        'space-between',
 
-              <Button
-                variant="contained"
-                startIcon={
-                  <Add />
-                }
-                onClick={() =>
-                  setCreateDialogOpen(
-                    true,
-                  )
-                }
+                    alignItems:
+                        'flex-start',
+
+                    gap: 2,
+
+                    flexWrap:
+                        'wrap',
+                  }}
               >
-                Add Test Step
-              </Button>
+                <Box>
+                  <Typography
+                      variant="h6"
+                      fontWeight={700}
+                  >
+                    Test Case
+                    Information
+                  </Typography>
+
+                  <Typography
+                      variant="body2"
+                      color="text.secondary"
+                  >
+                    Test Case
+                    definition and
+                    automation
+                    metadata.
+                  </Typography>
+                </Box>
+
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                      flexWrap:
+                          'wrap',
+                    }}
+                >
+                  <Chip
+                      label={getTestTypeLabel(
+                          testCase.testType,
+                      )}
+                      variant="outlined"
+                  />
+
+                  <Chip
+                      label={
+                        testCase.priority
+                      }
+                      color={getPriorityColor(
+                          testCase.priority,
+                      )}
+                      variant="outlined"
+                  />
+
+                  <Chip
+                      label={
+                        testCase.status
+                      }
+                      color={getStatusColor(
+                          testCase.status,
+                      )}
+                      variant="outlined"
+                  />
+
+                  <Chip
+                      label={
+                        testCase.automatable
+                            ? 'Automatable'
+                            : 'Manual'
+                      }
+                      color={
+                        testCase.automatable
+                            ? 'success'
+                            : 'default'
+                      }
+                      variant="outlined"
+                  />
+                </Stack>
+              </Box>
+
+              <Divider />
+
+              <Box>
+                <Typography
+                    variant="caption"
+                    color="text.secondary"
+                >
+                  Name
+                </Typography>
+
+                <Typography>
+                  {testCase.name}
+                </Typography>
+              </Box>
+
+              <Box
+                  sx={{
+                    display:
+                        'grid',
+
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      md: 'repeat(3, 1fr)',
+                    },
+
+                    gap: 3,
+                  }}
+              >
+                <Box>
+                  <Typography
+                      variant="caption"
+                      color="text.secondary"
+                  >
+                    Preconditions
+                  </Typography>
+
+                  <Typography
+                      sx={{
+                        whiteSpace:
+                            'pre-wrap',
+                      }}
+                  >
+                    {displayValue(
+                        testCase.preconditions,
+                    )}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography
+                      variant="caption"
+                      color="text.secondary"
+                  >
+                    Test Data
+                  </Typography>
+
+                  <Typography
+                      sx={{
+                        whiteSpace:
+                            'pre-wrap',
+                      }}
+                  >
+                    {displayValue(
+                        testCase.testData,
+                    )}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography
+                      variant="caption"
+                      color="text.secondary"
+                  >
+                    Expected Result
+                  </Typography>
+
+                  <Typography
+                      sx={{
+                        whiteSpace:
+                            'pre-wrap',
+                      }}
+                  >
+                    {
+                      testCase.expectedResult
+                    }
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Divider />
+
+              <Box
+                  sx={{
+                    display:
+                        'grid',
+
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: 'repeat(2, 1fr)',
+                      md: 'repeat(4, 1fr)',
+                    },
+
+                    gap: 3,
+                  }}
+              >
+                <Box>
+                  <Typography
+                      variant="caption"
+                      color="text.secondary"
+                  >
+                    Test Case ID
+                  </Typography>
+
+                  <Typography
+                      fontWeight={600}
+                  >
+                    {
+                      testCase.testCaseId
+                    }
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography
+                      variant="caption"
+                      color="text.secondary"
+                  >
+                    Scenario
+                  </Typography>
+
+                  <Typography>
+                    {
+                      testCase.scenarioBusinessId
+                    }
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography
+                      variant="caption"
+                      color="text.secondary"
+                  >
+                    Automation Type
+                  </Typography>
+
+                  <Typography>
+                    {getAutomationTypeLabel(
+                        testCase.automationType,
+                    )}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography
+                      variant="caption"
+                      color="text.secondary"
+                  >
+                    Automation Status
+                  </Typography>
+
+                  <Typography>
+                    {getAutomationStatusLabel(
+                        testCase.automationStatus,
+                    )}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography
+                      variant="caption"
+                      color="text.secondary"
+                  >
+                    Created
+                  </Typography>
+
+                  <Typography>
+                    {formatDate(
+                        testCase.createdAt,
+                    )}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography
+                      variant="caption"
+                      color="text.secondary"
+                  >
+                    Updated
+                  </Typography>
+
+                  <Typography>
+                    {formatDate(
+                        testCase.updatedAt,
+                    )}
+                  </Typography>
+                </Box>
+              </Box>
             </Stack>
           </CardContent>
         </Card>
-      ) : (
-        <Stack
-          spacing={2}
+
+        <Box
+            sx={{
+              display: 'flex',
+
+              justifyContent:
+                  'space-between',
+
+              alignItems:
+                  'center',
+
+              gap: 2,
+
+              flexWrap:
+                  'wrap',
+            }}
         >
-          {testSteps.map(
-            (
-              testStep,
-            ) => (
-              <Card
-                key={
-                  testStep.id
-                }
+          <Box>
+            <Typography
+                variant="h5"
+                fontWeight={700}
+            >
+              Test Steps
+            </Typography>
+
+            <Typography
+                color="text.secondary"
+            >
+              Ordered execution
+              steps for this Test
+              Case.
+            </Typography>
+          </Box>
+
+          <Chip
+              label={`${testSteps.length} step${
+                  testSteps.length ===
+                  1
+                      ? ''
+                      : 's'
+              }`}
+              variant="outlined"
+          />
+        </Box>
+
+        {testSteps.length ===
+        0 ? (
+            <Card
                 variant="outlined"
                 sx={{
                   borderRadius: 3,
                 }}
-              >
-                <CardContent>
-                  <Stack
+            >
+              <CardContent>
+                <Stack
                     spacing={2}
+                    sx={{
+                      minHeight: 250,
+
+                      alignItems:
+                          'center',
+
+                      justifyContent:
+                          'center',
+
+                      textAlign:
+                          'center',
+                    }}
+                >
+                  <Typography
+                      variant="h6"
                   >
-                    <Box
-                      sx={{
-                        display:
-                          'flex',
+                    No Test Steps yet
+                  </Typography>
 
-                        justifyContent:
-                          'space-between',
+                  <Typography
+                      color="text.secondary"
+                  >
+                    Create the first
+                    execution step
+                    for this Test
+                    Case.
+                  </Typography>
 
-                        alignItems:
-                          'flex-start',
-
-                        gap: 2,
-
-                        flexWrap:
-                          'wrap',
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          display:
-                            'flex',
-
-                          alignItems:
-                            'center',
-
-                          gap: 2,
-
-                          flex: 1,
-
-                          flexWrap:
-                            'wrap',
-                        }}
-                      >
-                        <Chip
-                          label={`Step ${testStep.stepOrder}`}
-                          color="primary"
-                        />
-
-                        <Typography
-                          variant="h6"
-                          fontWeight={700}
-                        >
-                          {
-                            testStep.testStepId
+                  <Button
+                      variant="contained"
+                      startIcon={
+                        <Add />
+                      }
+                      onClick={() =>
+                          setCreateDialogOpen(
+                              true,
+                          )
+                      }
+                  >
+                    Add Test Step
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
+        ) : (
+            <Stack
+                spacing={2}
+            >
+              {testSteps.map(
+                  (
+                      testStep,
+                  ) => (
+                      <Card
+                          key={
+                            testStep.id
                           }
-                        </Typography>
-                      </Box>
-
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                      >
-                        <Button
-                          size="small"
-                          startIcon={
-                            <Edit />
-                          }
-                          onClick={() =>
-                            setEditingTestStep(
-                              testStep,
-                            )
-                          }
-                        >
-                          Edit
-                        </Button>
-
-                        <Button
-                          size="small"
-                          color="error"
-                          startIcon={
-                            <Delete />
-                          }
-                          onClick={() => {
-                            setDeleteStepError(
-                              null,
-                            );
-
-                            setDeletingTestStep(
-                              testStep,
-                            );
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      </Stack>
-                    </Box>
-
-                    <Divider />
-
-                    <Box>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                      >
-                        Action
-                      </Typography>
-
-                      <Typography
-                        sx={{
-                          whiteSpace:
-                            'pre-wrap',
-                        }}
-                      >
-                        {
-                          testStep.action
-                        }
-                      </Typography>
-                    </Box>
-
-                    <Box
-                      sx={{
-                        display:
-                          'grid',
-
-                        gridTemplateColumns: {
-                          xs: '1fr',
-                          md: 'repeat(3, 1fr)',
-                        },
-
-                        gap: 3,
-                      }}
-                    >
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          Target
-                        </Typography>
-
-                        <Typography
-                          variant="body2"
+                          variant="outlined"
                           sx={{
-                            whiteSpace:
-                              'pre-wrap',
+                            borderRadius: 3,
                           }}
-                        >
-                          {displayValue(
-                            testStep.target,
-                          )}
-                        </Typography>
-                      </Box>
+                      >
+                        <CardContent>
+                          <Stack
+                              spacing={2}
+                          >
+                            <Box
+                                sx={{
+                                  display:
+                                      'flex',
 
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          Input Value
-                        </Typography>
+                                  justifyContent:
+                                      'space-between',
 
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            whiteSpace:
-                              'pre-wrap',
-                          }}
-                        >
-                          {displayValue(
-                            testStep.inputValue,
-                          )}
-                        </Typography>
-                      </Box>
+                                  alignItems:
+                                      'flex-start',
 
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          Expected Result
-                        </Typography>
+                                  gap: 2,
 
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            whiteSpace:
-                              'pre-wrap',
-                          }}
-                        >
-                          {displayValue(
-                            testStep.expectedResult,
-                          )}
-                        </Typography>
-                      </Box>
-                    </Box>
+                                  flexWrap:
+                                      'wrap',
+                                }}
+                            >
+                              <Box
+                                  sx={{
+                                    display:
+                                        'flex',
 
-                    <Divider />
+                                    alignItems:
+                                        'center',
 
-                    <Box
-                      sx={{
-                        display:
-                          'grid',
+                                    gap: 2,
 
-                        gridTemplateColumns: {
-                          xs: '1fr',
-                          sm: 'repeat(2, 1fr)',
-                        },
+                                    flex: 1,
 
-                        gap: 2,
-                      }}
-                    >
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          Created
-                        </Typography>
+                                    flexWrap:
+                                        'wrap',
+                                  }}
+                              >
+                                <Chip
+                                    label={`Step ${testStep.stepOrder}`}
+                                    color="primary"
+                                />
 
-                        <Typography
-                          variant="body2"
-                        >
-                          {formatDate(
-                            testStep.createdAt,
-                          )}
-                        </Typography>
-                      </Box>
+                                <Typography
+                                    variant="h6"
+                                    fontWeight={700}
+                                >
+                                  {
+                                    testStep.testStepId
+                                  }
+                                </Typography>
+                              </Box>
 
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          Updated
-                        </Typography>
+                              <Stack
+                                  direction="row"
+                                  spacing={1}
+                              >
+                                <Button
+                                    size="small"
+                                    startIcon={
+                                      <Edit />
+                                    }
+                                    onClick={() =>
+                                        setEditingTestStep(
+                                            testStep,
+                                        )
+                                    }
+                                >
+                                  Edit
+                                </Button>
 
-                        <Typography
-                          variant="body2"
-                        >
-                          {formatDate(
-                            testStep.updatedAt,
-                          )}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </Card>
-            ),
-          )}
-        </Stack>
-      )}
+                                <Button
+                                    size="small"
+                                    color="error"
+                                    startIcon={
+                                      <Delete />
+                                    }
+                                    onClick={() => {
+                                      setDeleteStepError(
+                                          null,
+                                      );
 
-      <CreateTestStepDialog
-        open={
-          createDialogOpen
-        }
-        testCaseId={
-          testCase.testCaseId
-        }
-        suggestedStepOrder={
-          suggestedStepOrder
-        }
-        onClose={() =>
-          setCreateDialogOpen(
-            false,
-          )
-        }
-        onCreated={
-          handleTestStepCreated
-        }
-      />
+                                      setDeletingTestStep(
+                                          testStep,
+                                      );
+                                    }}
+                                >
+                                  Delete
+                                </Button>
+                              </Stack>
+                            </Box>
 
-      <EditTestCaseDialog
-        open={
-          editDialogOpen
-        }
-        testCase={
-          testCase
-        }
-        onClose={() =>
-          setEditDialogOpen(
-            false,
-          )
-        }
-        onUpdated={
-          handleTestCaseUpdated
-        }
-      />
+                            <Divider />
 
-      <DeleteConfirmationDialog
-        open={
-          deleteDialogOpen
-        }
-        title="Delete Test Case?"
-        entityName={
-          testCase.testCaseId
-        }
-        description="A Test Case cannot be deleted while Test Steps or related automation records still reference it."
-        deleting={
-          deleting
-        }
-        error={
-          deleteError
-        }
-        onClose={() => {
-          if (deleting) {
-            return;
-          }
+                            <Box>
+                              <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                              >
+                                Action
+                              </Typography>
 
-          setDeleteDialogOpen(
-            false,
-          );
+                              <Typography
+                                  sx={{
+                                    whiteSpace:
+                                        'pre-wrap',
+                                  }}
+                              >
+                                {
+                                  testStep.action
+                                }
+                              </Typography>
+                            </Box>
 
-          setDeleteError(
-            null,
-          );
-        }}
-        onConfirm={() =>
-          void handleDeleteTestCase()
-        }
-      />
+                            <Box
+                                sx={{
+                                  display:
+                                      'grid',
 
-      {editingTestStep && (
-        <EditTestStepDialog
-          open
-          testStep={
-            editingTestStep
-          }
-          onClose={() =>
-            setEditingTestStep(
-              null,
-            )
-          }
-          onUpdated={
-            handleTestStepUpdated
-          }
-        />
-      )}
+                                  gridTemplateColumns: {
+                                    xs: '1fr',
+                                    md: 'repeat(3, 1fr)',
+                                  },
 
-      {deletingTestStep && (
-        <DeleteConfirmationDialog
-          open
-          title="Delete Test Step?"
-          entityName={
-            deletingTestStep.testStepId
-          }
-          description={`Step ${deletingTestStep.stepOrder} will be permanently deleted.`}
-          deleting={
-            deletingStep
-          }
-          error={
-            deleteStepError
-          }
-          onClose={() => {
-            if (
-              deletingStep
-            ) {
-              return;
+                                  gap: 3,
+                                }}
+                            >
+                              <Box>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
+                                  Target
+                                </Typography>
+
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                      whiteSpace:
+                                          'pre-wrap',
+                                    }}
+                                >
+                                  {displayValue(
+                                      testStep.target,
+                                  )}
+                                </Typography>
+                              </Box>
+
+                              <Box>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
+                                  Input Value
+                                </Typography>
+
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                      whiteSpace:
+                                          'pre-wrap',
+                                    }}
+                                >
+                                  {displayValue(
+                                      testStep.inputValue,
+                                  )}
+                                </Typography>
+                              </Box>
+
+                              <Box>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
+                                  Expected Result
+                                </Typography>
+
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                      whiteSpace:
+                                          'pre-wrap',
+                                    }}
+                                >
+                                  {displayValue(
+                                      testStep.expectedResult,
+                                  )}
+                                </Typography>
+                              </Box>
+                            </Box>
+
+                            <Divider />
+
+                            <Box
+                                sx={{
+                                  display:
+                                      'grid',
+
+                                  gridTemplateColumns: {
+                                    xs: '1fr',
+                                    sm: 'repeat(2, 1fr)',
+                                  },
+
+                                  gap: 2,
+                                }}
+                            >
+                              <Box>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
+                                  Created
+                                </Typography>
+
+                                <Typography
+                                    variant="body2"
+                                >
+                                  {formatDate(
+                                      testStep.createdAt,
+                                  )}
+                                </Typography>
+                              </Box>
+
+                              <Box>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
+                                  Updated
+                                </Typography>
+
+                                <Typography
+                                    variant="body2"
+                                >
+                                  {formatDate(
+                                      testStep.updatedAt,
+                                  )}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Stack>
+                        </CardContent>
+                      </Card>
+                  ),
+              )}
+            </Stack>
+        )}
+
+        <CreateTestStepDialog
+            open={
+              createDialogOpen
             }
-
-            setDeletingTestStep(
-              null,
-            );
-
-            setDeleteStepError(
-              null,
-            );
-          }}
-          onConfirm={() =>
-            void handleDeleteTestStep()
-          }
+            testCaseId={
+              testCase.testCaseId
+            }
+            onClose={() =>
+                setCreateDialogOpen(
+                    false,
+                )
+            }
+            onCreated={
+              handleTestStepCreated
+            }
         />
-      )}
-    </Stack>
+
+        <EditTestCaseDialog
+            open={
+              editDialogOpen
+            }
+            testCase={
+              testCase
+            }
+            onClose={() =>
+                setEditDialogOpen(
+                    false,
+                )
+            }
+            onUpdated={
+              handleTestCaseUpdated
+            }
+        />
+
+        <DeleteConfirmationDialog
+            open={
+              deleteDialogOpen
+            }
+            title="Delete Test Case?"
+            entityName={
+              testCase.testCaseId
+            }
+            description="A Test Case cannot be deleted while Test Steps or related automation records still reference it."
+            deleting={
+              deleting
+            }
+            error={
+              deleteError
+            }
+            onClose={() => {
+              if (deleting) {
+                return;
+              }
+
+              setDeleteDialogOpen(
+                  false,
+              );
+
+              setDeleteError(
+                  null,
+              );
+            }}
+            onConfirm={() =>
+                void handleDeleteTestCase()
+            }
+        />
+
+        {editingTestStep && (
+            <EditTestStepDialog
+                open
+                testStep={
+                  editingTestStep
+                }
+                onClose={() =>
+                    setEditingTestStep(
+                        null,
+                    )
+                }
+                onUpdated={
+                  handleTestStepUpdated
+                }
+            />
+        )}
+
+        {deletingTestStep && (
+            <DeleteConfirmationDialog
+                open
+                title="Delete Test Step?"
+                entityName={
+                  deletingTestStep.testStepId
+                }
+                description={`Step ${deletingTestStep.stepOrder} will be permanently deleted.`}
+                deleting={
+                  deletingStep
+                }
+                error={
+                  deleteStepError
+                }
+                onClose={() => {
+                  if (
+                      deletingStep
+                  ) {
+                    return;
+                  }
+
+                  setDeletingTestStep(
+                      null,
+                  );
+
+                  setDeleteStepError(
+                      null,
+                  );
+                }}
+                onConfirm={() =>
+                    void handleDeleteTestStep()
+                }
+            />
+        )}
+      </Stack>
   );
 }

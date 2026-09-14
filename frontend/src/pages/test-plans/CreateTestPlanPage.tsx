@@ -44,27 +44,23 @@ import type {
 } from '../../types/testPlan';
 
 const DEFAULT_APPROVAL_STATUS:
-  ApprovalStatus =
+    ApprovalStatus =
     'PENDING';
 
-function generateTestPlanId():
-  string {
-  return `TP-${Date.now()}`;
-}
 
 function optionalValue(
-  value: string,
+    value: string,
 ): string | undefined {
   const trimmedValue =
-    value.trim();
+      value.trim();
 
   return trimmedValue ||
-    undefined;
+      undefined;
 }
 
 export default function CreateTestPlanPage() {
   const navigate =
-    useNavigate();
+      useNavigate();
 
   const [
     name,
@@ -100,9 +96,9 @@ export default function CreateTestPlanPage() {
     status,
     setStatus,
   ] =
-    useState<TestPlanStatus>(
-      'DRAFT',
-    );
+      useState<TestPlanStatus>(
+          'DRAFT',
+      );
 
   const [
     submitting,
@@ -113,520 +109,517 @@ export default function CreateTestPlanPage() {
     error,
     setError,
   ] = useState<
-    string | null
+      string | null
   >(null);
 
   const trimmedName =
-    name.trim();
+      name.trim();
 
   const nameError =
-    useMemo(
-      () => {
-        if (!trimmedName) {
-          return 'Test Plan Name is required.';
-        }
+      useMemo(
+          () => {
+            if (!trimmedName) {
+              return 'Test Plan Name is required.';
+            }
 
-        if (
-          trimmedName.length >
-          255
-        ) {
-          return 'Test Plan Name must not exceed 255 characters.';
-        }
+            if (
+                trimmedName.length >
+                255
+            ) {
+              return 'Test Plan Name must not exceed 255 characters.';
+            }
 
-        return '';
-      },
-      [trimmedName],
-    );
+            return '';
+          },
+          [trimmedName],
+      );
 
   const handleSubmit =
-    async (
-      event:
-        FormEvent<HTMLFormElement>,
-    ) => {
-      event.preventDefault();
+      async (
+          event:
+          FormEvent<HTMLFormElement>,
+      ) => {
+        event.preventDefault();
 
-      setError(null);
+        setError(null);
 
-      if (nameError) {
-        setError(
-          nameError,
-        );
+        if (nameError) {
+          setError(
+              nameError,
+          );
 
-        return;
-      }
+          return;
+        }
 
-      const request:
-        CreateTestPlanRequest =
-      {
-        testPlanId:
-          generateTestPlanId(),
+        const request:
+            CreateTestPlanRequest =
+            {
+              name:
+              trimmedName,
 
-        name:
-          trimmedName,
+              version:
+                  optionalValue(
+                      version,
+                  ),
 
-        version:
-          optionalValue(
-            version,
-          ),
+              project:
+                  optionalValue(
+                      project,
+                  ),
 
-        project:
-          optionalValue(
-            project,
-          ),
+              application:
+                  optionalValue(
+                      application,
+                  ),
 
-        application:
-          optionalValue(
-            application,
-          ),
+              environment:
+                  optionalValue(
+                      environment,
+                  ),
 
-        environment:
-          optionalValue(
-            environment,
-          ),
+              preparedBy:
+                  optionalValue(
+                      preparedBy,
+                  ),
 
-        preparedBy:
-          optionalValue(
-            preparedBy,
-          ),
+              status,
 
-        status,
+              approvalStatus:
+              DEFAULT_APPROVAL_STATUS,
+            };
 
-        approvalStatus:
-          DEFAULT_APPROVAL_STATUS,
-      };
+        try {
+          setSubmitting(
+              true,
+          );
 
-      try {
-        setSubmitting(
-          true,
-        );
+          const createdTestPlan =
+              await testPlanApi
+                  .createTestPlan(
+                      request,
+                  );
 
-        const createdTestPlan =
-          await testPlanApi
-            .createTestPlan(
-              request,
+          navigate(
+              '/test-plans',
+              {
+                replace: true,
+
+                state: {
+                  message:
+                      `Test plan "${createdTestPlan.name}" created successfully.`,
+                },
+              },
+          );
+        } catch (err) {
+          console.error(
+              'Failed to create test plan:',
+              err,
+          );
+
+          if (
+              err instanceof
+              ApiError
+          ) {
+            if (
+                err.status ===
+                400
+            ) {
+              setError(
+                  err.message ||
+                  'Please check the form values.',
+              );
+
+              return;
+            }
+
+            setError(
+                err.message ||
+                `Backend returned HTTP ${err.status}.`,
             );
 
-        navigate(
-          '/test-plans',
-          {
-            replace: true,
+            return;
+          }
 
-            state: {
-              message:
-                `Test plan "${createdTestPlan.name}" created successfully.`,
-            },
-          },
-        );
-      } catch (err) {
-        console.error(
-          'Failed to create test plan:',
-          err,
-        );
-
-        if (
-          err instanceof
-          ApiError
-        ) {
           if (
-            err.status ===
-            400
+              err instanceof
+              TypeError
           ) {
             setError(
-              err.message ||
-                'Please check the form values.',
+                'Unable to connect to the backend. Make sure TestForge backend is running on port 8080.',
             );
 
             return;
           }
 
           setError(
-            err.message ||
-              `Backend returned HTTP ${err.status}.`,
+              'An unexpected error occurred while creating the test plan.',
           );
-
-          return;
-        }
-
-        if (
-          err instanceof
-          TypeError
-        ) {
-          setError(
-            'Unable to connect to the backend. Make sure TestForge backend is running on port 8080.',
+        } finally {
+          setSubmitting(
+              false,
           );
-
-          return;
         }
-
-        setError(
-          'An unexpected error occurred while creating the test plan.',
-        );
-      } finally {
-        setSubmitting(
-          false,
-        );
-      }
-    };
+      };
 
   return (
-    <Box
-      sx={{
-        maxWidth: 900,
-        mx: 'auto',
-      }}
-    >
-      <Button
-        startIcon={
-          <ArrowBack />
-        }
-        disabled={
-          submitting
-        }
-        onClick={() =>
-          navigate(
-            '/test-plans',
-          )
-        }
-        sx={{
-          mb: 2,
-        }}
-      >
-        Back to Test Plans
-      </Button>
-
       <Box
-        sx={{
-          mb: 3,
-        }}
-      >
-        <Typography
-          variant="h4"
-          fontWeight={700}
-          gutterBottom
-        >
-          Create Test Plan
-        </Typography>
-
-        <Typography
-          color="text.secondary"
-        >
-          Create the test plan
-          that will contain
-          requirements,
-          scenarios,
-          test cases and
-          automation.
-        </Typography>
-      </Box>
-
-      {error && (
-        <Alert
-          severity="error"
           sx={{
-            mb: 3,
+            maxWidth: 900,
+            mx: 'auto',
           }}
-          onClose={() =>
-            setError(null)
-          }
-        >
-          {error}
-        </Alert>
-      )}
-
-      <Card
-        variant="outlined"
-        sx={{
-          borderRadius: 3,
-        }}
       >
-        <CardContent
-          sx={{
-            p: 4,
-          }}
-        >
-          <Box
-            component="form"
-            onSubmit={
-              handleSubmit
+        <Button
+            startIcon={
+              <ArrowBack />
             }
+            disabled={
+              submitting
+            }
+            onClick={() =>
+                navigate(
+                    '/test-plans',
+                )
+            }
+            sx={{
+              mb: 2,
+            }}
+        >
+          Back to Test Plans
+        </Button>
+
+        <Box
+            sx={{
+              mb: 3,
+            }}
+        >
+          <Typography
+              variant="h4"
+              fontWeight={700}
+              gutterBottom
           >
-            <Stack
-              spacing={3}
-            >
-              <TextField
-                label="Test Plan Name"
-                required
-                fullWidth
-                disabled={
-                  submitting
-                }
-                value={name}
-                inputProps={{
-                  maxLength: 255,
-                }}
-                onChange={(
-                  event,
-                ) =>
-                  setName(
-                    event
-                      .target
-                      .value,
-                  )
-                }
-                placeholder="Example: Customer Portal Regression"
-                error={
-                  Boolean(
-                    name &&
-                    nameError,
-                  )
-                }
-                helperText={
-                  name &&
-                  nameError
-                    ? nameError
-                    : undefined
-                }
-              />
+            Create Test Plan
+          </Typography>
 
-              <TextField
-                label="Version"
-                fullWidth
-                disabled={
-                  submitting
-                }
-                value={
-                  version
-                }
-                inputProps={{
-                  maxLength: 50,
-                }}
-                onChange={(
-                  event,
-                ) =>
-                  setVersion(
-                    event
-                      .target
-                      .value,
-                  )
-                }
-                placeholder="Example: 1.0"
-              />
+          <Typography
+              color="text.secondary"
+          >
+            Create the test plan
+            that will contain
+            requirements,
+            scenarios,
+            test cases and
+            automation.
+          </Typography>
+        </Box>
 
-              <TextField
-                label="Project"
-                fullWidth
-                disabled={
-                  submitting
-                }
-                value={
-                  project
-                }
-                inputProps={{
-                  maxLength: 255,
-                }}
-                onChange={(
-                  event,
-                ) =>
-                  setProject(
-                    event
-                      .target
-                      .value,
-                  )
-                }
-                placeholder="Example: TestForge"
-              />
-
-              <TextField
-                label="Application"
-                fullWidth
-                disabled={
-                  submitting
-                }
-                value={
-                  application
-                }
-                inputProps={{
-                  maxLength: 255,
-                }}
-                onChange={(
-                  event,
-                ) =>
-                  setApplication(
-                    event
-                      .target
-                      .value,
-                  )
-                }
-                placeholder="Example: TestForge"
-              />
-
-              <TextField
-                label="Environment"
-                fullWidth
-                disabled={
-                  submitting
-                }
-                value={
-                  environment
-                }
-                inputProps={{
-                  maxLength: 100,
-                }}
-                onChange={(
-                  event,
-                ) =>
-                  setEnvironment(
-                    event
-                      .target
-                      .value,
-                  )
-                }
-                placeholder="Example: LOCAL, DEV, QA"
-              />
-
-              <TextField
-                label="Prepared By"
-                fullWidth
-                disabled={
-                  submitting
-                }
-                value={
-                  preparedBy
-                }
-                inputProps={{
-                  maxLength: 255,
-                }}
-                onChange={(
-                  event,
-                ) =>
-                  setPreparedBy(
-                    event
-                      .target
-                      .value,
-                  )
-                }
-                placeholder="Example: QA Team"
-              />
-
-              <FormControl
-                fullWidth
-              >
-                <InputLabel>
-                  Status
-                </InputLabel>
-
-                <Select
-                  value={
-                    status
-                  }
-                  label="Status"
-                  disabled={
-                    submitting
-                  }
-                  onChange={(
-                    event,
-                  ) =>
-                    setStatus(
-                      event
-                        .target
-                        .value as TestPlanStatus,
-                    )
-                  }
-                >
-                  <MenuItem
-                    value="DRAFT"
-                  >
-                    Draft
-                  </MenuItem>
-
-                  <MenuItem
-                    value="ACTIVE"
-                  >
-                    Active
-                  </MenuItem>
-
-                  <MenuItem
-                    value="COMPLETED"
-                  >
-                    Completed
-                  </MenuItem>
-
-                  <MenuItem
-                    value="ARCHIVED"
-                  >
-                    Archived
-                  </MenuItem>
-                </Select>
-              </FormControl>
-
-              <Alert
-                severity="info"
-                variant="outlined"
-              >
-                New Test Plans
-                start with approval
-                status{' '}
-                <strong>
-                  {
-                    DEFAULT_APPROVAL_STATUS
-                  }
-                </strong>
-                .
-              </Alert>
-
-              <Box
+        {error && (
+            <Alert
+                severity="error"
                 sx={{
-                  display:
-                    'flex',
-
-                  justifyContent:
-                    'flex-end',
-
-                  gap: 2,
-
-                  pt: 2,
+                  mb: 3,
                 }}
-              >
-                <Button
-                  variant="outlined"
-                  disabled={
-                    submitting
-                  }
-                  onClick={() =>
-                    navigate(
-                      '/test-plans',
-                    )
-                  }
-                >
-                  Cancel
-                </Button>
+                onClose={() =>
+                    setError(null)
+                }
+            >
+              {error}
+            </Alert>
+        )}
 
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={
-                    submitting
-                  }
-                  startIcon={
-                    submitting ? (
-                      <CircularProgress
-                        size={18}
-                        color="inherit"
-                      />
-                    ) : (
-                      <Save />
-                    )
-                  }
+        <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 3,
+            }}
+        >
+          <CardContent
+              sx={{
+                p: 4,
+              }}
+          >
+            <Box
+                component="form"
+                onSubmit={
+                  handleSubmit
+                }
+            >
+              <Stack
+                  spacing={3}
+              >
+                <TextField
+                    label="Test Plan Name"
+                    required
+                    fullWidth
+                    disabled={
+                      submitting
+                    }
+                    value={name}
+                    inputProps={{
+                      maxLength: 255,
+                    }}
+                    onChange={(
+                        event,
+                    ) =>
+                        setName(
+                            event
+                                .target
+                                .value,
+                        )
+                    }
+                    placeholder="Example: Customer Portal Regression"
+                    error={
+                      Boolean(
+                          name &&
+                          nameError,
+                      )
+                    }
+                    helperText={
+                      name &&
+                      nameError
+                          ? nameError
+                          : undefined
+                    }
+                />
+
+                <TextField
+                    label="Version"
+                    fullWidth
+                    disabled={
+                      submitting
+                    }
+                    value={
+                      version
+                    }
+                    inputProps={{
+                      maxLength: 50,
+                    }}
+                    onChange={(
+                        event,
+                    ) =>
+                        setVersion(
+                            event
+                                .target
+                                .value,
+                        )
+                    }
+                    placeholder="Example: 1.0"
+                />
+
+                <TextField
+                    label="Project"
+                    fullWidth
+                    disabled={
+                      submitting
+                    }
+                    value={
+                      project
+                    }
+                    inputProps={{
+                      maxLength: 255,
+                    }}
+                    onChange={(
+                        event,
+                    ) =>
+                        setProject(
+                            event
+                                .target
+                                .value,
+                        )
+                    }
+                    placeholder="Example: TestForge"
+                />
+
+                <TextField
+                    label="Application"
+                    fullWidth
+                    disabled={
+                      submitting
+                    }
+                    value={
+                      application
+                    }
+                    inputProps={{
+                      maxLength: 255,
+                    }}
+                    onChange={(
+                        event,
+                    ) =>
+                        setApplication(
+                            event
+                                .target
+                                .value,
+                        )
+                    }
+                    placeholder="Example: TestForge"
+                />
+
+                <TextField
+                    label="Environment"
+                    fullWidth
+                    disabled={
+                      submitting
+                    }
+                    value={
+                      environment
+                    }
+                    inputProps={{
+                      maxLength: 100,
+                    }}
+                    onChange={(
+                        event,
+                    ) =>
+                        setEnvironment(
+                            event
+                                .target
+                                .value,
+                        )
+                    }
+                    placeholder="Example: LOCAL, DEV, QA"
+                />
+
+                <TextField
+                    label="Prepared By"
+                    fullWidth
+                    disabled={
+                      submitting
+                    }
+                    value={
+                      preparedBy
+                    }
+                    inputProps={{
+                      maxLength: 255,
+                    }}
+                    onChange={(
+                        event,
+                    ) =>
+                        setPreparedBy(
+                            event
+                                .target
+                                .value,
+                        )
+                    }
+                    placeholder="Example: QA Team"
+                />
+
+                <FormControl
+                    fullWidth
                 >
-                  {submitting
-                    ? 'Creating...'
-                    : 'Create Test Plan'}
-                </Button>
-              </Box>
-            </Stack>
-          </Box>
-        </CardContent>
-      </Card>
-    </Box>
+                  <InputLabel>
+                    Status
+                  </InputLabel>
+
+                  <Select
+                      value={
+                        status
+                      }
+                      label="Status"
+                      disabled={
+                        submitting
+                      }
+                      onChange={(
+                          event,
+                      ) =>
+                          setStatus(
+                              event
+                                  .target
+                                  .value as TestPlanStatus,
+                          )
+                      }
+                  >
+                    <MenuItem
+                        value="DRAFT"
+                    >
+                      Draft
+                    </MenuItem>
+
+                    <MenuItem
+                        value="ACTIVE"
+                    >
+                      Active
+                    </MenuItem>
+
+                    <MenuItem
+                        value="COMPLETED"
+                    >
+                      Completed
+                    </MenuItem>
+
+                    <MenuItem
+                        value="ARCHIVED"
+                    >
+                      Archived
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+
+                <Alert
+                    severity="info"
+                    variant="outlined"
+                >
+                  New Test Plans
+                  start with approval
+                  status{' '}
+                  <strong>
+                    {
+                      DEFAULT_APPROVAL_STATUS
+                    }
+                  </strong>
+                  .
+                </Alert>
+
+                <Box
+                    sx={{
+                      display:
+                          'flex',
+
+                      justifyContent:
+                          'flex-end',
+
+                      gap: 2,
+
+                      pt: 2,
+                    }}
+                >
+                  <Button
+                      variant="outlined"
+                      disabled={
+                        submitting
+                      }
+                      onClick={() =>
+                          navigate(
+                              '/test-plans',
+                          )
+                      }
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={
+                        submitting
+                      }
+                      startIcon={
+                        submitting ? (
+                            <CircularProgress
+                                size={18}
+                                color="inherit"
+                            />
+                        ) : (
+                            <Save />
+                        )
+                      }
+                  >
+                    {submitting
+                        ? 'Creating...'
+                        : 'Create Test Plan'}
+                  </Button>
+                </Box>
+              </Stack>
+            </Box>
+          </CardContent>
+        </Card>
+      </Box>
   );
 }

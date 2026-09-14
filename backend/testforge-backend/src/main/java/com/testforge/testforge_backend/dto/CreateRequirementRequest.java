@@ -8,7 +8,6 @@ import jakarta.validation.constraints.Size;
 
 public class CreateRequirementRequest {
 
-    @NotBlank(message = "Requirement ID is required")
     @Size(
             max = 50,
             message = "Requirement ID must not exceed 50 characters"

@@ -15,22 +15,31 @@ import java.util.List;
 public class TestPlanService {
 
     private final TestPlanRepository testPlanRepository;
+    private final BusinessIdGeneratorService businessIdGeneratorService;
 
-    public TestPlanService(TestPlanRepository testPlanRepository) {
+    public TestPlanService(
+            TestPlanRepository testPlanRepository,
+            BusinessIdGeneratorService businessIdGeneratorService
+    ) {
         this.testPlanRepository = testPlanRepository;
+        this.businessIdGeneratorService = businessIdGeneratorService;
     }
 
     public TestPlan create(CreateTestPlanRequest request) {
 
-        if (testPlanRepository.existsByTestPlanId(request.getTestPlanId())) {
+        String testPlanId = resolveTestPlanId(
+                request.getTestPlanId()
+        );
+
+        if (testPlanRepository.existsByTestPlanId(testPlanId)) {
             throw new DuplicateTestPlanException(
-                    "Test Plan ID already exists: " + request.getTestPlanId()
+                    "Test Plan ID already exists: " + testPlanId
             );
         }
 
         TestPlan testPlan = new TestPlan();
 
-        testPlan.setTestPlanId(request.getTestPlanId());
+        testPlan.setTestPlanId(testPlanId);
         testPlan.setName(request.getName());
         testPlan.setVersion(request.getVersion());
         testPlan.setProject(request.getProject());
@@ -101,5 +110,24 @@ public class TestPlanService {
         }
 
         testPlanRepository.deleteById(id);
+    }
+
+    private String resolveTestPlanId(
+            String requestedTestPlanId
+    ) {
+        if (
+                requestedTestPlanId != null
+                        && !requestedTestPlanId.isBlank()
+        ) {
+            return requestedTestPlanId.trim();
+        }
+
+        String generatedId = businessIdGeneratorService.generateTestPlanId();
+
+        while (testPlanRepository.existsByTestPlanId(generatedId)) {
+            generatedId = businessIdGeneratorService.generateTestPlanId();
+        }
+
+        return generatedId;
     }
 }

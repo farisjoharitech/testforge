@@ -22,7 +22,6 @@ export type TestType =
     | 'NEGATIVE';
 
 export interface CreateTestScenarioRequest {
-  scenarioId: string;
   description: string;
   testType: TestType;
   priority: TestScenarioPriority;

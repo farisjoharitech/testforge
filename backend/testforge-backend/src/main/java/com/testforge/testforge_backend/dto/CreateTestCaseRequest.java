@@ -10,10 +10,6 @@ import jakarta.validation.constraints.Size;
 
 public class CreateTestCaseRequest {
 
-    @NotBlank(
-            message =
-                    "Test Case ID is required"
-    )
     @Size(
             max = 50,
             message =

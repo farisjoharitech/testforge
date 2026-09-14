@@ -26,15 +26,22 @@ public class TestStepService {
     private final TestCaseRepository
             testCaseRepository;
 
+    private final BusinessIdGeneratorService
+            businessIdGeneratorService;
+
     public TestStepService(
             TestStepRepository testStepRepository,
-            TestCaseRepository testCaseRepository) {
+            TestCaseRepository testCaseRepository,
+            BusinessIdGeneratorService businessIdGeneratorService) {
 
         this.testStepRepository =
                 testStepRepository;
 
         this.testCaseRepository =
                 testCaseRepository;
+
+        this.businessIdGeneratorService =
+                businessIdGeneratorService;
     }
 
     public TestStep create(
@@ -53,26 +60,35 @@ public class TestStepService {
                                 )
                         );
 
+        String testStepId = resolveTestStepId(
+                request.getTestStepId()
+        );
+
         if (testStepRepository
                 .existsByTestStepId(
-                        request.getTestStepId()
+                        testStepId
                 )) {
 
             throw new DuplicateTestStepException(
                     "Test Step ID already exists: "
-                            + request.getTestStepId()
+                            + testStepId
             );
         }
+
+        Integer stepOrder = resolveStepOrder(
+                testCase,
+                request.getStepOrder()
+        );
 
         if (testStepRepository
                 .existsByTestCaseAndStepOrder(
                         testCase,
-                        request.getStepOrder()
+                        stepOrder
                 )) {
 
             throw new DuplicateTestStepOrderException(
                     "Step order "
-                            + request.getStepOrder()
+                            + stepOrder
                             + " already exists for Test Case: "
                             + testCaseBusinessId
             );
@@ -82,7 +98,7 @@ public class TestStepService {
                 new TestStep();
 
         testStep.setTestStepId(
-                request.getTestStepId()
+                testStepId
         );
 
         testStep.setTestCase(
@@ -90,7 +106,7 @@ public class TestStepService {
         );
 
         testStep.setStepOrder(
-                request.getStepOrder()
+                stepOrder
         );
 
         testStep.setAction(
@@ -237,6 +253,43 @@ public class TestStepService {
          * Hibernate dirty checking persists updates.
          */
         return testStep;
+    }
+
+
+    private String resolveTestStepId(
+            String requestedTestStepId) {
+
+        if (
+                requestedTestStepId != null
+                        && !requestedTestStepId.isBlank()
+        ) {
+            return requestedTestStepId.trim();
+        }
+
+        String generatedId = businessIdGeneratorService.generateTestStepId();
+
+        while (testStepRepository.existsByTestStepId(generatedId)) {
+            generatedId = businessIdGeneratorService.generateTestStepId();
+        }
+
+        return generatedId;
+    }
+
+    private Integer resolveStepOrder(
+            TestCase testCase,
+            Integer requestedStepOrder) {
+
+        if (requestedStepOrder != null) {
+            return requestedStepOrder;
+        }
+
+        return testStepRepository
+                .findTopByTestCaseOrderByStepOrderDesc(
+                        testCase
+                )
+                .map(TestStep::getStepOrder)
+                .map(currentMax -> currentMax + 1)
+                .orElse(1);
     }
 
     public void delete(

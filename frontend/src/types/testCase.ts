@@ -1,42 +1,41 @@
 export type TestCasePriority =
-  | 'LOW'
-  | 'MEDIUM'
-  | 'HIGH'
-  | 'CRITICAL';
+    | 'LOW'
+    | 'MEDIUM'
+    | 'HIGH'
+    | 'CRITICAL';
 
 export type TestCaseStatus =
-  | 'DRAFT'
-  | 'ACTIVE'
-  | 'APPROVED'
-  | 'REJECTED'
-  | 'ARCHIVED';
+    | 'DRAFT'
+    | 'ACTIVE'
+    | 'APPROVED'
+    | 'REJECTED'
+    | 'ARCHIVED';
 
 export type TestType =
-  | 'SMOKE'
-  | 'SANITY'
-  | 'REGRESSION'
-  | 'FUNCTIONAL'
-  | 'INTEGRATION'
-  | 'END_TO_END'
-  | 'POSITIVE'
-  | 'NEGATIVE';
+    | 'SMOKE'
+    | 'SANITY'
+    | 'REGRESSION'
+    | 'FUNCTIONAL'
+    | 'INTEGRATION'
+    | 'END_TO_END'
+    | 'POSITIVE'
+    | 'NEGATIVE';
 
 export type AutomationType =
-  | 'MANUAL'
-  | 'UI'
-  | 'API'
-  | 'UI_API';
+    | 'MANUAL'
+    | 'UI'
+    | 'API'
+    | 'UI_API';
 
 export type AutomationStatus =
-  | 'NOT_APPLICABLE'
-  | 'NOT_AUTOMATED'
-  | 'SCRIPT_GENERATED'
-  | 'READY'
-  | 'RUNNING'
-  | 'AUTOMATED';
+    | 'NOT_APPLICABLE'
+    | 'NOT_AUTOMATED'
+    | 'SCRIPT_GENERATED'
+    | 'READY'
+    | 'RUNNING'
+    | 'AUTOMATED';
 
 export interface CreateTestCaseRequest {
-  testCaseId: string;
 
   name: string;
 
@@ -53,7 +52,7 @@ export interface CreateTestCaseRequest {
   automatable: boolean;
 
   automationType:
-    AutomationType;
+      AutomationType;
 
   status: TestCaseStatus;
 }
@@ -74,7 +73,7 @@ export interface UpdateTestCaseRequest {
   automatable: boolean;
 
   automationType:
-    AutomationType;
+      AutomationType;
 
   status: TestCaseStatus;
 }
@@ -87,29 +86,29 @@ export interface TestCase {
   scenarioId: number;
 
   scenarioBusinessId:
-    string;
+      string;
 
   name: string;
 
   preconditions?:
-    string | null;
+      string | null;
 
   testData?:
-    string | null;
+      string | null;
 
   expectedResult: string;
 
   priority:
-    TestCasePriority;
+      TestCasePriority;
 
   testType:
-    TestType;
+      TestType;
 
   automatable:
-    boolean;
+      boolean;
 
   automationType:
-    AutomationType;
+      AutomationType;
 
   /*
    * Read-only lifecycle state
@@ -119,14 +118,14 @@ export interface TestCase {
    * must not control this value.
    */
   automationStatus:
-    AutomationStatus;
+      AutomationStatus;
 
   status:
-    TestCaseStatus;
+      TestCaseStatus;
 
   createdAt:
-    string;
+      string;
 
   updatedAt:
-    string;
+      string;
 }

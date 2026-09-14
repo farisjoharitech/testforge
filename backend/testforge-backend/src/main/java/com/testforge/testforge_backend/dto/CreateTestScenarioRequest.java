@@ -9,7 +9,6 @@ import jakarta.validation.constraints.Size;
 
 public class CreateTestScenarioRequest {
 
-    @NotBlank(message = "Scenario ID is required")
     @Size(
             max = 50,
             message = "Scenario ID must not exceed 50 characters"

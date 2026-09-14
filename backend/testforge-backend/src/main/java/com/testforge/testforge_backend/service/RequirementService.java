@@ -21,16 +21,21 @@ public class RequirementService {
 
     private final RequirementRepository requirementRepository;
     private final TestPlanRepository testPlanRepository;
+    private final BusinessIdGeneratorService businessIdGeneratorService;
 
     public RequirementService(
             RequirementRepository requirementRepository,
-            TestPlanRepository testPlanRepository) {
+            TestPlanRepository testPlanRepository,
+            BusinessIdGeneratorService businessIdGeneratorService) {
 
         this.requirementRepository =
                 requirementRepository;
 
         this.testPlanRepository =
                 testPlanRepository;
+
+        this.businessIdGeneratorService =
+                businessIdGeneratorService;
     }
 
     public Requirement create(
@@ -49,14 +54,18 @@ public class RequirementService {
                                 )
                         );
 
+        String requirementId = resolveRequirementId(
+                request.getRequirementId()
+        );
+
         if (requirementRepository
                 .existsByRequirementId(
-                        request.getRequirementId()
+                        requirementId
                 )) {
 
             throw new DuplicateRequirementException(
                     "Requirement ID already exists: "
-                            + request.getRequirementId()
+                            + requirementId
             );
         }
 
@@ -64,7 +73,7 @@ public class RequirementService {
                 new Requirement();
 
         requirement.setRequirementId(
-                request.getRequirementId()
+                requirementId
         );
 
         requirement.setTestPlan(
@@ -213,5 +222,24 @@ public class RequirementService {
 
         requirementRepository
                 .deleteById(id);
+    }
+
+    private String resolveRequirementId(
+            String requestedRequirementId) {
+
+        if (
+                requestedRequirementId != null
+                        && !requestedRequirementId.isBlank()
+        ) {
+            return requestedRequirementId.trim();
+        }
+
+        String generatedId = businessIdGeneratorService.generateRequirementId();
+
+        while (requirementRepository.existsByRequirementId(generatedId)) {
+            generatedId = businessIdGeneratorService.generateRequirementId();
+        }
+
+        return generatedId;
     }
 }

@@ -32,6 +32,11 @@ public interface TestStepRepository
     );
 
     @EntityGraph(attributePaths = "testCase")
+    Optional<TestStep> findTopByTestCaseOrderByStepOrderDesc(
+            TestCase testCase
+    );
+
+    @EntityGraph(attributePaths = "testCase")
     List<TestStep> findByTestCaseOrderByStepOrderAsc(
             TestCase testCase
     );

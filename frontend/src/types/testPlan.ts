@@ -1,16 +1,15 @@
 export type TestPlanStatus =
-  | 'DRAFT'
-  | 'ACTIVE'
-  | 'COMPLETED'
-  | 'ARCHIVED';
+    | 'DRAFT'
+    | 'ACTIVE'
+    | 'COMPLETED'
+    | 'ARCHIVED';
 
 export type ApprovalStatus =
-  | 'PENDING'
-  | 'APPROVED'
-  | 'REJECTED';
+    | 'PENDING'
+    | 'APPROVED'
+    | 'REJECTED';
 
 export interface CreateTestPlanRequest {
-  testPlanId: string;
   name: string;
   version?: string;
   project?: string;
