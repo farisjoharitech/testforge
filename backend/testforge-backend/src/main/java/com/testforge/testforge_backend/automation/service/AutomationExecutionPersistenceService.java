@@ -136,6 +136,59 @@ public class AutomationExecutionPersistenceService {
         );
     }
 
+
+    @Transactional
+    public void appendLiveLog(
+            Long executionDatabaseId,
+            String chunk
+    ) {
+
+        if (
+                chunk == null
+                        || chunk.isEmpty()
+        ) {
+            return;
+        }
+
+        AutomationExecution execution =
+                automationExecutionRepository
+                        .findById(
+                                executionDatabaseId
+                        )
+                        .orElseThrow(
+                                () ->
+                                        new AutomationNotFoundException(
+                                                "Automation Execution not found: "
+                                                        + executionDatabaseId
+                                        )
+                        );
+
+        String current =
+                execution.getLogOutput();
+
+        if (current == null) {
+            current = "";
+        }
+
+        String updated =
+                current + chunk;
+
+        int maxLength =
+                500_000;
+
+        if (updated.length() > maxLength) {
+            updated =
+                    updated.substring(
+                            0,
+                            maxLength
+                    );
+        }
+
+        execution.setLogOutput(
+                updated
+        );
+    }
+
     @Transactional
     public AutomationExecutionResponse finishExecution(
             Long executionDatabaseId,

@@ -976,8 +976,8 @@ export default function AutomationBuilderPage() {
       spacing={3}
     >
       <PageHeader
-        title="Automation Builder"
-        description={`Configure Automation Steps for ${testCase.testCaseId}.`}
+        title={testCase.name}
+        description="Automation Builder · Configure the browser and API flow for this Test Case."
         breadcrumbs={[
           {
             label:
@@ -989,7 +989,7 @@ export default function AutomationBuilderPage() {
 
           {
             label:
-              testCase.testCaseId,
+              'Test Case',
           },
         ]}
         actions={
@@ -1040,31 +1040,22 @@ export default function AutomationBuilderPage() {
             >
               <Box>
                 <Typography
-                  variant="h6"
-                  fontWeight={
-                    700
-                  }
+                  variant="h5"
+                  fontWeight={800}
                 >
-                  {
-                    testCase.testCaseId
-                  }
-                  {' — '}
-                  {
-                    testCase.name
-                  }
+                  {testCase.name}
                 </Typography>
 
                 <Typography
-                  variant="body2"
+                  variant="caption"
                   color="text.secondary"
                   sx={{
-                    mt: 0.5,
+                    mt: 0.75,
+                    display: 'block',
+                    fontFamily: 'monospace',
                   }}
                 >
-                  Scenario:{' '}
-                  {
-                    testCase.scenarioBusinessId
-                  }
+                  {testCase.testCaseId}
                 </Typography>
               </Box>
 
@@ -1311,19 +1302,21 @@ export default function AutomationBuilderPage() {
 
                   <Typography
                     variant="h6"
-                    fontWeight={
-                      700
-                    }
+                    fontWeight={700}
                   >
-                    {
-                      script.automationScriptId
-                    }
+                    {script.name}
                   </Typography>
 
-                  <Typography>
-                    {
-                      script.name
-                    }
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      display: 'block',
+                      mt: 0.5,
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {script.automationScriptId}
                   </Typography>
                 </Box>
 
@@ -1395,12 +1388,10 @@ export default function AutomationBuilderPage() {
               severity="info"
               variant="outlined"
             >
-              UI + API automation can mix
-              browser actions and API
-              request/assertion actions in
-              the same Automation Script.
-              Execution follows Automation
-              Step Order.
+              UI + API automation can mix browser actions and API request/assertion
+              actions in the same Automation Script. Extract API response values into
+              runtime variables and reuse them in later UI or API steps with syntax such
+              as {'${ORDER_ID}'}. Execution follows Automation Step Order.
             </Alert>
           )}
 
@@ -1531,14 +1522,6 @@ export default function AutomationBuilderPage() {
                                 />
                               </Stack>
 
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                {
-                                  automationStep.automationStepId
-                                }
-                              </Typography>
                             </Box>
 
                             <Stack
@@ -1618,8 +1601,8 @@ export default function AutomationBuilderPage() {
                                 }
                               >
                                 {sourceStep
-                                  ? `${sourceStep.testStepId} (#${sourceStep.stepOrder})`
-                                  : automationStep.sourceTestStepId}
+                                  ? `Step ${sourceStep.stepOrder} — ${sourceStep.action}`
+                                  : 'Source step unavailable'}
                               </Typography>
                             </Box>
 

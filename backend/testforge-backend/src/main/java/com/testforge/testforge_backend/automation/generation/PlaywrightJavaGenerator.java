@@ -173,13 +173,13 @@ public class PlaywrightJavaGenerator {
             );
 
             source.append(
-                    "            APIResponse apiResponse = null;\n"
-            );
-
-            source.append(
-                    "            Map<String, String> runtimeData = new HashMap<>();\n\n"
+                    "            APIResponse apiResponse = null;\n\n"
             );
         }
+
+        source.append(
+                "            Map<String, String> runtimeData = new HashMap<>();\n\n"
+        );
 
         for (AutomationStep step : steps) {
 
@@ -194,9 +194,27 @@ public class PlaywrightJavaGenerator {
             );
 
             source.append(
+                    "            System.out.println(\"[TestForge] STEP "
+                            + step.getStepOrder()
+                            + " START - "
+                            + step.getActionType()
+                            + " | "
+                            + escapeJavaString(step.getAutomationStepId())
+                            + "\");\n"
+            );
+
+            source.append(
                     generateStep(
                             step
                     )
+            );
+
+            source.append(
+                    "            System.out.println(\"[TestForge] STEP "
+                            + step.getStepOrder()
+                            + " DONE - "
+                            + step.getActionType()
+                            + "\");\n"
             );
 
             source.append(
@@ -228,17 +246,28 @@ public class PlaywrightJavaGenerator {
                 "    }\n"
         );
 
+        source.append(
+                "\n    private static String resolveRuntimeValue(String value, Map<String, String> runtimeData) {\n"
+                        + "        if (value == null) return null;\n"
+                        + "        String resolved = value;\n"
+                        + "        for (Map.Entry<String, String> entry : runtimeData.entrySet()) {\n"
+                        + "            resolved = resolved.replace(\"${\" + entry.getKey() + \"}\", entry.getValue());\n"
+                        + "        }\n"
+                        + "        int unresolvedStart = resolved.indexOf(\"${\");\n"
+                        + "        if (unresolvedStart >= 0) {\n"
+                        + "            int unresolvedEnd = resolved.indexOf('}', unresolvedStart + 2);\n"
+                        + "            if (unresolvedEnd > unresolvedStart) {\n"
+                        + "                String variableName = resolved.substring(unresolvedStart + 2, unresolvedEnd);\n"
+                        + "                throw new IllegalStateException(\"Runtime variable is missing: \" + variableName);\n"
+                        + "            }\n"
+                        + "        }\n"
+                        + "        return resolved;\n"
+                        + "    }\n"
+        );
+
         if (needsApi) {
             source.append(
-                    "\n    private static String resolveRuntimeValue(String value, Map<String, String> runtimeData) {\n"
-                            + "        if (value == null) return null;\n"
-                            + "        String resolved = value;\n"
-                            + "        for (Map.Entry<String, String> entry : runtimeData.entrySet()) {\n"
-                            + "            resolved = resolved.replace(\"${\" + entry.getKey() + \"}\", entry.getValue());\n"
-                            + "        }\n"
-                            + "        return resolved;\n"
-                            + "    }\n\n"
-                            + "    private static String resolveSecretReference(String reference) {\n"
+                    "\n    private static String resolveSecretReference(String reference) {\n"
                             + "        if (reference == null || !reference.startsWith(\"${\") || !reference.endsWith(\"}\")) {\n"
                             + "            throw new IllegalArgumentException(\"Secret reference must use ${ENV_NAME} format\");\n"
                             + "        }\n"
@@ -254,7 +283,7 @@ public class PlaywrightJavaGenerator {
                             + "    }\n\n"
                             + "    private static JsonNode jsonPath(JsonNode root, String path) {\n"
                             + "        JsonNode current = root;\n"
-                            + "        for (String part : path.split(\"\\.\")) {\n"
+                            + "        for (String part : path.split(\"\\\\.\")) {\n"
                             + "            if (current == null || current.isMissingNode()) return null;\n"
                             + "            current = current.path(part);\n"
                             + "        }\n"
@@ -357,7 +386,7 @@ public class PlaywrightJavaGenerator {
             case NAVIGATE ->
                     line(
                             "page.navigate("
-                                    + quote(
+                                    + runtimeValue(
                                     requireInput(
                                             step
                                     )
@@ -402,7 +431,7 @@ public class PlaywrightJavaGenerator {
                                     + ".click()); download"
                                     + step.getStepOrder()
                                     + ".saveAs(Paths.get("
-                                    + quote(requireInput(step))
+                                    + runtimeValue(requireInput(step))
                                     + "));"
                     );
 
@@ -428,7 +457,7 @@ public class PlaywrightJavaGenerator {
                     line(
                             locator(step)
                                     + ".fill("
-                                    + quote(
+                                    + runtimeValue(
                                     requireInput(
                                             step
                                     )
@@ -446,7 +475,7 @@ public class PlaywrightJavaGenerator {
                     line(
                             locator(step)
                                     + ".selectOption("
-                                    + quote(
+                                    + runtimeValue(
                                     requireInput(
                                             step
                                     )
@@ -470,7 +499,7 @@ public class PlaywrightJavaGenerator {
                     line(
                             locator(step)
                                     + ".press("
-                                    + quote(
+                                    + runtimeValue(
                                     requireInput(
                                             step
                                     )
@@ -482,7 +511,7 @@ public class PlaywrightJavaGenerator {
                     line(
                             locator(step)
                                     + ".setInputFiles(Paths.get("
-                                    + quote(
+                                    + runtimeValue(
                                     requireInput(
                                             step
                                     )
@@ -500,7 +529,7 @@ public class PlaywrightJavaGenerator {
                     line(
                             frameLocator(step)
                                     + ".fill("
-                                    + quote(requireInput(step))
+                                    + runtimeValue(requireInput(step))
                                     + ");"
                     );
 
@@ -532,7 +561,7 @@ public class PlaywrightJavaGenerator {
             case WAIT_FOR_URL ->
                     line(
                             "page.waitForURL("
-                                    + quote(
+                                    + runtimeValue(
                                     requireInput(
                                             step
                                     )
@@ -548,7 +577,7 @@ public class PlaywrightJavaGenerator {
             case TAKE_SCREENSHOT ->
                     line(
                             "page.screenshot(new Page.ScreenshotOptions().setPath(Paths.get("
-                                    + quote(
+                                    + runtimeValue(
                                     requireInput(
                                             step
                                     )
@@ -603,7 +632,7 @@ public class PlaywrightJavaGenerator {
                             "assertThat("
                                     + locator(step)
                                     + ").hasText("
-                                    + quote(
+                                    + runtimeValue(
                                     requireExpected(
                                             step
                                     )
@@ -616,7 +645,7 @@ public class PlaywrightJavaGenerator {
                             "assertThat("
                                     + locator(step)
                                     + ").containsText("
-                                    + quote(
+                                    + runtimeValue(
                                     requireExpected(
                                             step
                                     )
@@ -640,7 +669,7 @@ public class PlaywrightJavaGenerator {
                             "assertThat("
                                     + locator(step)
                                     + ").hasValue("
-                                    + quote(
+                                    + runtimeValue(
                                     requireExpected(
                                             step
                                     )
@@ -651,7 +680,7 @@ public class PlaywrightJavaGenerator {
             case ASSERT_URL ->
                     line(
                             "assertThat(page).hasURL("
-                                    + quote(
+                                    + runtimeValue(
                                     requireExpected(
                                             step
                                     )
@@ -662,7 +691,7 @@ public class PlaywrightJavaGenerator {
             case ASSERT_TITLE ->
                     line(
                             "assertThat(page).hasTitle("
-                                    + quote(
+                                    + runtimeValue(
                                     requireExpected(
                                             step
                                     )
@@ -703,7 +732,7 @@ public class PlaywrightJavaGenerator {
                     )
                             + line(
                             "assertTrue(apiResponse.text().contains("
-                                    + quote(
+                                    + runtimeValue(
                                     requireExpected(
                                             step
                                     )
@@ -713,7 +742,7 @@ public class PlaywrightJavaGenerator {
 
             case ASSERT_API_BODY_EQUALS ->
                     line("assertNotNull(apiResponse, \"No API response is available for body assertion\");")
-                            + line("assertEquals(" + quote(requireExpected(step)) + ", apiResponse.text());");
+                            + line("assertEquals(" + runtimeValue(requireExpected(step)) + ", apiResponse.text());");
 
             case ASSERT_API_JSON_FIELD_EQUALS -> {
                 String suffix = String.valueOf(step.getStepOrder());
@@ -721,12 +750,12 @@ public class PlaywrightJavaGenerator {
                         + line("JsonNode apiJson" + suffix + " = new ObjectMapper().readTree(apiResponse.text());")
                         + line("JsonNode apiJsonValue" + suffix + " = jsonPath(apiJson" + suffix + ", " + quote(requireTarget(step)) + ");")
                         + line("assertNotNull(apiJsonValue" + suffix + ", \"JSON path not found: " + escapeJava(requireTarget(step)) + "\");")
-                        + line("assertEquals(" + quote(requireExpected(step)) + ", apiJsonValue" + suffix + ".isTextual() ? apiJsonValue" + suffix + ".asText() : apiJsonValue" + suffix + ".toString());");
+                        + line("assertEquals(" + runtimeValue(requireExpected(step)) + ", apiJsonValue" + suffix + ".isTextual() ? apiJsonValue" + suffix + ".asText() : apiJsonValue" + suffix + ".toString());");
             }
 
             case ASSERT_API_HEADER ->
                     line("assertNotNull(apiResponse, \"No API response is available for header assertion\");")
-                            + line("assertEquals(" + quote(requireExpected(step)) + ", apiResponse.headers().get(" + quote(requireTarget(step)) + "));");
+                            + line("assertEquals(" + runtimeValue(requireExpected(step)) + ", apiResponse.headers().get(" + runtimeValue(requireTarget(step)) + "));");
 
             case EXTRACT_API_JSON_VALUE -> {
                 String suffix = String.valueOf(step.getStepOrder());
@@ -953,17 +982,17 @@ public class PlaywrightJavaGenerator {
             AutomationStep step
     ) {
         String frame = "page.frameLocator("
-                + quote(requireTarget(step))
+                + runtimeValue(requireTarget(step))
                 + ")";
 
         return switch (step.getSelectorStrategy()) {
             case CSS -> frame
                     + ".locator("
-                    + quote(requireSelectorValue(step))
+                    + runtimeValue(requireSelectorValue(step))
                     + ")";
             case XPATH -> frame
-                    + ".locator("
-                    + quote("xpath=" + requireSelectorValue(step))
+                    + ".locator(\"xpath=\" + "
+                    + runtimeValue(requireSelectorValue(step))
                     + ")";
             default -> throw new AutomationValidationException(
                     step.getActionType()
@@ -1021,7 +1050,7 @@ public class PlaywrightJavaGenerator {
 
             case TEST_ID ->
                     "page.getByTestId("
-                            + quote(
+                            + runtimeValue(
                             requireSelectorValue(
                                     step
                             )
@@ -1030,7 +1059,7 @@ public class PlaywrightJavaGenerator {
 
             case CSS ->
                     "page.locator("
-                            + quote(
+                            + runtimeValue(
                             requireSelectorValue(
                                     step
                             )
@@ -1038,10 +1067,9 @@ public class PlaywrightJavaGenerator {
                             + ")";
 
             case XPATH ->
-                    "page.locator("
-                            + quote(
-                            "xpath="
-                                    + requireSelectorValue(
+                    "page.locator(\"xpath=\" + "
+                            + runtimeValue(
+                            requireSelectorValue(
                                     step
                             )
                     )
@@ -1073,7 +1101,7 @@ public class PlaywrightJavaGenerator {
                 + step.getSelectorRole().name()
                 + ", new Page.GetByRoleOptions()"
                 + ".setName("
-                + quote(
+                + runtimeValue(
                 step.getSelectorName()
         )
                 + ")"
@@ -1102,7 +1130,7 @@ public class PlaywrightJavaGenerator {
         return "page."
                 + method
                 + "("
-                + quote(value)
+                + runtimeValue(value)
                 + ", new Page."
                 + optionType
                 + "().setExact("
@@ -1276,6 +1304,14 @@ public class PlaywrightJavaGenerator {
         return !isUiAction(
                 type
         );
+    }
+
+    private String runtimeValue(
+            String value
+    ) {
+        return "resolveRuntimeValue("
+                + quote(value)
+                + ", runtimeData)";
     }
 
     private String line(

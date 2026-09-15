@@ -547,8 +547,8 @@ export default function ScriptGenerationPage() {
   return (
     <Stack spacing={3}>
       <PageHeader
-        title="Script Generation"
-        description={`Generate Playwright Java automation for ${testCase.testCaseId}.`}
+        title={testCase.name}
+        description="Script Generation · Generate the Playwright Java source for this Test Case."
         breadcrumbs={[
           {
             label:
@@ -558,7 +558,7 @@ export default function ScriptGenerationPage() {
           },
           {
             label:
-              testCase.testCaseId,
+              'Test Case',
             to:
               `/automation/${encodeURIComponent(
                 testCase.testCaseId,
@@ -631,16 +631,22 @@ export default function ScriptGenerationPage() {
                 </Typography>
 
                 <Typography
-                  variant="h6"
-                  fontWeight={700}
+                  variant="h5"
+                  fontWeight={800}
                 >
-                  {
-                    testCase.testCaseId
-                  }
-                  {' — '}
-                  {
-                    testCase.name
-                  }
+                  {testCase.name}
+                </Typography>
+
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{
+                    display: 'block',
+                    mt: 0.75,
+                    fontFamily: 'monospace',
+                  }}
+                >
+                  {testCase.testCaseId}
                 </Typography>
               </Box>
 
@@ -712,9 +718,7 @@ export default function ScriptGenerationPage() {
                 <Typography
                   fontWeight={600}
                 >
-                  {
-                    script.automationScriptId
-                  }
+                  {script.name}
                 </Typography>
               </Box>
 
@@ -723,13 +727,11 @@ export default function ScriptGenerationPage() {
                   variant="caption"
                   color="text.secondary"
                 >
-                  Script Name
+                  Script ID
                 </Typography>
 
                 <Typography>
-                  {
-                    script.name
-                  }
+                  {script.automationScriptId}
                 </Typography>
               </Box>
 
@@ -1090,16 +1092,16 @@ export default function ScriptGenerationPage() {
                     m: 0,
                     p: 2,
                     bgcolor:
-                      'grey.950',
+                      '#0B1020',
                     color:
-                      'grey.100',
+                      '#F8FAFC',
                     borderRadius: 1,
                     border:
                       '1px solid',
                     borderColor:
-                      'divider',
+                      '#334155',
                     fontFamily:
-                      'monospace',
+                      '"Cascadia Code", "Consolas", monospace',
                     fontSize: 12,
                     lineHeight: 1.55,
                     maxHeight: 700,

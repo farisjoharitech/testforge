@@ -801,34 +801,25 @@ export default function AutomationSelectionPage() {
                     >
                       <Box>
                         <Typography
-                          variant="h6"
+                          variant="h5"
                           sx={{
-                            fontWeight:
-                              700,
+                            fontWeight: 800,
+                            lineHeight: 1.25,
                           }}
                         >
-                          {
-                            testCase.testCaseId
-                          }
-                        </Typography>
-
-                        <Typography>
-                          {
-                            testCase.name
-                          }
+                          {testCase.name}
                         </Typography>
 
                         <Typography
-                          variant="body2"
+                          variant="caption"
                           color="text.secondary"
                           sx={{
-                            mt: 0.5,
+                            mt: 0.75,
+                            display: 'block',
+                            fontFamily: 'monospace',
                           }}
                         >
-                          Scenario:{' '}
-                          {
-                            testCase.scenarioBusinessId
-                          }
+                          {testCase.testCaseId}
                         </Typography>
                       </Box>
 

@@ -434,11 +434,11 @@ export default function AutomationResultsPage() {
                 <TableHead>
                   <TableRow>
                     <TableCell>
-                      Execution
+                      Test Case
                     </TableCell>
 
                     <TableCell>
-                      Test Case
+                      Execution
                     </TableCell>
 
                     <TableCell>
@@ -477,13 +477,10 @@ export default function AutomationResultsPage() {
                         >
                           <TableCell>
                             <Typography
-                              variant="body2"
+                              variant="body1"
                               fontWeight={700}
-                              fontFamily="monospace"
                             >
-                              {
-                                result.executionId
-                              }
+                              {result.testCaseName}
                             </Typography>
 
                             <Typography
@@ -491,33 +488,20 @@ export default function AutomationResultsPage() {
                               color="text.secondary"
                               fontFamily="monospace"
                             >
-                              {
-                                result
-                                  .automationScriptBusinessId
-                              }
+                              {result.testCaseBusinessId}
                             </Typography>
                           </TableCell>
 
                           <TableCell>
                             <Typography
-                              variant="body2"
-                              fontWeight={700}
-                              fontFamily="monospace"
-                            >
-                              {
-                                result
-                                  .testCaseBusinessId
-                              }
-                            </Typography>
-
-                            <Typography
-                              variant="body2"
+                              variant="caption"
                               color="text.secondary"
+                              fontFamily="monospace"
+                              sx={{
+                                overflowWrap: 'anywhere',
+                              }}
                             >
-                              {
-                                result
-                                  .testCaseName
-                              }
+                              {result.executionId}
                             </Typography>
                           </TableCell>
 

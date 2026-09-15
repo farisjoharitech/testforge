@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 @Component
 public class AutomationExecutionRunner {
@@ -53,6 +54,28 @@ public class AutomationExecutionRunner {
             String className,
             String generatedSource
     ) {
+
+        return execute(
+                executionId,
+                className,
+                generatedSource,
+                ignored -> {
+                }
+        );
+    }
+
+    public RunnerResult execute(
+            String executionId,
+            String className,
+            String generatedSource,
+            Consumer<String> liveLogConsumer
+    ) {
+
+        Consumer<String> safeLiveLogConsumer =
+                liveLogConsumer == null
+                        ? ignored -> {
+                        }
+                        : liveLogConsumer;
 
         LocalDateTime startedAt =
                 LocalDateTime.now();
@@ -97,9 +120,17 @@ public class AutomationExecutionRunner {
                     )
             ) {
 
+                emitLiveLog(
+                        safeLiveLogConsumer,
+                        sectionHeader(
+                                "PLAYWRIGHT BROWSER INSTALL"
+                        )
+                );
+
                 ProcessResult browserInstallResult =
                         installChromium(
-                                workingDirectory
+                                workingDirectory,
+                                safeLiveLogConsumer
                         );
 
                 appendSection(
@@ -136,10 +167,18 @@ public class AutomationExecutionRunner {
                 }
             }
 
+            emitLiveLog(
+                    safeLiveLogConsumer,
+                    sectionHeader(
+                            "AUTOMATION EXECUTION"
+                    )
+            );
+
             ProcessResult testResult =
                     runGeneratedTest(
                             workingDirectory,
-                            className
+                            className,
+                            safeLiveLogConsumer
                     );
 
             appendSection(
@@ -403,7 +442,8 @@ public class AutomationExecutionRunner {
     }
 
     private ProcessResult installChromium(
-            Path projectDirectory
+            Path projectDirectory,
+            Consumer<String> liveLogConsumer
     ) throws Exception {
 
         List<String> mavenArguments =
@@ -426,13 +466,15 @@ public class AutomationExecutionRunner {
         return runMaven(
                 projectDirectory,
                 mavenArguments,
-                browserInstallTimeoutSeconds
+                browserInstallTimeoutSeconds,
+                liveLogConsumer
         );
     }
 
     private ProcessResult runGeneratedTest(
             Path projectDirectory,
-            String className
+            String className,
+            Consumer<String> liveLogConsumer
     ) throws Exception {
 
         List<String> mavenArguments =
@@ -454,14 +496,16 @@ public class AutomationExecutionRunner {
         return runMaven(
                 projectDirectory,
                 mavenArguments,
-                executionTimeoutSeconds
+                executionTimeoutSeconds,
+                liveLogConsumer
         );
     }
 
     private ProcessResult runMaven(
             Path workingDirectory,
             List<String> mavenArguments,
-            long timeoutSeconds
+            long timeoutSeconds,
+            Consumer<String> liveLogConsumer
     ) throws Exception {
 
         List<String> command =
@@ -502,7 +546,8 @@ public class AutomationExecutionRunner {
                 createOutputReaderThread(
                         process,
                         liveOutput,
-                        outputTruncated
+                        outputTruncated,
+                        liveLogConsumer
                 );
 
         outputReaderThread.start();
@@ -523,6 +568,15 @@ public class AutomationExecutionRunner {
                             + " seconds. Terminating Maven process tree."
                             + System.lineSeparator(),
                     outputTruncated
+            );
+
+            emitLiveLog(
+                    liveLogConsumer,
+                    System.lineSeparator()
+                            + "[TestForge] Execution timeout reached after "
+                            + timeoutSeconds
+                            + " seconds. Terminating Maven process tree."
+                            + System.lineSeparator()
             );
 
             terminateProcessTree(
@@ -561,7 +615,8 @@ public class AutomationExecutionRunner {
     private Thread createOutputReaderThread(
             Process process,
             StringBuilder liveOutput,
-            AtomicBoolean outputTruncated
+            AtomicBoolean outputTruncated,
+            Consumer<String> liveLogConsumer
     ) {
 
         Thread thread =
@@ -588,6 +643,12 @@ public class AutomationExecutionRunner {
                                             line
                                                     + System.lineSeparator(),
                                             outputTruncated
+                                    );
+
+                                    emitLiveLog(
+                                            liveLogConsumer,
+                                            line
+                                                    + System.lineSeparator()
                                     );
                                 }
 
@@ -977,6 +1038,48 @@ public class AutomationExecutionRunner {
         );
 
         return command;
+    }
+
+    private void emitLiveLog(
+            Consumer<String> liveLogConsumer,
+            String value
+    ) {
+
+        if (
+                value == null
+                        || value.isEmpty()
+        ) {
+            return;
+        }
+
+        try {
+
+            liveLogConsumer.accept(
+                    value
+            );
+
+        } catch (
+                RuntimeException ignored
+        ) {
+
+            /*
+             * Live-log persistence must never stop the
+             * automation process itself.
+             */
+        }
+    }
+
+    private String sectionHeader(
+            String title
+    ) {
+
+        return System.lineSeparator()
+                + "=================================================="
+                + System.lineSeparator()
+                + title
+                + System.lineSeparator()
+                + "=================================================="
+                + System.lineSeparator();
     }
 
     private void appendSection(

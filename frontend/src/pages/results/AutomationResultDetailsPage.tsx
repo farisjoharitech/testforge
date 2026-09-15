@@ -344,10 +344,8 @@ export default function AutomationResultDetailsPage() {
       spacing={3}
     >
       <PageHeader
-        title="Automation Result"
-        description={
-          result.executionId
-        }
+        title={result.testCaseName}
+        description="Automation Result · Completed Playwright execution."
         actions={
           <Button
             variant="outlined"
@@ -435,13 +433,15 @@ export default function AutomationResultDetailsPage() {
                 </Typography>
 
                 <Typography
-                  variant="h5"
-                  fontWeight={700}
+                  variant="body2"
+                  color="text.secondary"
+                  fontWeight={600}
                   fontFamily="monospace"
+                  sx={{
+                    overflowWrap: 'anywhere',
+                  }}
                 >
-                  {
-                    result.executionId
-                  }
+                  {result.executionId}
                 </Typography>
               </Box>
 
@@ -487,20 +487,18 @@ export default function AutomationResultDetailsPage() {
                 </Typography>
 
                 <Typography
+                  variant="h6"
                   fontWeight={700}
                 >
-                  {
-                    result.testCaseBusinessId
-                  }
+                  {result.testCaseName}
                 </Typography>
 
                 <Typography
-                  variant="body2"
+                  variant="caption"
                   color="text.secondary"
+                  fontFamily="monospace"
                 >
-                  {
-                    result.testCaseName
-                  }
+                  {result.testCaseBusinessId}
                 </Typography>
               </Box>
 
@@ -513,11 +511,11 @@ export default function AutomationResultDetailsPage() {
                 </Typography>
 
                 <Typography
-                  fontWeight={700}
+                  variant="caption"
+                  color="text.secondary"
+                  fontFamily="monospace"
                 >
-                  {
-                    result.automationScriptBusinessId
-                  }
+                  {result.automationScriptBusinessId}
                 </Typography>
               </Box>
 
@@ -718,13 +716,15 @@ export default function AutomationResultDetailsPage() {
                   'auto',
                 borderRadius: 1,
                 bgcolor:
-                  'grey.950',
+                  '#0B1020',
                 color:
-                  'grey.100',
+                  '#F8FAFC',
+                border:
+                  '1px solid #334155',
                 fontFamily:
-                  'monospace',
-                fontSize: 12,
-                lineHeight: 1.55,
+                  '"Cascadia Code", "Consolas", monospace',
+                fontSize: 12.5,
+                lineHeight: 1.6,
                 whiteSpace:
                   'pre-wrap',
                 overflowWrap:

@@ -6,6 +6,8 @@ import com.testforge.testforge_backend.automation.exception.AutomationConflictEx
 import com.testforge.testforge_backend.automation.execution.AutomationExecutionRunner;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.CompletableFuture;
+
 @Service
 public class AutomationExecutionService {
 
@@ -18,10 +20,14 @@ public class AutomationExecutionService {
     private final AutomationExecutionRunner
             automationExecutionRunner;
 
+    private final AutomationExecutionLogStreamService
+            logStreamService;
+
     public AutomationExecutionService(
             AutomationGenerationService automationGenerationService,
             AutomationExecutionPersistenceService persistenceService,
-            AutomationExecutionRunner automationExecutionRunner
+            AutomationExecutionRunner automationExecutionRunner,
+            AutomationExecutionLogStreamService logStreamService
     ) {
 
         this.automationGenerationService =
@@ -32,6 +38,9 @@ public class AutomationExecutionService {
 
         this.automationExecutionRunner =
                 automationExecutionRunner;
+
+        this.logStreamService =
+                logStreamService;
     }
 
     public AutomationExecutionResponse execute(
@@ -65,19 +74,49 @@ public class AutomationExecutionService {
                                 generatedScript
                         );
 
-        AutomationExecutionRunner.RunnerResult result =
-                automationExecutionRunner
-                        .execute(
-                                runningExecution.executionId(),
-                                generatedScript.className(),
-                                generatedScript.source()
-                        );
+        CompletableFuture.runAsync(
+                () -> {
 
-        return persistenceService
-                .finishExecution(
-                        runningExecution.id(),
-                        result
-                );
+                    AutomationExecutionRunner.RunnerResult result =
+                            automationExecutionRunner
+                                    .execute(
+                                            runningExecution.executionId(),
+                                            generatedScript.className(),
+                                            generatedScript.source(),
+                                            chunk ->
+                                                    {
+                                                persistenceService
+                                                        .appendLiveLog(
+                                                                runningExecution.id(),
+                                                                chunk
+                                                        );
+
+                                                logStreamService
+                                                        .publishLog(
+                                                                runningExecution.id(),
+                                                                chunk
+                                                        );
+                                            }
+                                    );
+
+                    AutomationExecutionResponse finishedExecution =
+                            persistenceService
+                                    .finishExecution(
+                                            runningExecution.id(),
+                                            result
+                                    );
+
+                    logStreamService
+                            .publishCompleted(
+                                    runningExecution.id(),
+                                    finishedExecution
+                                            .status()
+                                            .name()
+                            );
+                }
+        );
+
+        return runningExecution;
     }
 
     public AutomationExecutionResponse getLatest(

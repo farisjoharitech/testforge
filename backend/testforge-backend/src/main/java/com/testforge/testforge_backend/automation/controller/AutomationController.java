@@ -8,10 +8,13 @@ import com.testforge.testforge_backend.automation.dto.CreateAutomationStepReques
 import com.testforge.testforge_backend.automation.dto.GeneratedScriptResponse;
 import com.testforge.testforge_backend.automation.dto.UpdateAutomationStepRequest;
 import com.testforge.testforge_backend.automation.service.AutomationExecutionService;
+import com.testforge.testforge_backend.automation.service.AutomationExecutionLogStreamService;
 import com.testforge.testforge_backend.automation.service.AutomationGenerationService;
 import com.testforge.testforge_backend.automation.service.AutomationService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,10 +40,14 @@ public class AutomationController {
     private final AutomationExecutionService
             automationExecutionService;
 
+    private final AutomationExecutionLogStreamService
+            logStreamService;
+
     public AutomationController(
             AutomationService automationService,
             AutomationGenerationService automationGenerationService,
-            AutomationExecutionService automationExecutionService
+            AutomationExecutionService automationExecutionService,
+            AutomationExecutionLogStreamService logStreamService
     ) {
 
         this.automationService =
@@ -51,6 +58,9 @@ public class AutomationController {
 
         this.automationExecutionService =
                 automationExecutionService;
+
+        this.logStreamService =
+                logStreamService;
     }
 
     @PostMapping(
@@ -300,4 +310,26 @@ public class AutomationController {
                         )
         );
     }
+    @GetMapping(
+            value = "/automation-executions/{executionId}/log-stream",
+            produces = MediaType.TEXT_EVENT_STREAM_VALUE
+    )
+    public SseEmitter streamExecutionLog(
+            @PathVariable Long executionId
+    ) {
+
+        AutomationExecutionResponse execution =
+                automationExecutionService
+                        .getById(
+                                executionId
+                        );
+
+        return logStreamService
+                .open(
+                        execution.id(),
+                        execution.logOutput(),
+                        execution.status().name()
+                );
+    }
+
 }

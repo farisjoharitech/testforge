@@ -1181,33 +1181,31 @@ export default function DashboardPage() {
                                   spacing={0.25}
                                 >
                                   <Typography
-                                    variant="body2"
+                                    variant="body1"
                                     fontWeight={700}
                                   >
-                                    {
-                                      result
-                                        .testCaseBusinessId
-                                    }
+                                    {result.testCaseName}
                                   </Typography>
 
                                   <Typography
                                     variant="caption"
                                     color="text.secondary"
+                                    fontFamily="monospace"
                                   >
-                                    {
-                                      result
-                                        .testCaseName
-                                    }
+                                    {result.testCaseBusinessId}
                                   </Typography>
                                 </Stack>
                               </TableCell>
 
                               <TableCell>
                                 <Typography
-                                  variant="body2"
+                                  variant="caption"
+                                  color="text.secondary"
                                   sx={{
                                     fontFamily:
                                       'monospace',
+                                    overflowWrap:
+                                      'anywhere',
                                   }}
                                 >
                                   {

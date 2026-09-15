@@ -1,17 +1,5 @@
-import {
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
-
-import {
-  Add,
-  ArrowForward,
-  Delete,
-  Edit,
-  Refresh,
-} from '@mui/icons-material';
-
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { Add, ArrowForward, Delete, Edit, Refresh } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -20,1211 +8,245 @@ import {
   CardContent,
   Chip,
   CircularProgress,
-  Divider,
+  MenuItem,
+  Select,
   Stack,
   Typography,
 } from '@mui/material';
-
-import {
-  useNavigate,
-  useParams,
-} from 'react-router-dom';
-
-import {
-  ApiError,
-} from '../../api/apiClient';
-
-import {
-  hierarchyMonitoringApi,
-} from '../../api/hierarchyMonitoringApi';
-
-import {
-  requirementApi,
-} from '../../api/requirementApi';
-
-import {
-  testPlanApi,
-} from '../../api/testPlanApi';
-
+import { useNavigate, useParams } from 'react-router-dom';
+import { ApiError } from '../../api/apiClient';
+import { hierarchyMonitoringApi } from '../../api/hierarchyMonitoringApi';
+import { requirementApi } from '../../api/requirementApi';
+import { testPlanApi } from '../../api/testPlanApi';
 import DeleteConfirmationDialog from '../../components/common/DeleteConfirmationDialog';
-
-import {
-  PageHeader,
-} from '../../components/common/PageHeader';
-
+import { PageHeader } from '../../components/common/PageHeader';
+import { QualityStrip } from '../../components/common/QualityStrip';
+import { WorkspaceCollection } from '../../components/common/WorkspaceCollection';
 import CreateRequirementDialog from '../../components/requirements/CreateRequirementDialog';
-
-import TestPlanMonitoringPanel from '../../components/monitoring/TestPlanMonitoringPanel';
-
 import EditTestPlanDialog from '../../components/test-plans/EditTestPlanDialog';
+import type { TestPlanMonitoring } from '../../types/hierarchyMonitoring';
+import type { Requirement } from '../../types/requirement';
+import type { TestPlan } from '../../types/testPlan';
 
-import type {
-  TestPlanMonitoring,
-} from '../../types/hierarchyMonitoring';
-
-import type {
-  Requirement,
-} from '../../types/requirement';
-
-import type {
-  TestPlan,
-} from '../../types/testPlan';
-
-function displayValue(
-    value:
-        | string
-        | null
-        | undefined,
-): string {
-  return value?.trim() ||
-      'Not specified';
+function priorityColor(priority: string): 'default' | 'primary' | 'warning' | 'error' {
+  if (priority === 'CRITICAL') return 'error';
+  if (priority === 'HIGH') return 'warning';
+  if (priority === 'MEDIUM') return 'primary';
+  return 'default';
 }
 
-function formatDate(
-    value:
-        | string
-        | null
-        | undefined,
-): string {
-  if (!value) {
-    return 'Not specified';
-  }
-
-  const date =
-      new Date(value);
-
-  if (
-      Number.isNaN(
-          date.getTime(),
-      )
-  ) {
-    return value;
-  }
-
-  return date.toLocaleString();
-}
-
-function getPriorityColor(
-    priority: string,
-):
-    | 'default'
-    | 'primary'
-    | 'warning'
-    | 'error' {
-  switch (priority) {
-    case 'CRITICAL':
-      return 'error';
-
-    case 'HIGH':
-      return 'warning';
-
-    case 'MEDIUM':
-      return 'primary';
-
-    default:
-      return 'default';
-  }
-}
-
-function getRequirementStatusColor(
-    status: string,
-):
-    | 'default'
-    | 'primary'
-    | 'success'
-    | 'warning'
-    | 'error' {
-  switch (status) {
-    case 'ACTIVE':
-      return 'primary';
-
-    case 'APPROVED':
-      return 'success';
-
-    case 'REJECTED':
-      return 'error';
-
-    case 'DRAFT':
-      return 'warning';
-
-    default:
-      return 'default';
-  }
-}
-
-function getTestPlanStatusColor(
-    status: string,
-):
-    | 'default'
-    | 'primary'
-    | 'success'
-    | 'warning' {
-  switch (status) {
-    case 'ACTIVE':
-      return 'primary';
-
-    case 'COMPLETED':
-      return 'success';
-
-    case 'DRAFT':
-      return 'warning';
-
-    default:
-      return 'default';
-  }
-}
-
-function getApprovalStatusColor(
-    status: string,
-):
-    | 'default'
-    | 'success'
-    | 'warning'
-    | 'error' {
-  switch (status) {
-    case 'APPROVED':
-      return 'success';
-
-    case 'REJECTED':
-      return 'error';
-
-    case 'PENDING':
-      return 'warning';
-
-    default:
-      return 'default';
-  }
+function statusColor(status: string): 'default' | 'primary' | 'success' | 'warning' | 'error' {
+  if (status === 'ACTIVE') return 'primary';
+  if (status === 'APPROVED' || status === 'COMPLETED') return 'success';
+  if (status === 'REJECTED') return 'error';
+  if (status === 'DRAFT' || status === 'PENDING') return 'warning';
+  return 'default';
 }
 
 export default function TestPlanDetailsPage() {
-  const navigate =
-      useNavigate();
+  const navigate = useNavigate();
+  const { testPlanId } = useParams<{ testPlanId: string }>();
+  const [testPlan, setTestPlan] = useState<TestPlan | null>(null);
+  const [requirements, setRequirements] = useState<Requirement[]>([]);
+  const [monitoring, setMonitoring] = useState<TestPlanMonitoring | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const {
-    testPlanId,
-  } = useParams<{
-    testPlanId: string;
-  }>();
+  const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
+  const [priorityFilter, setPriorityFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
-  const [
-    testPlan,
-    setTestPlan,
-  ] = useState<
-      TestPlan | null
-  >(null);
+  const loadPage = useCallback(async (refresh = false) => {
+    if (!testPlanId) {
+      setError('Test Plan ID is missing.');
+      setLoading(false);
+      return;
+    }
+    try {
+      refresh ? setRefreshing(true) : setLoading(true);
+      setError(null);
+      const [planResponse, requirementResponse, monitoringResponse] = await Promise.all([
+        testPlanApi.getTestPlanByBusinessId(testPlanId),
+        requirementApi.getRequirementsByTestPlan(testPlanId),
+        hierarchyMonitoringApi.getTestPlanMonitoring(testPlanId),
+      ]);
+      setTestPlan(planResponse);
+      setRequirements(requirementResponse);
+      setMonitoring(monitoringResponse);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to load Test Plan workspace.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [testPlanId]);
 
-  const [
-    requirements,
-    setRequirements,
-  ] = useState<
-      Requirement[]
-  >([]);
+  useEffect(() => { void loadPage(); }, [loadPage]);
+  useEffect(() => { setPage(1); }, [deferredSearch, priorityFilter, statusFilter, pageSize]);
 
-  const [
-    monitoring,
-    setMonitoring,
-  ] = useState<
-      TestPlanMonitoring | null
-  >(null);
+  const filteredRequirements = useMemo(() => {
+    const q = deferredSearch.trim().toLowerCase();
+    return requirements.filter((requirement) => {
+      const searchMatch = !q || requirement.description.toLowerCase().includes(q) || requirement.requirementId.toLowerCase().includes(q);
+      const priorityMatch = priorityFilter === 'ALL' || requirement.priority === priorityFilter;
+      const statusMatch = statusFilter === 'ALL' || requirement.status === statusFilter;
+      return searchMatch && priorityMatch && statusMatch;
+    });
+  }, [deferredSearch, priorityFilter, requirements, statusFilter]);
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(true);
+  const visibleRequirements = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredRequirements.slice(start, start + pageSize);
+  }, [filteredRequirements, page, pageSize]);
 
-  const [
-    refreshing,
-    setRefreshing,
-  ] = useState(false);
+  const handleDelete = async () => {
+    if (!testPlan) return;
+    try {
+      setDeleting(true);
+      setDeleteError(null);
+      await testPlanApi.deleteTestPlan(testPlan.id);
+      navigate(`/projects/${encodeURIComponent(testPlan.projectBusinessId)}`);
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : 'Unable to delete Test Plan. Delete its Requirements first.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
-  const [
-    error,
-    setError,
-  ] = useState<
-      string | null
-  >(null);
-
-  const [
-    successMessage,
-    setSuccessMessage,
-  ] = useState<
-      string | null
-  >(null);
-
-  const [
-    createDialogOpen,
-    setCreateDialogOpen,
-  ] = useState(false);
-
-  const [
-    editDialogOpen,
-    setEditDialogOpen,
-  ] = useState(false);
-
-  const [
-    deleteDialogOpen,
-    setDeleteDialogOpen,
-  ] = useState(false);
-
-  const [
-    deleting,
-    setDeleting,
-  ] = useState(false);
-
-  const [
-    deleteError,
-    setDeleteError,
-  ] = useState<
-      string | null
-  >(null);
-
-  const loadPage =
-      useCallback(
-          async (
-              isRefresh = false,
-          ) => {
-            if (!testPlanId) {
-              setError(
-                  'Test Plan ID is missing.',
-              );
-
-              setLoading(false);
-
-              return;
-            }
-
-            try {
-              if (isRefresh) {
-                setRefreshing(true);
-              } else {
-                setLoading(true);
-              }
-
-              setError(null);
-
-              const [
-                testPlanResponse,
-                requirementResponse,
-                monitoringResponse,
-              ] =
-                  await Promise.all([
-                    testPlanApi
-                        .getTestPlanByBusinessId(
-                            testPlanId,
-                        ),
-
-                    requirementApi
-                        .getRequirementsByTestPlan(
-                            testPlanId,
-                        ),
-
-                    hierarchyMonitoringApi
-                        .getTestPlanMonitoring(
-                            testPlanId,
-                        ),
-                  ]);
-
-              setTestPlan(
-                  testPlanResponse,
-              );
-
-              setRequirements(
-                  requirementResponse,
-              );
-
-              setMonitoring(
-                  monitoringResponse,
-              );
-            } catch (err) {
-              console.error(
-                  'Failed to load Test Plan details:',
-                  err,
-              );
-
-              if (
-                  err instanceof
-                  ApiError
-              ) {
-                setError(
-                    err.message,
-                );
-              } else {
-                setError(
-                    'Unable to load the Test Plan details or Requirements.',
-                );
-              }
-            } finally {
-              setLoading(false);
-              setRefreshing(false);
-            }
-          },
-          [testPlanId],
-      );
-
-  useEffect(
-      () => {
-        void loadPage();
-      },
-      [loadPage],
-  );
-
-  const handleRequirementCreated =
-      (
-          requirement:
-          Requirement,
-      ) => {
-        setCreateDialogOpen(
-            false,
-        );
-
-        setRequirements(
-            (
-                current,
-            ) => [
-              ...current,
-              requirement,
-            ],
-        );
-
-        setSuccessMessage(
-            `Requirement "${requirement.requirementId}" created successfully.`,
-        );
-
-        void loadPage(true);
-      };
-
-  const handleTestPlanUpdated =
-      (
-          updatedTestPlan:
-          TestPlan,
-      ) => {
-        setTestPlan(
-            updatedTestPlan,
-        );
-
-        setEditDialogOpen(
-            false,
-        );
-
-        setSuccessMessage(
-            `Test Plan "${updatedTestPlan.testPlanId}" updated successfully.`,
-        );
-      };
-
-  const handleDelete =
-      async () => {
-        if (!testPlan) {
-          return;
-        }
-
-        try {
-          setDeleting(true);
-
-          setDeleteError(
-              null,
-          );
-
-          await testPlanApi
-              .deleteTestPlan(
-                  testPlan.id,
-              );
-
-          navigate(
-              '/test-plans',
-          );
-        } catch (err) {
-          console.error(
-              'Failed to delete Test Plan:',
-              err,
-          );
-
-          if (
-              err instanceof
-              ApiError
-          ) {
-            setDeleteError(
-                err.message,
-            );
-          } else {
-            setDeleteError(
-                'Unable to delete the Test Plan. Delete its child Requirements first.',
-            );
-          }
-        } finally {
-          setDeleting(false);
-        }
-      };
-
-  if (loading) {
-    return (
-        <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-            }}
-        >
-          <CardContent>
-            <Stack
-                spacing={2}
-                sx={{
-                  minHeight: 320,
-                  alignItems:
-                      'center',
-                  justifyContent:
-                      'center',
-                }}
-            >
-              <CircularProgress />
-
-              <Typography
-                  color="text.secondary"
-              >
-                Loading Test
-                Plan...
-              </Typography>
-            </Stack>
-          </CardContent>
-        </Card>
-    );
+  if (loading && !testPlan) {
+    return <Stack spacing={2} sx={{ minHeight: 320, alignItems: 'center', justifyContent: 'center' }}><CircularProgress /><Typography color="text.secondary">Loading Test Plan...</Typography></Stack>;
   }
+  if (!testPlan) return <Alert severity="error">{error || 'Test Plan not found.'}</Alert>;
 
-  if (
-      error &&
-      !testPlan
-  ) {
-    return (
-        <Stack
-            spacing={3}
-        >
-          <Alert
-              severity="error"
-          >
-            {error}
-          </Alert>
-
-          <Stack
-              direction="row"
-              spacing={1}
-          >
-            <Button
-                variant="outlined"
-                onClick={() =>
-                    navigate(
-                        '/test-plans',
-                    )
-                }
-            >
-              Back to Test Plans
-            </Button>
-
-            <Button
-                variant="contained"
-                onClick={() =>
-                    void loadPage()
-                }
-            >
-              Try Again
-            </Button>
-          </Stack>
-        </Stack>
-    );
-  }
-
-  if (!testPlan) {
-    return null;
-  }
+  const context = [testPlan.projectName, testPlan.application, testPlan.environment, testPlan.version ? `v${testPlan.version}` : null].filter(Boolean).join(' · ');
 
   return (
-      <Stack
-          spacing={3}
+    <Stack spacing={2.5}>
+      <PageHeader
+        title={testPlan.name}
+        description={context || undefined}
+        breadcrumbs={[
+          { label: 'Projects', to: '/projects' },
+          { label: testPlan.projectName, to: `/projects/${encodeURIComponent(testPlan.projectBusinessId)}` },
+          { label: testPlan.name },
+        ]}
+        actions={
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Chip size="small" label={testPlan.status} color={statusColor(testPlan.status)} variant="outlined" />
+            <Chip size="small" label={testPlan.approvalStatus} color={statusColor(testPlan.approvalStatus)} variant="outlined" />
+            <Button size="small" startIcon={<Refresh />} disabled={refreshing} onClick={() => void loadPage(true)}>Refresh</Button>
+            <Button size="small" startIcon={<Edit />} onClick={() => setEditDialogOpen(true)}>Edit</Button>
+            <Button size="small" color="error" startIcon={<Delete />} onClick={() => setDeleteDialogOpen(true)}>Delete</Button>
+          </Stack>
+        }
+      />
+
+      {successMessage && <Alert severity="success" onClose={() => setSuccessMessage(null)}>{successMessage}</Alert>}
+      {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
+
+      {monitoring && (
+        <QualityStrip
+          automationCoveragePercentage={monitoring.summary.automationCoveragePercentage}
+          passRatePercentage={monitoring.summary.passRatePercentage}
+          needsAttentionTestCases={monitoring.summary.needsAttentionTestCases}
+          notRunTestCases={monitoring.summary.notRunTestCases}
+          manualTestCases={monitoring.summary.manualTestCases}
+          onNeedsAttention={() => navigate(`/monitoring/test-plan/${encodeURIComponent(testPlan.testPlanId)}/test-cases?status=NEEDS_ATTENTION`)}
+          onNotRun={() => navigate(`/monitoring/test-plan/${encodeURIComponent(testPlan.testPlanId)}/test-cases?status=NOT_RUN`)}
+        />
+      )}
+
+      <WorkspaceCollection
+        title="Requirements"
+        totalCount={requirements.length}
+        filteredCount={filteredRequirements.length}
+        searchValue={search}
+        searchPlaceholder="Search requirements..."
+        onSearchChange={setSearch}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        filters={
+          <Stack direction="row" spacing={1}>
+            <Select size="small" value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)} sx={{ minWidth: 120 }}>
+              <MenuItem value="ALL">All priorities</MenuItem><MenuItem value="CRITICAL">Critical</MenuItem><MenuItem value="HIGH">High</MenuItem><MenuItem value="MEDIUM">Medium</MenuItem><MenuItem value="LOW">Low</MenuItem>
+            </Select>
+            <Select size="small" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} sx={{ minWidth: 120 }}>
+              <MenuItem value="ALL">All statuses</MenuItem><MenuItem value="DRAFT">Draft</MenuItem><MenuItem value="ACTIVE">Active</MenuItem><MenuItem value="APPROVED">Approved</MenuItem><MenuItem value="REJECTED">Rejected</MenuItem><MenuItem value="ARCHIVED">Archived</MenuItem>
+            </Select>
+          </Stack>
+        }
+        actions={<Button variant="contained" size="small" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Add Requirement</Button>}
       >
-        <PageHeader
-            title={
-              testPlan.testPlanId
-            }
-            description={
-              testPlan.name
-            }
-            breadcrumbs={[
-              {
-                label:
-                    'Test Plans',
-                to:
-                    '/test-plans',
-              },
-              {
-                label:
-                testPlan.testPlanId,
-              },
-            ]}
-            actions={
-              <Stack
-                  direction={{
-                    xs: 'column',
-                    sm: 'row',
-                  }}
-                  spacing={1}
-              >
-                <Button
-                    variant="outlined"
-                    startIcon={
-                      <Refresh />
-                    }
-                    disabled={
-                      refreshing
-                    }
-                    onClick={() =>
-                        void loadPage(
-                            true,
-                        )
-                    }
-                >
-                  {refreshing
-                      ? 'Refreshing...'
-                      : 'Refresh'}
-                </Button>
-
-                <Button
-                    variant="outlined"
-                    startIcon={
-                      <Edit />
-                    }
-                    onClick={() =>
-                        setEditDialogOpen(
-                            true,
-                        )
-                    }
-                >
-                  Edit
-                </Button>
-
-                <Button
-                    color="error"
-                    variant="outlined"
-                    startIcon={
-                      <Delete />
-                    }
-                    onClick={() => {
-                      setDeleteError(
-                          null,
-                      );
-
-                      setDeleteDialogOpen(
-                          true,
-                      );
-                    }}
-                >
-                  Delete
-                </Button>
-
-                <Button
-                    variant="contained"
-                    startIcon={
-                      <Add />
-                    }
-                    onClick={() =>
-                        setCreateDialogOpen(
-                            true,
-                        )
-                    }
-                >
-                  Add Requirement
-                </Button>
-              </Stack>
-            }
-        />
-
-        {successMessage && (
-            <Alert
-                severity="success"
-                onClose={() =>
-                    setSuccessMessage(
-                        null,
-                    )
-                }
-            >
-              {successMessage}
-            </Alert>
-        )}
-
-        {error && (
-            <Alert
-                severity="error"
-                onClose={() =>
-                    setError(null)
-                }
-            >
-              {error}
-            </Alert>
-        )}
-
-        <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-            }}
-        >
-          <CardContent>
-            <Stack
-                spacing={3}
-            >
-              <Box
-                  sx={{
-                    display:
-                        'flex',
-                    justifyContent:
-                        'space-between',
-                    alignItems:
-                        'flex-start',
-                    gap: 2,
-                    flexWrap:
-                        'wrap',
-                  }}
-              >
-                <Box>
-                  <Typography
-                      variant="h6"
-                      fontWeight={700}
-                  >
-                    Test Plan
-                    Information
-                  </Typography>
-
-                  <Typography
-                      variant="body2"
-                      color="text.secondary"
-                  >
-                    Core Test Plan
-                    configuration and
-                    lifecycle status.
-                  </Typography>
-                </Box>
-
-                <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{
-                      flexWrap:
-                          'wrap',
-                    }}
-                >
-                  <Chip
-                      label={
-                        testPlan.status
-                      }
-                      color={getTestPlanStatusColor(
-                          testPlan.status,
-                      )}
-                      variant="outlined"
-                  />
-
-                  <Chip
-                      label={
-                        testPlan.approvalStatus
-                      }
-                      color={getApprovalStatusColor(
-                          testPlan.approvalStatus,
-                      )}
-                      variant="outlined"
-                  />
-                </Stack>
-              </Box>
-
-              <Divider />
-
-              <Box
-                  sx={{
-                    display:
-                        'grid',
-
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: 'repeat(2, 1fr)',
-                      md: 'repeat(3, 1fr)',
-                    },
-
-                    gap: 3,
-                  }}
-              >
-                <Box>
-                  <Typography
-                      variant="caption"
-                      color="text.secondary"
-                  >
-                    Test Plan ID
-                  </Typography>
-
-                  <Typography
-                      fontWeight={600}
-                  >
-                    {
-                      testPlan.testPlanId
-                    }
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography
-                      variant="caption"
-                      color="text.secondary"
-                  >
-                    Name
-                  </Typography>
-
-                  <Typography>
-                    {
-                      testPlan.name
-                    }
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography
-                      variant="caption"
-                      color="text.secondary"
-                  >
-                    Version
-                  </Typography>
-
-                  <Typography>
-                    {displayValue(
-                        testPlan.version,
-                    )}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography
-                      variant="caption"
-                      color="text.secondary"
-                  >
-                    Project
-                  </Typography>
-
-                  <Typography>
-                    {displayValue(
-                        `${testPlan.projectName} (${testPlan.projectBusinessId})`,
-                    )}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography
-                      variant="caption"
-                      color="text.secondary"
-                  >
-                    Application
-                  </Typography>
-
-                  <Typography>
-                    {displayValue(
-                        testPlan.application,
-                    )}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography
-                      variant="caption"
-                      color="text.secondary"
-                  >
-                    Environment
-                  </Typography>
-
-                  <Typography>
-                    {displayValue(
-                        testPlan.environment,
-                    )}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography
-                      variant="caption"
-                      color="text.secondary"
-                  >
-                    Prepared By
-                  </Typography>
-
-                  <Typography>
-                    {displayValue(
-                        testPlan.preparedBy,
-                    )}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography
-                      variant="caption"
-                      color="text.secondary"
-                  >
-                    Created
-                  </Typography>
-
-                  <Typography>
-                    {formatDate(
-                        testPlan.createdAt,
-                    )}
-                  </Typography>
-                </Box>
-
-                <Box>
-                  <Typography
-                      variant="caption"
-                      color="text.secondary"
-                  >
-                    Updated
-                  </Typography>
-
-                  <Typography>
-                    {formatDate(
-                        testPlan.updatedAt,
-                    )}
-                  </Typography>
-                </Box>
-              </Box>
-            </Stack>
-          </CardContent>
-        </Card>
-
-        {monitoring && (
-            <TestPlanMonitoringPanel
-                monitoring={monitoring}
-            />
-        )}
-
-        <Box
-            sx={{
-              display: 'flex',
-              justifyContent:
-                  'space-between',
-              alignItems:
-                  'center',
-              gap: 2,
-              flexWrap:
-                  'wrap',
-            }}
-        >
-          <Box>
-            <Typography
-                variant="h5"
-                fontWeight={700}
-            >
-              Requirements
-            </Typography>
-
-            <Typography
-                color="text.secondary"
-            >
-              Requirements linked
-              to this Test Plan.
-            </Typography>
-          </Box>
-
-          <Chip
-              label={`${requirements.length} requirement${
-                  requirements.length ===
-                  1
-                      ? ''
-                      : 's'
-              }`}
-              variant="outlined"
-          />
-        </Box>
-
-        {requirements.length ===
-        0 ? (
-            <Card
-                variant="outlined"
-                sx={{
-                  borderRadius: 3,
-                }}
-            >
-              <CardContent>
-                <Stack
-                    spacing={2}
-                    sx={{
-                      minHeight: 250,
-                      alignItems:
-                          'center',
-                      justifyContent:
-                          'center',
-                      textAlign:
-                          'center',
-                    }}
-                >
-                  <Typography
-                      variant="h6"
-                  >
-                    No Requirements
-                    yet
-                  </Typography>
-
-                  <Typography
-                      color="text.secondary"
-                  >
-                    Add the first
-                    Requirement to this
-                    Test Plan.
-                  </Typography>
-
-                  <Button
-                      variant="contained"
-                      startIcon={
-                        <Add />
-                      }
-                      onClick={() =>
-                          setCreateDialogOpen(
-                              true,
-                          )
-                      }
-                  >
-                    Add Requirement
-                  </Button>
-                </Stack>
-              </CardContent>
-            </Card>
+        {requirements.length === 0 ? (
+          <Card variant="outlined"><CardContent><Stack spacing={1.5} alignItems="center" sx={{ py: 5 }}><Typography fontWeight={700}>No Requirements yet</Typography><Typography variant="body2" color="text.secondary">Add the first requirement for this Test Plan.</Typography><Button variant="contained" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Add Requirement</Button></Stack></CardContent></Card>
+        ) : filteredRequirements.length === 0 ? (
+          <Alert severity="info">No Requirements match the current search or filters.</Alert>
         ) : (
-            <Stack
-                spacing={2}
-            >
-              {requirements.map(
-                  (
-                      requirement,
-                  ) => (
-                      <Card
-                          key={
-                            requirement.id
-                          }
-                          variant="outlined"
-                          sx={{
-                            borderRadius: 3,
-                          }}
-                      >
-                        <CardContent>
-                          <Stack
-                              spacing={2}
-                          >
-                            <Box
-                                sx={{
-                                  display:
-                                      'flex',
-                                  justifyContent:
-                                      'space-between',
-                                  alignItems:
-                                      'flex-start',
-                                  gap: 2,
-                                  flexWrap:
-                                      'wrap',
-                                }}
-                            >
-                              <Box
-                                  sx={{
-                                    flex: 1,
-                                  }}
-                              >
-                                <Typography
-                                    variant="h6"
-                                    fontWeight={
-                                      700
-                                    }
-                                >
-                                  {
-                                    requirement.requirementId
-                                  }
-                                </Typography>
-
-                                <Typography
-                                    color="text.secondary"
-                                    sx={{
-                                      mt: 0.5,
-                                      whiteSpace:
-                                          'pre-wrap',
-                                    }}
-                                >
-                                  {
-                                    requirement.description
-                                  }
-                                </Typography>
-                              </Box>
-
-                              <Stack
-                                  direction="row"
-                                  spacing={1}
-                                  sx={{
-                                    flexWrap:
-                                        'wrap',
-                                  }}
-                              >
-                                <Chip
-                                    label={
-                                      requirement.priority
-                                    }
-                                    color={getPriorityColor(
-                                        requirement.priority,
-                                    )}
-                                    variant="outlined"
-                                />
-
-                                <Chip
-                                    label={
-                                      requirement.status
-                                    }
-                                    color={getRequirementStatusColor(
-                                        requirement.status,
-                                    )}
-                                    variant="outlined"
-                                />
-                              </Stack>
-                            </Box>
-
-                            <Divider />
-
-                            <Box
-                                sx={{
-                                  display:
-                                      'grid',
-
-                                  gridTemplateColumns: {
-                                    xs: '1fr',
-                                    sm: 'repeat(2, 1fr)',
-                                  },
-
-                                  gap: 2,
-                                }}
-                            >
-                              <Box>
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                >
-                                  Created
-                                </Typography>
-
-                                <Typography
-                                    variant="body2"
-                                >
-                                  {formatDate(
-                                      requirement.createdAt,
-                                  )}
-                                </Typography>
-                              </Box>
-
-                              <Box>
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                >
-                                  Updated
-                                </Typography>
-
-                                <Typography
-                                    variant="body2"
-                                >
-                                  {formatDate(
-                                      requirement.updatedAt,
-                                  )}
-                                </Typography>
-                              </Box>
-                            </Box>
-
-                            <Box
-                                sx={{
-                                  display:
-                                      'flex',
-                                  justifyContent:
-                                      'flex-end',
-                                }}
-                            >
-                              <Button
-                                  endIcon={
-                                    <ArrowForward />
-                                  }
-                                  onClick={() =>
-                                      navigate(
-                                          `/requirements/${encodeURIComponent(
-                                              requirement.requirementId,
-                                          )}`,
-                                      )
-                                  }
-                              >
-                                Open Requirement
-                              </Button>
-                            </Box>
-                          </Stack>
-                        </CardContent>
-                      </Card>
-                  ),
-              )}
-            </Stack>
+          <Stack spacing={1}>
+            {visibleRequirements.map((requirement) => (
+              <Card key={requirement.id} variant="outlined" sx={{ borderRadius: 2 }}>
+                <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography fontWeight={700} sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{requirement.description}</Typography>
+                    </Box>
+                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                      <Chip size="small" label={requirement.priority} color={priorityColor(requirement.priority)} variant="outlined" />
+                      <Chip size="small" label={requirement.status} color={statusColor(requirement.status)} variant="outlined" />
+                      <Button size="small" endIcon={<ArrowForward />} onClick={() => navigate(`/requirements/${encodeURIComponent(requirement.requirementId)}`)}>Open</Button>
+                    </Stack>
+                  </Stack>
+                </CardContent>
+              </Card>
+            ))}
+          </Stack>
         )}
+      </WorkspaceCollection>
 
-        <CreateRequirementDialog
-            open={
-              createDialogOpen
-            }
-            testPlanId={
-              testPlan.testPlanId
-            }
-            onClose={() =>
-                setCreateDialogOpen(
-                    false,
-                )
-            }
-            onCreated={
-              handleRequirementCreated
-            }
-        />
-
-        <EditTestPlanDialog
-            open={
-              editDialogOpen
-            }
-            testPlan={
-              testPlan
-            }
-            onClose={() =>
-                setEditDialogOpen(
-                    false,
-                )
-            }
-            onUpdated={
-              handleTestPlanUpdated
-            }
-        />
-
-        <DeleteConfirmationDialog
-            open={
-              deleteDialogOpen
-            }
-            title="Delete Test Plan?"
-            entityName={
-              testPlan.testPlanId
-            }
-            description="A Test Plan cannot be deleted while child Requirements still reference it. Delete the child lifecycle records first."
-            deleting={
-              deleting
-            }
-            error={
-              deleteError
-            }
-            onClose={() => {
-              if (deleting) {
-                return;
-              }
-
-              setDeleteDialogOpen(
-                  false,
-              );
-
-              setDeleteError(
-                  null,
-              );
-            }}
-            onConfirm={() =>
-                void handleDelete()
-            }
-        />
-      </Stack>
+      <CreateRequirementDialog
+        open={createDialogOpen}
+        testPlanId={testPlan.testPlanId}
+        onClose={() => setCreateDialogOpen(false)}
+        onCreated={(created) => {
+          setCreateDialogOpen(false);
+          setRequirements((current) => [...current, created]);
+          setSuccessMessage('Requirement created successfully.');
+          void loadPage(true);
+        }}
+      />
+      <EditTestPlanDialog
+        open={editDialogOpen}
+        testPlan={testPlan}
+        onClose={() => setEditDialogOpen(false)}
+        onUpdated={(updated) => {
+          setTestPlan(updated);
+          setEditDialogOpen(false);
+          setSuccessMessage('Test Plan updated successfully.');
+          void loadPage(true);
+        }}
+      />
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        title="Delete Test Plan?"
+        entityName={testPlan.name}
+        description="A Test Plan cannot be deleted while Requirements still reference it."
+        deleting={deleting}
+        error={deleteError}
+        onClose={() => { if (!deleting) { setDeleteDialogOpen(false); setDeleteError(null); } }}
+        onConfirm={() => void handleDelete()}
+      />
+    </Stack>
   );
 }

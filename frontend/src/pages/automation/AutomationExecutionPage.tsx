@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -227,6 +228,17 @@ export default function AutomationExecutionPage() {
       null,
     );
 
+  const [
+    liveLog,
+    setLiveLog,
+  ] =
+    useState('');
+
+  const liveLogRef =
+    useRef<HTMLPreElement | null>(
+      null,
+    );
+
   const loadPage =
     useCallback(
       async () => {
@@ -296,6 +308,10 @@ export default function AutomationExecutionPage() {
               loadedExecution,
             );
 
+            setLiveLog(
+              loadedExecution.logOutput ?? '',
+            );
+
           } catch (
             latestError
           ) {
@@ -308,6 +324,8 @@ export default function AutomationExecutionPage() {
               setLatestExecution(
                 null,
               );
+
+              setLiveLog('');
 
             } else {
 
@@ -349,6 +367,205 @@ export default function AutomationExecutionPage() {
     ],
   );
 
+
+  useEffect(
+    () => {
+
+      if (
+        !latestExecution
+        || latestExecution.status !==
+          'RUNNING'
+      ) {
+        return;
+      }
+
+      let cancelled =
+        false;
+
+      const pollExecution =
+        async () => {
+
+          try {
+
+            const refreshedExecution =
+              await automationApi
+                .getExecution(
+                  latestExecution.id,
+                );
+
+            if (cancelled) {
+              return;
+            }
+
+            setLatestExecution(
+              refreshedExecution,
+            );
+
+            if (
+              refreshedExecution.status !==
+              'RUNNING'
+            ) {
+              setLiveLog(
+                refreshedExecution.logOutput ?? '',
+              );
+            }
+
+            if (
+              refreshedExecution.status !==
+              'RUNNING'
+            ) {
+
+              setExecuting(
+                false,
+              );
+
+              if (testCaseId) {
+                const refreshedTestCase =
+                  await testCaseApi
+                    .getTestCaseByBusinessId(
+                      testCaseId,
+                    );
+
+                if (!cancelled) {
+                  setTestCase(
+                    refreshedTestCase,
+                  );
+                }
+              }
+
+              if (!cancelled) {
+                setSuccessMessage(
+                  refreshedExecution.status ===
+                    'PASSED'
+                    ? 'Automation execution passed successfully.'
+                    : `Automation execution completed with status ${refreshedExecution.status}.`,
+                );
+              }
+            }
+
+          } catch (pollError) {
+
+            if (!cancelled) {
+              console.error(
+                pollError,
+              );
+            }
+          }
+        };
+
+      void pollExecution();
+
+      const intervalId =
+        window.setInterval(
+          () => {
+            void pollExecution();
+          },
+          1000,
+        );
+
+      return () => {
+        cancelled =
+          true;
+
+        window.clearInterval(
+          intervalId,
+        );
+      };
+    },
+    [
+      latestExecution?.id,
+      latestExecution?.status,
+      testCaseId,
+    ],
+  );
+
+  useEffect(
+    () => {
+
+      if (
+        !latestExecution
+        || latestExecution.status !==
+          'RUNNING'
+      ) {
+        return;
+      }
+
+      const eventSource =
+        new EventSource(
+          automationApi
+            .getExecutionLogStreamUrl(
+              latestExecution.id,
+            ),
+        );
+
+      const handleSnapshot =
+        (event: MessageEvent<string>) => {
+          setLiveLog(
+            event.data ?? '',
+          );
+        };
+
+      const handleLog =
+        (event: MessageEvent<string>) => {
+          setLiveLog(
+            (current) =>
+              current + event.data + '\n',
+          );
+        };
+
+      const handleComplete =
+        () => {
+          eventSource.close();
+        };
+
+      eventSource.addEventListener(
+        'snapshot',
+        handleSnapshot as EventListener,
+      );
+
+      eventSource.addEventListener(
+        'log',
+        handleLog as EventListener,
+      );
+
+      eventSource.addEventListener(
+        'complete',
+        handleComplete as EventListener,
+      );
+
+      eventSource.onerror =
+        () => {
+          // Database polling remains active as a fallback.
+          eventSource.close();
+        };
+
+      return () => {
+        eventSource.close();
+      };
+    },
+    [
+      latestExecution?.id,
+      latestExecution?.status,
+    ],
+  );
+
+  useEffect(
+    () => {
+
+      if (
+        !liveLogRef.current
+      ) {
+        return;
+      }
+
+      liveLogRef.current.scrollTop =
+        liveLogRef.current.scrollHeight;
+    },
+    [
+      liveLog,
+    ],
+  );
+
   const handleExecute =
     async () => {
 
@@ -383,6 +600,10 @@ export default function AutomationExecutionPage() {
           execution,
         );
 
+        setLiveLog(
+          execution.logOutput ?? '',
+        );
+
         const refreshedTestCase =
           await testCaseApi
             .getTestCaseByBusinessId(
@@ -394,6 +615,15 @@ export default function AutomationExecutionPage() {
         );
 
         if (
+          execution.status ===
+          'RUNNING'
+        ) {
+
+          setSuccessMessage(
+            'Automation execution started. Live logs are updating below.',
+          );
+
+        } else if (
           execution.status ===
           'PASSED'
         ) {
@@ -487,17 +717,22 @@ export default function AutomationExecutionPage() {
     );
   }
 
+  const executionRunning =
+    latestExecution?.status ===
+    'RUNNING';
+
   const canExecute =
     !generated.stale
-    && !executing;
+    && !executing
+    && !executionRunning;
 
   return (
     <Stack
       spacing={3}
     >
       <PageHeader
-        title="Automation Execution"
-        description={`Run generated Playwright Java automation for ${testCase.testCaseId}.`}
+        title={testCase.name}
+        description="Automation Execution · Run and observe the generated Playwright Java automation."
         actions={
           <Stack
             direction="row"
@@ -610,9 +845,7 @@ export default function AutomationExecutionPage() {
                 <Typography
                   fontWeight={700}
                 >
-                  {
-                    testCase.testCaseId
-                  }
+                  {testCase.name}
                 </Typography>
               </Box>
 
@@ -627,9 +860,7 @@ export default function AutomationExecutionPage() {
                 <Typography
                   fontWeight={700}
                 >
-                  {
-                    script.automationScriptId
-                  }
+                  {script.name}
                 </Typography>
               </Box>
 
@@ -750,9 +981,11 @@ export default function AutomationExecutionPage() {
                   </Typography>
 
                   <Typography
-                    variant="h6"
+                    variant="body2"
+                    color="text.secondary"
                     fontFamily="monospace"
-                    fontWeight={700}
+                    fontWeight={600}
+                    sx={{ overflowWrap: 'anywhere' }}
                   >
                     {
                       latestExecution.executionId
@@ -870,6 +1103,87 @@ export default function AutomationExecutionPage() {
                   }
                 </Alert>
               )}
+
+              <Box>
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  spacing={2}
+                  sx={{
+                    mb: 1,
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      variant="subtitle2"
+                      fontWeight={700}
+                    >
+                      Live Execution Log
+                    </Typography>
+
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                    >
+                      Updates automatically while Playwright is running.
+                    </Typography>
+                  </Box>
+
+                  {latestExecution.status ===
+                    'RUNNING' && (
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                    >
+                      <CircularProgress
+                        size={16}
+                      />
+
+                      <Typography
+                        variant="caption"
+                        fontWeight={700}
+                      >
+                        RUNNING
+                      </Typography>
+                    </Stack>
+                  )}
+                </Stack>
+
+                <Box
+                  ref={liveLogRef}
+                  component="pre"
+                  aria-live="polite"
+                  sx={{
+                    m: 0,
+                    p: 2,
+                    minHeight: 220,
+                    maxHeight: 520,
+                    overflow: 'auto',
+                    bgcolor: '#0B1020',
+                    color: '#F8FAFC',
+                    border: '1px solid #334155',
+                    borderRadius: 1,
+                    fontFamily:
+                      '"Cascadia Code", "Consolas", monospace',
+                    fontSize: 12.5,
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-wrap',
+                    overflowWrap: 'anywhere',
+                  }}
+                >
+                  {
+                    liveLog
+                    || (
+                      latestExecution.status ===
+                        'RUNNING'
+                        ? '[TestForge] Execution started. Waiting for process output...'
+                        : '(no execution log output)'
+                    )
+                  }
+                </Box>
+              </Box>
 
               {latestExecution.status !==
                 'RUNNING' && (

@@ -1,3 +1,7 @@
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  'http://localhost:8080';
+
 import {
   apiClient,
 } from './apiClient';
@@ -153,5 +157,11 @@ export const automationApi = {
     return apiClient.get<AutomationExecution>(
       `/api/automation-executions/${executionId}`,
     );
+  },
+
+  getExecutionLogStreamUrl(
+    executionId: number,
+  ): string {
+    return `${API_BASE_URL}/api/automation-executions/${executionId}/log-stream`;
   },
 };

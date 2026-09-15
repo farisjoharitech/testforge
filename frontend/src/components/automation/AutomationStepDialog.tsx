@@ -1971,10 +1971,10 @@ export default function AutomationStepDialog({
                         severity="info"
                         variant="outlined"
                     >
-                      This Test Case supports both
-                      UI and API automation actions.
-                      Steps are executed according
-                      to Automation Step Order.
+                      This Test Case supports both UI and API automation actions.
+                      Use EXTRACT_API_JSON_VALUE to store a runtime value such as ORDER_ID,
+                      then reference it in later UI or API fields as {'${ORDER_ID}'}.
+                      Steps execute strictly according to Automation Step Order.
                     </Alert>
                 )}
           </Stack>
