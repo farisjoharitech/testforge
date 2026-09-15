@@ -43,7 +43,21 @@ export type AutomationActionType =
     | 'API_PATCH'
     | 'API_DELETE'
     | 'ASSERT_API_STATUS'
-    | 'ASSERT_API_BODY_CONTAINS';
+    | 'ASSERT_API_BODY_CONTAINS'
+    | 'ASSERT_API_BODY_EQUALS'
+    | 'ASSERT_API_JSON_FIELD_EQUALS'
+    | 'ASSERT_API_HEADER'
+    | 'EXTRACT_API_JSON_VALUE';
+
+export type ApiAuthenticationType =
+    | 'NONE'
+    | 'BASIC'
+    | 'BEARER_TOKEN'
+    | 'API_KEY';
+
+export type ApiKeyLocation =
+    | 'HEADER'
+    | 'QUERY';
 
 export type SelectorStrategy =
     | 'ROLE'
@@ -109,6 +123,7 @@ export interface CreateAutomationStepRequest {
   selectorExact: boolean;
   inputValue?: string | null;
   expectedValue?: string | null;
+  apiConfig?: string | null;
 }
 
 export interface UpdateAutomationStepRequest {
@@ -122,6 +137,7 @@ export interface UpdateAutomationStepRequest {
   selectorExact: boolean;
   inputValue?: string | null;
   expectedValue?: string | null;
+  apiConfig?: string | null;
 }
 
 export interface AutomationStep {
@@ -139,6 +155,7 @@ export interface AutomationStep {
   selectorExact: boolean;
   inputValue?: string | null;
   expectedValue?: string | null;
+  apiConfig?: string | null;
   createdAt: string;
   updatedAt: string;
 }

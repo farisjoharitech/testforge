@@ -24,6 +24,8 @@ import {
 } from '@mui/material';
 
 import type {
+  ApiAuthenticationType,
+  ApiKeyLocation,
   AutomationActionType,
   AutomationStep,
   SelectorStrategy,
@@ -151,6 +153,10 @@ const API_ACTION_TYPES:
   'API_DELETE',
   'ASSERT_API_STATUS',
   'ASSERT_API_BODY_CONTAINS',
+  'ASSERT_API_BODY_EQUALS',
+  'ASSERT_API_JSON_FIELD_EQUALS',
+  'ASSERT_API_HEADER',
+  'EXTRACT_API_JSON_VALUE',
 ];
 
 const SELECTOR_STRATEGIES:
@@ -238,6 +244,10 @@ const NO_SELECTOR_ACTIONS:
   'API_DELETE',
   'ASSERT_API_STATUS',
   'ASSERT_API_BODY_CONTAINS',
+  'ASSERT_API_BODY_EQUALS',
+  'ASSERT_API_JSON_FIELD_EQUALS',
+  'ASSERT_API_HEADER',
+  'EXTRACT_API_JSON_VALUE',
 ];
 
 const INPUT_REQUIRED_ACTIONS:
@@ -252,6 +262,7 @@ const INPUT_REQUIRED_ACTIONS:
   'WAIT',
   'WAIT_FOR_URL',
   'TAKE_SCREENSHOT',
+  'EXTRACT_API_JSON_VALUE',
 ];
 
 const EXPECTED_REQUIRED_ACTIONS:
@@ -264,6 +275,10 @@ const EXPECTED_REQUIRED_ACTIONS:
   'ASSERT_TITLE',
   'ASSERT_API_STATUS',
   'ASSERT_API_BODY_CONTAINS',
+  'ASSERT_API_BODY_EQUALS',
+  'ASSERT_API_JSON_FIELD_EQUALS',
+  'ASSERT_API_HEADER',
+  'EXTRACT_API_JSON_VALUE',
 ];
 
 const API_REQUEST_ACTIONS:
@@ -327,6 +342,8 @@ function inputLabel(
       return 'URL to Wait For';
     case 'TAKE_SCREENSHOT':
       return 'Screenshot Output Path';
+    case 'EXTRACT_API_JSON_VALUE':
+      return 'Runtime Variable Name';
     default:
       return 'Input Value';
   }
@@ -346,6 +363,12 @@ function expectedLabel(
       return 'Expected HTTP Status';
     case 'ASSERT_API_BODY_CONTAINS':
       return 'Expected Body Text';
+    case 'ASSERT_API_BODY_EQUALS':
+      return 'Expected Full Body';
+    case 'ASSERT_API_JSON_FIELD_EQUALS':
+      return 'Expected JSON Field Value';
+    case 'ASSERT_API_HEADER':
+      return 'Expected Header Value';
     default:
       return 'Expected Value';
   }
@@ -455,6 +478,18 @@ export default function AutomationStepDialog({
     expectedValue,
     setExpectedValue,
   ] = useState('');
+
+  const [apiHeaders, setApiHeaders] = useState('{}');
+  const [apiQueryParams, setApiQueryParams] = useState('{}');
+  const [apiBodyType, setApiBodyType] = useState<'NONE' | 'JSON' | 'TEXT' | 'FORM'>('NONE');
+  const [apiBody, setApiBody] = useState('');
+  const [apiAuthType, setApiAuthType] = useState<ApiAuthenticationType>('NONE');
+  const [apiBasicUsername, setApiBasicUsername] = useState('');
+  const [apiBasicPasswordSecretRef, setApiBasicPasswordSecretRef] = useState('');
+  const [apiBearerTokenSecretRef, setApiBearerTokenSecretRef] = useState('');
+  const [apiKeyName, setApiKeyName] = useState('');
+  const [apiKeyValueSecretRef, setApiKeyValueSecretRef] = useState('');
+  const [apiKeyLocation, setApiKeyLocation] = useState<ApiKeyLocation>('HEADER');
 
   const [
     validationError,
@@ -572,6 +607,35 @@ export default function AutomationStepDialog({
               '',
           );
 
+          try {
+            const config = automationStep.apiConfig
+                ? JSON.parse(automationStep.apiConfig)
+                : {};
+            setApiHeaders(JSON.stringify(config.headers ?? {}, null, 2));
+            setApiQueryParams(JSON.stringify(config.queryParams ?? {}, null, 2));
+            setApiBodyType(config.bodyType ?? 'NONE');
+            setApiBody(config.body ?? '');
+            setApiAuthType(config.auth?.type ?? 'NONE');
+            setApiBasicUsername(config.auth?.username ?? '');
+            setApiBasicPasswordSecretRef(config.auth?.passwordSecretRef ?? '');
+            setApiBearerTokenSecretRef(config.auth?.tokenSecretRef ?? '');
+            setApiKeyName(config.auth?.keyName ?? '');
+            setApiKeyValueSecretRef(config.auth?.valueSecretRef ?? '');
+            setApiKeyLocation(config.auth?.location ?? 'HEADER');
+          } catch {
+            setApiHeaders('{}');
+            setApiQueryParams('{}');
+            setApiBodyType('NONE');
+            setApiBody('');
+            setApiAuthType('NONE');
+            setApiBasicUsername('');
+            setApiBasicPasswordSecretRef('');
+            setApiBearerTokenSecretRef('');
+            setApiKeyName('');
+            setApiKeyValueSecretRef('');
+            setApiKeyLocation('HEADER');
+          }
+
           return;
         }
 
@@ -625,6 +689,17 @@ export default function AutomationStepDialog({
         setExpectedValue(
             '',
         );
+        setApiHeaders('{}');
+        setApiQueryParams('{}');
+        setApiBodyType('NONE');
+        setApiBody('');
+        setApiAuthType('NONE');
+        setApiBasicUsername('');
+        setApiBasicPasswordSecretRef('');
+        setApiBearerTokenSecretRef('');
+        setApiKeyName('');
+        setApiKeyValueSecretRef('');
+        setApiKeyLocation('HEADER');
       },
       [
         open,
@@ -684,7 +759,9 @@ export default function AutomationStepDialog({
           FRAME_ACTIONS
               .includes(
                   actionType,
-              ));
+              ) ||
+          ['ASSERT_API_JSON_FIELD_EQUALS', 'ASSERT_API_HEADER', 'EXTRACT_API_JSON_VALUE']
+              .includes(actionType));
 
   const showApiBody =
       actionType !== '' &&
@@ -747,7 +824,9 @@ export default function AutomationStepDialog({
         !FRAME_ACTIONS
             .includes(
                 nextAction,
-            )
+            ) &&
+        !['ASSERT_API_JSON_FIELD_EQUALS', 'ASSERT_API_HEADER', 'EXTRACT_API_JSON_VALUE']
+            .includes(nextAction)
     ) {
       setTarget(
           '',
@@ -1096,6 +1175,71 @@ export default function AutomationStepDialog({
       }
     }
 
+    let apiConfig: string | null = null;
+    if (API_REQUEST_ACTIONS.includes(actionType)) {
+      try {
+        const headers = JSON.parse(apiHeaders || '{}');
+        const queryParams = JSON.parse(apiQueryParams || '{}');
+        if (headers === null || Array.isArray(headers) || typeof headers !== 'object') {
+          throw new Error('Headers must be a JSON object.');
+        }
+        if (queryParams === null || Array.isArray(queryParams) || typeof queryParams !== 'object') {
+          throw new Error('Query parameters must be a JSON object.');
+        }
+        if (apiBodyType === 'FORM' && apiBody.trim()) {
+          const form = JSON.parse(apiBody);
+          if (form === null || Array.isArray(form) || typeof form !== 'object') {
+            throw new Error('FORM body must be a JSON object.');
+          }
+        }
+        if (apiBodyType === 'JSON' && apiBody.trim()) {
+          JSON.parse(apiBody);
+        }
+        const secretRefPattern = /^\$\{[A-Z][A-Z0-9_]*}$/;
+        let auth: Record<string, string> = { type: apiAuthType };
+
+        if (apiAuthType === 'BASIC') {
+          if (!apiBasicUsername.trim()) {
+            throw new Error('Basic authentication requires a username.');
+          }
+          if (!secretRefPattern.test(apiBasicPasswordSecretRef.trim())) {
+            throw new Error('Basic password must be a secret reference such as ${TESTFORGE_API_PASSWORD}.');
+          }
+          auth = {
+            type: 'BASIC',
+            username: apiBasicUsername.trim(),
+            passwordSecretRef: apiBasicPasswordSecretRef.trim(),
+          };
+        } else if (apiAuthType === 'BEARER_TOKEN') {
+          if (!secretRefPattern.test(apiBearerTokenSecretRef.trim())) {
+            throw new Error('Bearer token must be a secret reference such as ${TESTFORGE_API_TOKEN}.');
+          }
+          auth = {
+            type: 'BEARER_TOKEN',
+            tokenSecretRef: apiBearerTokenSecretRef.trim(),
+          };
+        } else if (apiAuthType === 'API_KEY') {
+          if (!apiKeyName.trim()) {
+            throw new Error('API key authentication requires a key name.');
+          }
+          if (!secretRefPattern.test(apiKeyValueSecretRef.trim())) {
+            throw new Error('API key value must be a secret reference such as ${TESTFORGE_API_KEY}.');
+          }
+          auth = {
+            type: 'API_KEY',
+            keyName: apiKeyName.trim(),
+            valueSecretRef: apiKeyValueSecretRef.trim(),
+            location: apiKeyLocation,
+          };
+        }
+
+        apiConfig = JSON.stringify({ headers, queryParams, bodyType: apiBodyType, body: apiBody, auth });
+      } catch (configError) {
+        setValidationError(configError instanceof Error ? configError.message : 'Invalid API configuration.');
+        return;
+      }
+    }
+
     setValidationError(
         null,
     );
@@ -1130,6 +1274,8 @@ export default function AutomationStepDialog({
 
       expectedValue:
           expectedValue.trim(),
+
+      apiConfig,
     });
   };
 
@@ -1395,9 +1541,13 @@ export default function AutomationStepDialog({
                       actionType,
                   )
                       ? 'Frame Selector'
-                      : requiresTarget
-                          ? 'Request URL'
-                          : 'Target / Description'
+                      : actionType === 'ASSERT_API_JSON_FIELD_EQUALS' || actionType === 'EXTRACT_API_JSON_VALUE'
+                          ? 'JSON Field Path'
+                          : actionType === 'ASSERT_API_HEADER'
+                              ? 'Response Header Name'
+                              : requiresTarget
+                                  ? 'Request URL'
+                                  : 'Target / Description'
                 }
                 value={
                   target
@@ -1643,30 +1793,138 @@ export default function AutomationStepDialog({
                 />
             )}
 
-            {showApiBody && (
-                <TextField
-                    fullWidth
-                    multiline
-                    minRows={4}
-                    label="Request Body"
-                    value={
-                      inputValue
-                    }
-                    onChange={(
-                        event,
-                    ) =>
-                        setInputValue(
-                            event
-                                .target
-                                .value,
-                        )
-                    }
-                    inputProps={{
-                      maxLength:
-                          4000,
-                    }}
-                    helperText="Optional request body. JSON text can be entered directly."
-                />
+            {actionType !== '' && API_REQUEST_ACTIONS.includes(actionType) && (
+                <Stack spacing={2}>
+                  <Alert severity="info" variant="outlined">
+                    Configure request headers and query parameters as JSON objects.
+                    Values may reference runtime values extracted earlier using ${'{'}NAME{'}'}.
+                  </Alert>
+
+                  <FormControl fullWidth>
+                    <InputLabel>API Authentication</InputLabel>
+                    <Select
+                        value={apiAuthType}
+                        label="API Authentication"
+                        onChange={(event) => setApiAuthType(event.target.value as ApiAuthenticationType)}
+                    >
+                      <MenuItem value="NONE">None</MenuItem>
+                      <MenuItem value="BASIC">Basic</MenuItem>
+                      <MenuItem value="BEARER_TOKEN">Bearer Token</MenuItem>
+                      <MenuItem value="API_KEY">API Key</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  {apiAuthType === 'BASIC' && (
+                      <>
+                        <TextField
+                            fullWidth
+                            required
+                            label="Basic Username"
+                            value={apiBasicUsername}
+                            onChange={(event) => setApiBasicUsername(event.target.value)}
+                            helperText="Username may be stored because it is not treated as the secret."
+                        />
+                        <TextField
+                            fullWidth
+                            required
+                            label="Password Secret Reference"
+                            value={apiBasicPasswordSecretRef}
+                            onChange={(event) => setApiBasicPasswordSecretRef(event.target.value)}
+                            placeholder="${TESTFORGE_API_PASSWORD}"
+                            helperText="Store only an environment-variable reference. Do not enter the real password."
+                        />
+                      </>
+                  )}
+
+                  {apiAuthType === 'BEARER_TOKEN' && (
+                      <TextField
+                          fullWidth
+                          required
+                          label="Bearer Token Secret Reference"
+                          value={apiBearerTokenSecretRef}
+                          onChange={(event) => setApiBearerTokenSecretRef(event.target.value)}
+                          placeholder="${TESTFORGE_API_TOKEN}"
+                          helperText="The real token is read from the execution process environment."
+                      />
+                  )}
+
+                  {apiAuthType === 'API_KEY' && (
+                      <>
+                        <TextField
+                            fullWidth
+                            required
+                            label="API Key Name"
+                            value={apiKeyName}
+                            onChange={(event) => setApiKeyName(event.target.value)}
+                            placeholder="X-API-Key"
+                        />
+                        <TextField
+                            fullWidth
+                            required
+                            label="API Key Secret Reference"
+                            value={apiKeyValueSecretRef}
+                            onChange={(event) => setApiKeyValueSecretRef(event.target.value)}
+                            placeholder="${TESTFORGE_API_KEY}"
+                            helperText="Store only the secret reference, never the actual API key."
+                        />
+                        <FormControl fullWidth>
+                          <InputLabel>API Key Location</InputLabel>
+                          <Select
+                              value={apiKeyLocation}
+                              label="API Key Location"
+                              onChange={(event) => setApiKeyLocation(event.target.value as ApiKeyLocation)}
+                          >
+                            <MenuItem value="HEADER">Header</MenuItem>
+                            <MenuItem value="QUERY">Query Parameter</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </>
+                  )}
+
+                  <TextField
+                      fullWidth multiline minRows={3}
+                      label="Request Headers (JSON)"
+                      value={apiHeaders}
+                      onChange={(event) => setApiHeaders(event.target.value)}
+                      helperText='Example: {"Accept":"application/json","X-Tenant":"qa"}'
+                  />
+
+                  <TextField
+                      fullWidth multiline minRows={3}
+                      label="Query Parameters (JSON)"
+                      value={apiQueryParams}
+                      onChange={(event) => setApiQueryParams(event.target.value)}
+                      helperText='Example: {"page":"1","status":"ACTIVE"}'
+                  />
+
+                  {showApiBody && (
+                      <>
+                        <FormControl fullWidth>
+                          <InputLabel>Request Body Type</InputLabel>
+                          <Select
+                              value={apiBodyType}
+                              label="Request Body Type"
+                              onChange={(event) => setApiBodyType(event.target.value as 'NONE' | 'JSON' | 'TEXT' | 'FORM')}
+                          >
+                            <MenuItem value="NONE">None</MenuItem>
+                            <MenuItem value="JSON">JSON</MenuItem>
+                            <MenuItem value="TEXT">Text</MenuItem>
+                            <MenuItem value="FORM">Form URL Encoded</MenuItem>
+                          </Select>
+                        </FormControl>
+
+                        {apiBodyType !== 'NONE' && (
+                            <TextField
+                                fullWidth multiline minRows={5}
+                                label={apiBodyType === 'FORM' ? 'Form Fields (JSON)' : 'Request Body'}
+                                value={apiBody}
+                                onChange={(event) => setApiBody(event.target.value)}
+                                helperText={apiBodyType === 'FORM' ? 'Example: {"username":"faris","active":"true"}' : undefined}
+                            />
+                        )}
+                      </>
+                  )}
+                </Stack>
             )}
 
             {requiresExpected && (

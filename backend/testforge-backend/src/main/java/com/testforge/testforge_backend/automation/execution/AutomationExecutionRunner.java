@@ -347,6 +347,12 @@ public class AutomationExecutionRunner {
                         </dependency>
 
                         <dependency>
+                            <groupId>com.fasterxml.jackson.core</groupId>
+                            <artifactId>jackson-databind</artifactId>
+                            <version>2.18.3</version>
+                        </dependency>
+
+                        <dependency>
                             <groupId>org.junit.jupiter</groupId>
                             <artifactId>junit-jupiter</artifactId>
                             <version>%s</version>

@@ -145,6 +145,12 @@ public class AutomationStep {
     private String expectedValue;
 
     @Column(
+            name = "api_config",
+            columnDefinition = "text"
+    )
+    private String apiConfig;
+
+    @Column(
             name = "created_at",
             nullable = false,
             updatable = false
@@ -348,6 +354,14 @@ public class AutomationStep {
     ) {
         this.expectedValue =
                 expectedValue;
+    }
+
+    public String getApiConfig() {
+        return apiConfig;
+    }
+
+    public void setApiConfig(String apiConfig) {
+        this.apiConfig = apiConfig;
     }
 
     public LocalDateTime getCreatedAt() {

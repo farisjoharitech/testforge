@@ -492,6 +492,36 @@ public class AutomationActionValidator {
                         "ASSERT_API_BODY_CONTAINS requires expected body text"
                 );
             }
+
+            case ASSERT_API_BODY_EQUALS -> {
+                requireNoSelector(action);
+                requireExpectedValue(action,
+                        "ASSERT_API_BODY_EQUALS requires expected body text");
+            }
+
+            case ASSERT_API_JSON_FIELD_EQUALS -> {
+                requireNoSelector(action);
+                requireTarget(action,
+                        "ASSERT_API_JSON_FIELD_EQUALS requires a JSON field path");
+                requireExpectedValue(action,
+                        "ASSERT_API_JSON_FIELD_EQUALS requires an expected value");
+            }
+
+            case ASSERT_API_HEADER -> {
+                requireNoSelector(action);
+                requireTarget(action,
+                        "ASSERT_API_HEADER requires a response header name");
+                requireExpectedValue(action,
+                        "ASSERT_API_HEADER requires an expected header value");
+            }
+
+            case EXTRACT_API_JSON_VALUE -> {
+                requireNoSelector(action);
+                requireTarget(action,
+                        "EXTRACT_API_JSON_VALUE requires a JSON field path");
+                requireValue(action,
+                        "EXTRACT_API_JSON_VALUE requires a runtime variable name");
+            }
         }
     }
 

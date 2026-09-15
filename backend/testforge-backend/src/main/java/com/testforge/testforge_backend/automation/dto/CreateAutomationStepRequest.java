@@ -82,6 +82,23 @@ public record CreateAutomationStepRequest(
                 message =
                         "Expected value must not exceed 4000 characters"
         )
-        String expectedValue
-) {
+        String expectedValue,
+
+        @Size(
+                max = 16000,
+                message =
+                        "API configuration must not exceed 16000 characters"
+        )
+        String apiConfig
+)  {
+        public CreateAutomationStepRequest(
+                String automationStepId, Long sourceTestStepId, Integer stepOrder,
+                AutomationActionType actionType, String target, SelectorStrategy selectorStrategy,
+                String selectorValue, UiElementRole selectorRole, String selectorName,
+                boolean selectorExact, String inputValue, String expectedValue
+        ) {
+                this(automationStepId, sourceTestStepId, stepOrder, actionType, target,
+                        selectorStrategy, selectorValue, selectorRole, selectorName, selectorExact,
+                        inputValue, expectedValue, null);
+        }
 }

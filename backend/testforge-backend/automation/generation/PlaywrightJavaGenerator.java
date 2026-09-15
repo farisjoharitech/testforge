@@ -921,7 +921,7 @@ public class PlaywrightJavaGenerator {
 
     private String requireSecretReference(String value, String label) {
         String reference = requireConfigValue(value, label).trim();
-        if (!reference.matches("^\\$\\{[A-Z][A-Z0-9_]*}$")) {
+        if (!reference.matches("^\$\{[A-Z][A-Z0-9_]*}$")) {
             throw new AutomationValidationException(label + " must use ${ENV_NAME} format");
         }
         return reference;

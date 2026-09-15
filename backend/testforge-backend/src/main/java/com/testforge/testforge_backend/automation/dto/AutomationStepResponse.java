@@ -36,8 +36,21 @@ public record AutomationStepResponse(
 
         String expectedValue,
 
+        String apiConfig,
+
         LocalDateTime createdAt,
 
         LocalDateTime updatedAt
-) {
+)  {
+    public AutomationStepResponse(
+            Long id, String automationStepId, Long automationScriptId, Long sourceTestStepId,
+            Integer stepOrder, AutomationActionType actionType, String target,
+            SelectorStrategy selectorStrategy, String selectorValue, UiElementRole selectorRole,
+            String selectorName, boolean selectorExact, String inputValue, String expectedValue,
+            LocalDateTime createdAt, LocalDateTime updatedAt
+    ) {
+        this(id, automationStepId, automationScriptId, sourceTestStepId, stepOrder, actionType,
+                target, selectorStrategy, selectorValue, selectorRole, selectorName, selectorExact,
+                inputValue, expectedValue, null, createdAt, updatedAt);
+    }
 }
