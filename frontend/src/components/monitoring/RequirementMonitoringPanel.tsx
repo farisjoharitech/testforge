@@ -67,6 +67,8 @@ export default function RequirementMonitoringPanel({
 
                     <MonitoringSummaryCards
                         summary={monitoring.summary}
+                        scopeType="requirement"
+                        scopeId={monitoring.requirementBusinessId}
                         leadingMetrics={[
                             {
                                 label: 'Scenarios',

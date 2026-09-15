@@ -55,6 +55,9 @@ import AutomationResultDetailsPage
 import DashboardPage
     from '../pages/dashboard/DashboardPage';
 
+import MonitoringDrilldownPage
+    from '../pages/monitoring/MonitoringDrilldownPage';
+
 export default function App() {
     return (
         <Routes>
@@ -175,6 +178,13 @@ export default function App() {
                     path="/results/:executionId"
                     element={
                         <AutomationResultDetailsPage />
+                    }
+                />
+
+                <Route
+                    path="/monitoring/:scopeType/:scopeId/test-cases"
+                    element={
+                        <MonitoringDrilldownPage />
                     }
                 />
 

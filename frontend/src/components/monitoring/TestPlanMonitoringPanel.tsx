@@ -57,6 +57,8 @@ export default function TestPlanMonitoringPanel({
 
                     <MonitoringSummaryCards
                         summary={monitoring.summary}
+                        scopeType="test-plan"
+                        scopeId={monitoring.testPlanBusinessId}
                         leadingMetrics={[
                             {
                                 label: 'Requirements',

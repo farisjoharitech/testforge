@@ -50,14 +50,14 @@ export interface AutomationStepFormValues {
   target: string;
 
   selectorStrategy:
-    | SelectorStrategy
-    | '';
+      | SelectorStrategy
+      | '';
 
   selectorValue: string;
 
   selectorRole:
-    | UiElementRole
-    | '';
+      | UiElementRole
+      | '';
 
   selectorName: string;
 
@@ -72,19 +72,19 @@ interface AutomationStepDialogProps {
   open: boolean;
 
   mode:
-    | 'create'
-    | 'edit';
+      | 'create'
+      | 'edit';
 
   testCaseId: string;
 
   automationType:
-    AutomationType;
+      AutomationType;
 
   testSteps: TestStep[];
 
   automationStep?:
-    | AutomationStep
-    | null;
+      | AutomationStep
+      | null;
 
   suggestedOrder: number;
 
@@ -95,31 +95,55 @@ interface AutomationStepDialogProps {
   onClose: () => void;
 
   onSubmit: (
-    values:
+      values:
       AutomationStepFormValues,
   ) => void;
 }
 
 const UI_ACTION_TYPES:
-AutomationActionType[] = [
+    AutomationActionType[] = [
   'NAVIGATE',
+  'GO_BACK',
+  'GO_FORWARD',
+  'RELOAD',
   'CLICK',
+  'CLICK_NEW_TAB',
+  'CLICK_DOWNLOAD',
+  'DOUBLE_CLICK',
+  'HOVER',
+  'FOCUS',
   'FILL',
+  'CLEAR',
   'SELECT',
   'CHECK',
   'UNCHECK',
   'PRESS',
+  'SET_INPUT_FILES',
+  'FRAME_CLICK',
+  'FRAME_FILL',
+  'ACCEPT_DIALOG',
+  'DISMISS_DIALOG',
   'WAIT',
+  'WAIT_FOR_SELECTOR',
+  'WAIT_FOR_URL',
+  'WAIT_FOR_LOAD_STATE',
+  'TAKE_SCREENSHOT',
   'ASSERT_VISIBLE',
   'ASSERT_HIDDEN',
   'ASSERT_TEXT',
+  'ASSERT_CONTAINS_TEXT',
   'ASSERT_VALUE',
+  'ASSERT_ENABLED',
+  'ASSERT_DISABLED',
+  'ASSERT_EDITABLE',
+  'ASSERT_CHECKED',
+  'ASSERT_COUNT',
   'ASSERT_URL',
   'ASSERT_TITLE',
 ];
 
 const API_ACTION_TYPES:
-AutomationActionType[] = [
+    AutomationActionType[] = [
   'API_GET',
   'API_POST',
   'API_PUT',
@@ -130,7 +154,7 @@ AutomationActionType[] = [
 ];
 
 const SELECTOR_STRATEGIES:
-SelectorStrategy[] = [
+    SelectorStrategy[] = [
   'ROLE',
   'LABEL',
   'PLACEHOLDER',
@@ -141,7 +165,7 @@ SelectorStrategy[] = [
 ];
 
 const UI_ROLES:
-UiElementRole[] = [
+    UiElementRole[] = [
   'BUTTON',
   'LINK',
   'TEXTBOX',
@@ -164,23 +188,47 @@ UiElementRole[] = [
 ];
 
 const SELECTOR_REQUIRED_ACTIONS:
-AutomationActionType[] = [
+    AutomationActionType[] = [
   'CLICK',
+  'FRAME_FILL',
+  'FRAME_CLICK',
+  'CLICK_NEW_TAB',
+  'CLICK_DOWNLOAD',
+  'DOUBLE_CLICK',
+  'HOVER',
+  'FOCUS',
   'FILL',
+  'CLEAR',
   'SELECT',
   'CHECK',
   'UNCHECK',
   'PRESS',
+  'SET_INPUT_FILES',
+  'WAIT_FOR_SELECTOR',
   'ASSERT_VISIBLE',
   'ASSERT_HIDDEN',
   'ASSERT_TEXT',
+  'ASSERT_CONTAINS_TEXT',
   'ASSERT_VALUE',
+  'ASSERT_ENABLED',
+  'ASSERT_DISABLED',
+  'ASSERT_EDITABLE',
+  'ASSERT_CHECKED',
+  'ASSERT_COUNT',
 ];
 
 const NO_SELECTOR_ACTIONS:
-AutomationActionType[] = [
+    AutomationActionType[] = [
   'NAVIGATE',
+  'GO_BACK',
+  'GO_FORWARD',
+  'RELOAD',
+  'DISMISS_DIALOG',
+  'ACCEPT_DIALOG',
   'WAIT',
+  'WAIT_FOR_URL',
+  'WAIT_FOR_LOAD_STATE',
+  'TAKE_SCREENSHOT',
   'ASSERT_URL',
   'ASSERT_TITLE',
   'API_GET',
@@ -193,18 +241,25 @@ AutomationActionType[] = [
 ];
 
 const INPUT_REQUIRED_ACTIONS:
-AutomationActionType[] = [
+    AutomationActionType[] = [
   'NAVIGATE',
   'FILL',
   'SELECT',
   'PRESS',
+  'SET_INPUT_FILES',
+  'CLICK_DOWNLOAD',
+  'FRAME_FILL',
   'WAIT',
+  'WAIT_FOR_URL',
+  'TAKE_SCREENSHOT',
 ];
 
 const EXPECTED_REQUIRED_ACTIONS:
-AutomationActionType[] = [
+    AutomationActionType[] = [
   'ASSERT_TEXT',
+  'ASSERT_CONTAINS_TEXT',
   'ASSERT_VALUE',
+  'ASSERT_COUNT',
   'ASSERT_URL',
   'ASSERT_TITLE',
   'ASSERT_API_STATUS',
@@ -212,7 +267,7 @@ AutomationActionType[] = [
 ];
 
 const API_REQUEST_ACTIONS:
-AutomationActionType[] = [
+    AutomationActionType[] = [
   'API_GET',
   'API_POST',
   'API_PUT',
@@ -220,58 +275,112 @@ AutomationActionType[] = [
   'API_DELETE',
 ];
 
+const FRAME_ACTIONS:
+    AutomationActionType[] = [
+  'FRAME_CLICK',
+  'FRAME_FILL',
+];
+
 const API_BODY_ACTIONS:
-AutomationActionType[] = [
+    AutomationActionType[] = [
   'API_POST',
   'API_PUT',
   'API_PATCH',
 ];
 
 function actionLabel(
-  value: string,
+    value: string,
 ): string {
   return value
-    .split('_')
-    .map(
-      (part) =>
-        part.charAt(0) +
-        part
-          .slice(1)
-          .toLowerCase(),
-    )
-    .join(' ');
+      .split('_')
+      .map(
+          (part) =>
+              part.charAt(0) +
+              part
+                  .slice(1)
+                  .toLowerCase(),
+      )
+      .join(' ');
+}
+
+function inputLabel(
+    actionType: AutomationActionType | '',
+): string {
+  switch (actionType) {
+    case 'NAVIGATE':
+      return 'URL';
+    case 'FILL':
+      return 'Input Value';
+    case 'SELECT':
+      return 'Option Value';
+    case 'PRESS':
+      return 'Keyboard Key';
+    case 'SET_INPUT_FILES':
+      return 'File Path';
+    case 'CLICK_DOWNLOAD':
+      return 'Download Output Path';
+    case 'FRAME_FILL':
+      return 'Input Value';
+    case 'WAIT':
+      return 'Wait Time (milliseconds)';
+    case 'WAIT_FOR_URL':
+      return 'URL to Wait For';
+    case 'TAKE_SCREENSHOT':
+      return 'Screenshot Output Path';
+    default:
+      return 'Input Value';
+  }
+}
+
+function expectedLabel(
+    actionType: AutomationActionType | '',
+): string {
+  switch (actionType) {
+    case 'ASSERT_URL':
+      return 'Expected URL';
+    case 'ASSERT_TITLE':
+      return 'Expected Title';
+    case 'ASSERT_COUNT':
+      return 'Expected Count';
+    case 'ASSERT_API_STATUS':
+      return 'Expected HTTP Status';
+    case 'ASSERT_API_BODY_CONTAINS':
+      return 'Expected Body Text';
+    default:
+      return 'Expected Value';
+  }
 }
 
 function buildAutomationStepId(
-  testCaseId: string,
-  order: number,
+    testCaseId: string,
+    order: number,
 ): string {
   const normalized =
-    testCaseId
-      .replace(
-        /[^A-Za-z0-9-_]/g,
-        '-',
-      )
-      .toUpperCase();
+      testCaseId
+          .replace(
+              /[^A-Za-z0-9-_]/g,
+              '-',
+          )
+          .toUpperCase();
 
   return (
-    `ASTEP-${normalized}-${order}`
+      `ASTEP-${normalized}-${order}`
   ).slice(0, 50);
 }
 
 export default function AutomationStepDialog({
-  open,
-  mode,
-  testCaseId,
-  automationType,
-  testSteps,
-  automationStep,
-  suggestedOrder,
-  saving = false,
-  error,
-  onClose,
-  onSubmit,
-}: AutomationStepDialogProps) {
+                                               open,
+                                               mode,
+                                               testCaseId,
+                                               automationType,
+                                               testSteps,
+                                               automationStep,
+                                               suggestedOrder,
+                                               saving = false,
+                                               error,
+                                               onClose,
+                                               onSubmit,
+                                             }: AutomationStepDialogProps) {
   const [
     automationStepId,
     setAutomationStepId,
@@ -281,25 +390,25 @@ export default function AutomationStepDialog({
     sourceTestStepId,
     setSourceTestStepId,
   ] =
-    useState<number | ''>(
-      '',
-    );
+      useState<number | ''>(
+          '',
+      );
 
   const [
     stepOrder,
     setStepOrder,
   ] =
-    useState<number>(
-      suggestedOrder,
-    );
+      useState<number>(
+          suggestedOrder,
+      );
 
   const [
     actionType,
     setActionType,
   ] =
-    useState<
-      AutomationActionType | ''
-    >('');
+      useState<
+          AutomationActionType | ''
+      >('');
 
   const [
     target,
@@ -310,9 +419,9 @@ export default function AutomationStepDialog({
     selectorStrategy,
     setSelectorStrategy,
   ] =
-    useState<
-      SelectorStrategy | ''
-    >('');
+      useState<
+          SelectorStrategy | ''
+      >('');
 
   const [
     selectorValue,
@@ -323,9 +432,9 @@ export default function AutomationStepDialog({
     selectorRole,
     setSelectorRole,
   ] =
-    useState<
-      UiElementRole | ''
-    >('');
+      useState<
+          UiElementRole | ''
+      >('');
 
   const [
     selectorName,
@@ -351,389 +460,397 @@ export default function AutomationStepDialog({
     validationError,
     setValidationError,
   ] =
-    useState<string | null>(
-      null,
-    );
-
-  const availableActionTypes =
-    useMemo(
-      () => {
-        if (
-          automationType ===
-          'API'
-        ) {
-          return API_ACTION_TYPES;
-        }
-
-        if (
-          automationType ===
-          'UI_API'
-        ) {
-          return [
-            ...UI_ACTION_TYPES,
-            ...API_ACTION_TYPES,
-          ];
-        }
-
-        return UI_ACTION_TYPES;
-      },
-      [
-        automationType,
-      ],
-    );
-
-  useEffect(
-    () => {
-      if (!open) {
-        return;
-      }
-
-      setValidationError(
-        null,
+      useState<string | null>(
+          null,
       );
 
-      if (
-        mode === 'edit' &&
-        automationStep
-      ) {
+  const availableActionTypes =
+      useMemo(
+          () => {
+            if (
+                automationType ===
+                'API'
+            ) {
+              return API_ACTION_TYPES;
+            }
+
+            if (
+                automationType ===
+                'UI_API'
+            ) {
+              return [
+                ...UI_ACTION_TYPES,
+                ...API_ACTION_TYPES,
+              ];
+            }
+
+            return UI_ACTION_TYPES;
+          },
+          [
+            automationType,
+          ],
+      );
+
+  useEffect(
+      () => {
+        if (!open) {
+          return;
+        }
+
+        setValidationError(
+            null,
+        );
+
+        if (
+            mode === 'edit' &&
+            automationStep
+        ) {
+          setAutomationStepId(
+              automationStep
+                  .automationStepId,
+          );
+
+          setSourceTestStepId(
+              automationStep
+                  .sourceTestStepId,
+          );
+
+          setStepOrder(
+              automationStep
+                  .stepOrder,
+          );
+
+          setActionType(
+              automationStep
+                  .actionType,
+          );
+
+          setTarget(
+              automationStep
+                  .target ??
+              '',
+          );
+
+          setSelectorStrategy(
+              automationStep
+                  .selectorStrategy ??
+              '',
+          );
+
+          setSelectorValue(
+              automationStep
+                  .selectorValue ??
+              '',
+          );
+
+          setSelectorRole(
+              automationStep
+                  .selectorRole ??
+              '',
+          );
+
+          setSelectorName(
+              automationStep
+                  .selectorName ??
+              '',
+          );
+
+          setSelectorExact(
+              automationStep
+                  .selectorExact,
+          );
+
+          setInputValue(
+              automationStep
+                  .inputValue ??
+              '',
+          );
+
+          setExpectedValue(
+              automationStep
+                  .expectedValue ??
+              '',
+          );
+
+          return;
+        }
+
         setAutomationStepId(
-          automationStep
-            .automationStepId,
+            buildAutomationStepId(
+                testCaseId,
+                suggestedOrder,
+            ),
         );
 
         setSourceTestStepId(
-          automationStep
-            .sourceTestStepId,
+            '',
         );
 
         setStepOrder(
-          automationStep
-            .stepOrder,
+            suggestedOrder,
         );
 
         setActionType(
-          automationStep
-            .actionType,
+            '',
         );
 
         setTarget(
-          automationStep
-            .target ??
             '',
         );
 
         setSelectorStrategy(
-          automationStep
-            .selectorStrategy ??
             '',
         );
 
         setSelectorValue(
-          automationStep
-            .selectorValue ??
             '',
         );
 
         setSelectorRole(
-          automationStep
-            .selectorRole ??
             '',
         );
 
         setSelectorName(
-          automationStep
-            .selectorName ??
             '',
         );
 
         setSelectorExact(
-          automationStep
-            .selectorExact,
+            false,
         );
 
         setInputValue(
-          automationStep
-            .inputValue ??
             '',
         );
 
         setExpectedValue(
-          automationStep
-            .expectedValue ??
             '',
         );
-
-        return;
-      }
-
-      setAutomationStepId(
-        buildAutomationStepId(
-          testCaseId,
-          suggestedOrder,
-        ),
-      );
-
-      setSourceTestStepId(
-        '',
-      );
-
-      setStepOrder(
+      },
+      [
+        open,
+        mode,
+        automationStep,
+        testCaseId,
         suggestedOrder,
-      );
-
-      setActionType(
-        '',
-      );
-
-      setTarget(
-        '',
-      );
-
-      setSelectorStrategy(
-        '',
-      );
-
-      setSelectorValue(
-        '',
-      );
-
-      setSelectorRole(
-        '',
-      );
-
-      setSelectorName(
-        '',
-      );
-
-      setSelectorExact(
-        false,
-      );
-
-      setInputValue(
-        '',
-      );
-
-      setExpectedValue(
-        '',
-      );
-    },
-    [
-      open,
-      mode,
-      automationStep,
-      testCaseId,
-      suggestedOrder,
-    ],
+      ],
   );
 
   const requiresSelector =
-    useMemo(
-      () =>
-        actionType !== '' &&
-        SELECTOR_REQUIRED_ACTIONS
-          .includes(
+      useMemo(
+          () =>
+              actionType !== '' &&
+              SELECTOR_REQUIRED_ACTIONS
+                  .includes(
+                      actionType,
+                  ),
+          [
             actionType,
-          ),
-      [
-        actionType,
-      ],
-    );
+          ],
+      );
 
   const forbidsSelector =
-    useMemo(
-      () =>
-        actionType !== '' &&
-        NO_SELECTOR_ACTIONS
-          .includes(
+      useMemo(
+          () =>
+              actionType !== '' &&
+              NO_SELECTOR_ACTIONS
+                  .includes(
+                      actionType,
+                  ),
+          [
             actionType,
-          ),
-      [
-        actionType,
-      ],
-    );
+          ],
+      );
 
   const requiresInput =
-    actionType !== '' &&
-    INPUT_REQUIRED_ACTIONS
-      .includes(
-        actionType,
-      );
+      actionType !== '' &&
+      INPUT_REQUIRED_ACTIONS
+          .includes(
+              actionType,
+          );
 
   const requiresExpected =
-    actionType !== '' &&
-    EXPECTED_REQUIRED_ACTIONS
-      .includes(
-        actionType,
-      );
+      actionType !== '' &&
+      EXPECTED_REQUIRED_ACTIONS
+          .includes(
+              actionType,
+          );
 
   const requiresTarget =
-    actionType !== '' &&
-    API_REQUEST_ACTIONS
-      .includes(
-        actionType,
-      );
+      actionType !== '' &&
+      (API_REQUEST_ACTIONS
+              .includes(
+                  actionType,
+              ) ||
+          FRAME_ACTIONS
+              .includes(
+                  actionType,
+              ));
 
   const showApiBody =
-    actionType !== '' &&
-    API_BODY_ACTIONS
-      .includes(
-        actionType,
-      );
+      actionType !== '' &&
+      API_BODY_ACTIONS
+          .includes(
+              actionType,
+          );
 
   const selectedSourceStep =
-    testSteps.find(
-      (testStep) =>
-        testStep.id ===
-        sourceTestStepId,
-    );
+      testSteps.find(
+          (testStep) =>
+              testStep.id ===
+              sourceTestStepId,
+      );
 
   const handleActionChange = (
-    nextAction:
+      nextAction:
       AutomationActionType,
   ) => {
     setActionType(
-      nextAction,
+        nextAction,
     );
 
     setValidationError(
-      null,
+        null,
     );
 
     if (
-      NO_SELECTOR_ACTIONS
-        .includes(
-          nextAction,
-        )
+        NO_SELECTOR_ACTIONS
+            .includes(
+                nextAction,
+            )
     ) {
       setSelectorStrategy(
-        '',
+          '',
       );
 
       setSelectorValue(
-        '',
+          '',
       );
 
       setSelectorRole(
-        '',
+          '',
       );
 
       setSelectorName(
-        '',
+          '',
       );
 
       setSelectorExact(
-        false,
+          false,
       );
     }
 
     if (
-      !API_REQUEST_ACTIONS
-        .includes(
-          nextAction,
-        )
+        !API_REQUEST_ACTIONS
+            .includes(
+                nextAction,
+            ) &&
+        !FRAME_ACTIONS
+            .includes(
+                nextAction,
+            )
     ) {
       setTarget(
-        '',
+          '',
       );
     }
 
     if (
-      !API_BODY_ACTIONS
-        .includes(
-          nextAction,
-        ) &&
-      !INPUT_REQUIRED_ACTIONS
-        .includes(
-          nextAction,
-        )
+        !API_BODY_ACTIONS
+            .includes(
+                nextAction,
+            ) &&
+        !INPUT_REQUIRED_ACTIONS
+            .includes(
+                nextAction,
+            )
     ) {
       setInputValue(
-        '',
+          '',
       );
     }
 
     if (
-      !EXPECTED_REQUIRED_ACTIONS
-        .includes(
-          nextAction,
-        )
+        !EXPECTED_REQUIRED_ACTIONS
+            .includes(
+                nextAction,
+            )
     ) {
       setExpectedValue(
-        '',
+          '',
       );
     }
   };
 
   const handleSelectorChange = (
-    strategy:
+      strategy:
       SelectorStrategy,
   ) => {
     setSelectorStrategy(
-      strategy,
+        strategy,
     );
 
     if (
-      strategy === 'ROLE'
+        strategy === 'ROLE'
     ) {
       setSelectorValue(
-        '',
+          '',
       );
     } else {
       setSelectorRole(
-        '',
+          '',
       );
 
       setSelectorName(
-        '',
+          '',
       );
     }
   };
 
   const handleSubmit = () => {
     const trimmedStepId =
-      automationStepId.trim();
+        automationStepId.trim();
 
     if (
-      mode === 'create' &&
-      !trimmedStepId
+        mode === 'create' &&
+        !trimmedStepId
     ) {
       setValidationError(
-        'Automation Step ID is required.',
+          'Automation Step ID is required.',
       );
 
       return;
     }
 
     if (
-      trimmedStepId.length >
-      50
+        trimmedStepId.length >
+        50
     ) {
       setValidationError(
-        'Automation Step ID must not exceed 50 characters.',
+          'Automation Step ID must not exceed 50 characters.',
       );
 
       return;
     }
 
     if (
-      sourceTestStepId ===
-      ''
+        sourceTestStepId ===
+        ''
     ) {
       setValidationError(
-        'Source Test Step is required.',
+          'Source Test Step is required.',
       );
 
       return;
     }
 
     if (
-      !Number.isInteger(
-        stepOrder,
-      ) ||
-      stepOrder < 1
+        !Number.isInteger(
+            stepOrder,
+        ) ||
+        stepOrder < 1
     ) {
       setValidationError(
-        'Automation step order must be greater than zero.',
+          'Automation step order must be greater than zero.',
       );
 
       return;
@@ -741,117 +858,119 @@ export default function AutomationStepDialog({
 
     if (!actionType) {
       setValidationError(
-        'Automation action type is required.',
+          'Automation action type is required.',
       );
 
       return;
     }
 
     if (
-      target.length >
-      500
+        target.length >
+        500
     ) {
       setValidationError(
-        'Target must not exceed 500 characters.',
+          'Target must not exceed 500 characters.',
       );
 
       return;
     }
 
     if (
-      selectorValue.length >
-      2000
+        selectorValue.length >
+        2000
     ) {
       setValidationError(
-        'Selector value must not exceed 2000 characters.',
+          'Selector value must not exceed 2000 characters.',
       );
 
       return;
     }
 
     if (
-      selectorName.length >
-      500
+        selectorName.length >
+        500
     ) {
       setValidationError(
-        'Selector name must not exceed 500 characters.',
+          'Selector name must not exceed 500 characters.',
       );
 
       return;
     }
 
     if (
-      inputValue.length >
-      4000
+        inputValue.length >
+        4000
     ) {
       setValidationError(
-        'Input value must not exceed 4000 characters.',
+          'Input value must not exceed 4000 characters.',
       );
 
       return;
     }
 
     if (
-      expectedValue.length >
-      4000
+        expectedValue.length >
+        4000
     ) {
       setValidationError(
-        'Expected value must not exceed 4000 characters.',
+          'Expected value must not exceed 4000 characters.',
       );
 
       return;
     }
 
     if (
-      requiresTarget &&
-      !target.trim()
+        requiresTarget &&
+        !target.trim()
     ) {
       setValidationError(
-        `${actionType} requires a request URL.`,
+          FRAME_ACTIONS.includes(actionType)
+              ? `${actionType} requires a frame selector in Target.`
+              : `${actionType} requires a request URL.`,
       );
 
       return;
     }
 
     if (
-      requiresSelector &&
-      !selectorStrategy
+        requiresSelector &&
+        !selectorStrategy
     ) {
       setValidationError(
-        `${actionType} requires a selector.`,
+          `${actionType} requires a selector.`,
       );
 
       return;
     }
 
     if (
-      forbidsSelector &&
-      selectorStrategy
+        forbidsSelector &&
+        selectorStrategy
     ) {
       setValidationError(
-        `${actionType} must not have a selector.`,
+          `${actionType} must not have a selector.`,
       );
 
       return;
     }
 
     if (
-      selectorStrategy ===
-      'ROLE'
+        selectorStrategy ===
+        'ROLE'
     ) {
       if (!selectorRole) {
         setValidationError(
-          'ROLE selector requires an element role.',
+            'ROLE selector requires an element role.',
         );
 
         return;
       }
 
       if (
-        !selectorName.trim()
+          !selectorName.trim()
       ) {
         setValidationError(
-          'ROLE selector requires an accessible name.',
+            'ROLE selector requires an accessible name.',
         );
 
         return;
@@ -859,58 +978,72 @@ export default function AutomationStepDialog({
     }
 
     if (
-      selectorStrategy &&
-      selectorStrategy !==
+        selectorStrategy &&
+        selectorStrategy !==
         'ROLE' &&
-      !selectorValue.trim()
+        !selectorValue.trim()
     ) {
       setValidationError(
-        `${selectorStrategy} selector requires a selector value.`,
+          `${selectorStrategy} selector requires a selector value.`,
       );
 
       return;
     }
 
     if (
-      requiresInput &&
-      !inputValue.trim()
+        FRAME_ACTIONS.includes(
+            actionType,
+        ) &&
+        selectorStrategy !== 'CSS' &&
+        selectorStrategy !== 'XPATH'
     ) {
       setValidationError(
-        `${actionType} requires an input/value.`,
+          `${actionType} currently requires a CSS or XPATH element selector.`,
       );
 
       return;
     }
 
     if (
-      requiresExpected &&
-      !expectedValue.trim()
+        requiresInput &&
+        !inputValue.trim()
     ) {
       setValidationError(
-        `${actionType} requires an expected value.`,
+          `${actionType} requires an input/value.`,
       );
 
       return;
     }
 
     if (
-      actionType ===
-      'ASSERT_API_STATUS'
+        requiresExpected &&
+        !expectedValue.trim()
+    ) {
+      setValidationError(
+          `${actionType} requires an expected value.`,
+      );
+
+      return;
+    }
+
+    if (
+        actionType ===
+        'ASSERT_API_STATUS'
     ) {
       const status =
-        Number(
-          expectedValue,
-        );
+          Number(
+              expectedValue,
+          );
 
       if (
-        !Number.isInteger(
-          status,
-        ) ||
-        status < 100 ||
-        status > 599
+          !Number.isInteger(
+              status,
+          ) ||
+          status < 100 ||
+          status > 599
       ) {
         setValidationError(
-          'Expected HTTP Status must be a valid status code between 100 and 599.',
+            'Expected HTTP Status must be a valid status code between 100 and 599.',
         );
 
         return;
@@ -918,22 +1051,45 @@ export default function AutomationStepDialog({
     }
 
     if (
-      actionType ===
-      'WAIT'
+        actionType ===
+        'ASSERT_COUNT'
     ) {
-      const milliseconds =
-        Number(
-          inputValue,
-        );
+      const count =
+          Number(
+              expectedValue,
+          );
 
       if (
-        Number.isNaN(
-          milliseconds,
-        ) ||
-        milliseconds < 0
+          !Number.isInteger(
+              count,
+          ) ||
+          count < 0
       ) {
         setValidationError(
-          'WAIT requires a non-negative number of milliseconds.',
+            'ASSERT_COUNT requires a whole number of zero or greater.',
+        );
+
+        return;
+      }
+    }
+
+    if (
+        actionType ===
+        'WAIT'
+    ) {
+      const milliseconds =
+          Number(
+              inputValue,
+          );
+
+      if (
+          Number.isNaN(
+              milliseconds,
+          ) ||
+          milliseconds < 0
+      ) {
+        setValidationError(
+            'WAIT requires a non-negative number of milliseconds.',
         );
 
         return;
@@ -941,12 +1097,12 @@ export default function AutomationStepDialog({
     }
 
     setValidationError(
-      null,
+        null,
     );
 
     onSubmit({
       automationStepId:
-        trimmedStepId,
+      trimmedStepId,
 
       sourceTestStepId,
 
@@ -955,677 +1111,661 @@ export default function AutomationStepDialog({
       actionType,
 
       target:
-        target.trim(),
+          target.trim(),
 
       selectorStrategy,
 
       selectorValue:
-        selectorValue.trim(),
+          selectorValue.trim(),
 
       selectorRole,
 
       selectorName:
-        selectorName.trim(),
+          selectorName.trim(),
 
       selectorExact,
 
       inputValue:
-        inputValue.trim(),
+          inputValue.trim(),
 
       expectedValue:
-        expectedValue.trim(),
+          expectedValue.trim(),
     });
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={
-        saving
-          ? undefined
-          : onClose
-      }
-      fullWidth
-      maxWidth="md"
-    >
-      <DialogTitle>
-        {mode === 'create'
-          ? 'Add Automation Step'
-          : 'Edit Automation Step'}
-      </DialogTitle>
+      <Dialog
+          open={open}
+          onClose={
+            saving
+                ? undefined
+                : onClose
+          }
+          fullWidth
+          maxWidth="md"
+      >
+        <DialogTitle>
+          {mode === 'create'
+              ? 'Add Automation Step'
+              : 'Edit Automation Step'}
+        </DialogTitle>
 
-      <DialogContent>
-        <Stack
-          spacing={2.5}
-          sx={{
-            pt: 1,
-          }}
-        >
-          {(error ||
-            validationError) && (
-            <Alert
-              severity="error"
-            >
-              {error ??
-                validationError}
-            </Alert>
-          )}
-
+        <DialogContent>
           <Stack
-            direction={{
-              xs:
-                'column',
-
-              md:
-                'row',
-            }}
-            spacing={2}
-          >
-            <TextField
-              fullWidth
-              required
-              label="Automation Step ID"
-              value={
-                automationStepId
-              }
-              disabled={
-                mode === 'edit'
-              }
-              onChange={(
-                event,
-              ) =>
-                setAutomationStepId(
-                  event.target.value,
-                )
-              }
-              inputProps={{
-                maxLength: 50,
+              spacing={2.5}
+              sx={{
+                pt: 1,
               }}
-              helperText={
-                mode ===
-                'edit'
-                  ? 'Automation Step ID cannot be changed after creation.'
-                  : `${automationStepId.length}/50`
-              }
-            />
-
-            <TextField
-              fullWidth
-              required
-              label="Step Order"
-              type="number"
-              value={
-                stepOrder
-              }
-              onChange={(
-                event,
-              ) =>
-                setStepOrder(
-                  Number(
-                    event.target.value,
-                  ),
-                )
-              }
-              inputProps={{
-                min: 1,
-              }}
-            />
-          </Stack>
-
-          <FormControl
-            fullWidth
-            required
           >
-            <InputLabel>
-              Source Test Step
-            </InputLabel>
-
-            <Select
-              label="Source Test Step"
-              value={
-                sourceTestStepId
-              }
-              disabled={
-                mode === 'edit'
-              }
-              onChange={(
-                event,
-              ) =>
-                setSourceTestStepId(
-                  Number(
-                    event.target.value,
-                  ),
-                )
-              }
-            >
-              {testSteps.map(
-                (
-                  testStep,
-                ) => (
-                  <MenuItem
-                    key={
-                      testStep.id
-                    }
-                    value={
-                      testStep.id
-                    }
-                  >
-                    {
-                      testStep.stepOrder
-                    }
-                    {' — '}
-                    {
-                      testStep.testStepId
-                    }
-                    {' — '}
-                    {
-                      testStep.action
-                    }
-                  </MenuItem>
-                ),
-              )}
-            </Select>
-          </FormControl>
-
-          {selectedSourceStep && (
-            <Alert
-              severity="info"
-              variant="outlined"
-            >
-              <Typography
-                variant="body2"
-                fontWeight={
-                  700
-                }
-              >
-                Source Test Step
-              </Typography>
-
-              <Typography
-                variant="body2"
-              >
-                Action:{' '}
-                {
-                  selectedSourceStep.action
-                }
-              </Typography>
-
-              {selectedSourceStep.target && (
-                <Typography
-                  variant="body2"
+            {(error ||
+                validationError) && (
+                <Alert
+                    severity="error"
                 >
-                  Target:{' '}
-                  {
-                    selectedSourceStep.target
-                  }
-                </Typography>
-              )}
+                  {error ??
+                      validationError}
+                </Alert>
+            )}
 
-              {selectedSourceStep.inputValue && (
-                <Typography
-                  variant="body2"
-                >
-                  Input:{' '}
-                  {
-                    selectedSourceStep.inputValue
-                  }
-                </Typography>
-              )}
-
-              {selectedSourceStep.expectedResult && (
-                <Typography
-                  variant="body2"
-                >
-                  Expected:{' '}
-                  {
-                    selectedSourceStep.expectedResult
-                  }
-                </Typography>
-              )}
-            </Alert>
-          )}
-
-          <FormControl
-            fullWidth
-            required
-          >
-            <InputLabel>
-              Automation Action
-            </InputLabel>
-
-            <Select
-              label="Automation Action"
-              value={
-                actionType
-              }
-              onChange={(
-                event,
-              ) =>
-                handleActionChange(
-                  event
-                    .target
-                    .value as AutomationActionType,
-                )
-              }
-            >
-              {availableActionTypes.map(
-                (
-                  value,
-                ) => (
-                  <MenuItem
-                    key={
-                      value
-                    }
-                    value={
-                      value
-                    }
-                  >
-                    {actionLabel(
-                      value,
-                    )}
-                  </MenuItem>
-                ),
-              )}
-            </Select>
-          </FormControl>
-
-          <TextField
-            fullWidth
-            required={
-              requiresTarget
-            }
-            label={
-              requiresTarget
-                ? 'Request URL'
-                : 'Target / Description'
-            }
-            value={
-              target
-            }
-            onChange={(
-              event,
-            ) =>
-              setTarget(
-                event
-                  .target
-                  .value,
-              )
-            }
-            inputProps={{
-              maxLength: 500,
-            }}
-            helperText={
-              requiresTarget
-                ? 'Full API endpoint URL.'
-                : 'Optional descriptive target.'
-            }
-          />
-
-          {requiresSelector && (
-            <>
-              <FormControl
-                fullWidth
-                required
-              >
-                <InputLabel>
-                  Selector Strategy
-                </InputLabel>
-
-                <Select
-                  label="Selector Strategy"
-                  value={
-                    selectorStrategy
-                  }
-                  onChange={(
-                    event,
-                  ) =>
-                    handleSelectorChange(
-                      event
-                        .target
-                        .value as SelectorStrategy,
-                    )
-                  }
-                >
-                  {SELECTOR_STRATEGIES.map(
-                    (
-                      value,
-                    ) => (
-                      <MenuItem
-                        key={
-                          value
-                        }
-                        value={
-                          value
-                        }
-                      >
-                        {actionLabel(
-                          value,
-                        )}
-                      </MenuItem>
-                    ),
-                  )}
-                </Select>
-              </FormControl>
-
-              {selectorStrategy ===
-              'ROLE' ? (
-                <Stack
-                  direction={{
-                    xs:
+            <Stack
+                direction={{
+                  xs:
                       'column',
 
-                    md:
+                  md:
                       'row',
+                }}
+                spacing={2}
+            >
+              <TextField
+                  fullWidth
+                  required
+                  label="Automation Step ID"
+                  value={
+                    automationStepId
+                  }
+                  disabled={
+                      mode === 'edit'
+                  }
+                  onChange={(
+                      event,
+                  ) =>
+                      setAutomationStepId(
+                          event.target.value,
+                      )
+                  }
+                  inputProps={{
+                    maxLength: 50,
                   }}
-                  spacing={2}
+                  helperText={
+                    mode ===
+                    'edit'
+                        ? 'Automation Step ID cannot be changed after creation.'
+                        : `${automationStepId.length}/50`
+                  }
+              />
+
+              <TextField
+                  fullWidth
+                  required
+                  label="Step Order"
+                  type="number"
+                  value={
+                    stepOrder
+                  }
+                  onChange={(
+                      event,
+                  ) =>
+                      setStepOrder(
+                          Number(
+                              event.target.value,
+                          ),
+                      )
+                  }
+                  inputProps={{
+                    min: 1,
+                  }}
+              />
+            </Stack>
+
+            <FormControl
+                fullWidth
+                required
+            >
+              <InputLabel>
+                Source Test Step
+              </InputLabel>
+
+              <Select
+                  label="Source Test Step"
+                  value={
+                    sourceTestStepId
+                  }
+                  disabled={
+                      mode === 'edit'
+                  }
+                  onChange={(
+                      event,
+                  ) =>
+                      setSourceTestStepId(
+                          Number(
+                              event.target.value,
+                          ),
+                      )
+                  }
+              >
+                {testSteps.map(
+                    (
+                        testStep,
+                    ) => (
+                        <MenuItem
+                            key={
+                              testStep.id
+                            }
+                            value={
+                              testStep.id
+                            }
+                        >
+                          {
+                            testStep.stepOrder
+                          }
+                          {' — '}
+                          {
+                            testStep.testStepId
+                          }
+                          {' — '}
+                          {
+                            testStep.action
+                          }
+                        </MenuItem>
+                    ),
+                )}
+              </Select>
+            </FormControl>
+
+            {selectedSourceStep && (
+                <Alert
+                    severity="info"
+                    variant="outlined"
                 >
+                  <Typography
+                      variant="body2"
+                      fontWeight={
+                        700
+                      }
+                  >
+                    Source Test Step
+                  </Typography>
+
+                  <Typography
+                      variant="body2"
+                  >
+                    Action:{' '}
+                    {
+                      selectedSourceStep.action
+                    }
+                  </Typography>
+
+                  {selectedSourceStep.target && (
+                      <Typography
+                          variant="body2"
+                      >
+                        Target:{' '}
+                        {
+                          selectedSourceStep.target
+                        }
+                      </Typography>
+                  )}
+
+                  {selectedSourceStep.inputValue && (
+                      <Typography
+                          variant="body2"
+                      >
+                        Input:{' '}
+                        {
+                          selectedSourceStep.inputValue
+                        }
+                      </Typography>
+                  )}
+
+                  {selectedSourceStep.expectedResult && (
+                      <Typography
+                          variant="body2"
+                      >
+                        Expected:{' '}
+                        {
+                          selectedSourceStep.expectedResult
+                        }
+                      </Typography>
+                  )}
+                </Alert>
+            )}
+
+            <FormControl
+                fullWidth
+                required
+            >
+              <InputLabel>
+                Automation Action
+              </InputLabel>
+
+              <Select
+                  label="Automation Action"
+                  value={
+                    actionType
+                  }
+                  onChange={(
+                      event,
+                  ) =>
+                      handleActionChange(
+                          event
+                              .target
+                              .value as AutomationActionType,
+                      )
+                  }
+              >
+                {availableActionTypes.map(
+                    (
+                        value,
+                    ) => (
+                        <MenuItem
+                            key={
+                              value
+                            }
+                            value={
+                              value
+                            }
+                        >
+                          {actionLabel(
+                              value,
+                          )}
+                        </MenuItem>
+                    ),
+                )}
+              </Select>
+            </FormControl>
+
+            <TextField
+                fullWidth
+                required={
+                  requiresTarget
+                }
+                label={
+                  FRAME_ACTIONS.includes(
+                      actionType,
+                  )
+                      ? 'Frame Selector'
+                      : requiresTarget
+                          ? 'Request URL'
+                          : 'Target / Description'
+                }
+                value={
+                  target
+                }
+                onChange={(
+                    event,
+                ) =>
+                    setTarget(
+                        event
+                            .target
+                            .value,
+                    )
+                }
+                inputProps={{
+                  maxLength: 500,
+                }}
+                helperText={
+                  requiresTarget
+                      ? 'Full API endpoint URL.'
+                      : 'Optional descriptive target.'
+                }
+            />
+
+            {requiresSelector && (
+                <>
                   <FormControl
-                    fullWidth
-                    required
+                      fullWidth
+                      required
                   >
                     <InputLabel>
-                      Element Role
+                      Selector Strategy
                     </InputLabel>
 
                     <Select
-                      label="Element Role"
-                      value={
-                        selectorRole
-                      }
-                      onChange={(
-                        event,
-                      ) =>
-                        setSelectorRole(
-                          event
-                            .target
-                            .value as UiElementRole,
-                        )
-                      }
+                        label="Selector Strategy"
+                        value={
+                          selectorStrategy
+                        }
+                        onChange={(
+                            event,
+                        ) =>
+                            handleSelectorChange(
+                                event
+                                    .target
+                                    .value as SelectorStrategy,
+                            )
+                        }
                     >
-                      {UI_ROLES.map(
-                        (
-                          role,
-                        ) => (
-                          <MenuItem
-                            key={
-                              role
-                            }
-                            value={
-                              role
-                            }
-                          >
-                            {actionLabel(
-                              role,
-                            )}
-                          </MenuItem>
-                        ),
+                      {SELECTOR_STRATEGIES.map(
+                          (
+                              value,
+                          ) => (
+                              <MenuItem
+                                  key={
+                                    value
+                                  }
+                                  value={
+                                    value
+                                  }
+                              >
+                                {actionLabel(
+                                    value,
+                                )}
+                              </MenuItem>
+                          ),
                       )}
                     </Select>
                   </FormControl>
 
-                  <TextField
+                  {selectorStrategy ===
+                  'ROLE' ? (
+                      <Stack
+                          direction={{
+                            xs:
+                                'column',
+
+                            md:
+                                'row',
+                          }}
+                          spacing={2}
+                      >
+                        <FormControl
+                            fullWidth
+                            required
+                        >
+                          <InputLabel>
+                            Element Role
+                          </InputLabel>
+
+                          <Select
+                              label="Element Role"
+                              value={
+                                selectorRole
+                              }
+                              onChange={(
+                                  event,
+                              ) =>
+                                  setSelectorRole(
+                                      event
+                                          .target
+                                          .value as UiElementRole,
+                                  )
+                              }
+                          >
+                            {UI_ROLES.map(
+                                (
+                                    role,
+                                ) => (
+                                    <MenuItem
+                                        key={
+                                          role
+                                        }
+                                        value={
+                                          role
+                                        }
+                                    >
+                                      {actionLabel(
+                                          role,
+                                      )}
+                                    </MenuItem>
+                                ),
+                            )}
+                          </Select>
+                        </FormControl>
+
+                        <TextField
+                            fullWidth
+                            required
+                            label="Accessible Name"
+                            value={
+                              selectorName
+                            }
+                            onChange={(
+                                event,
+                            ) =>
+                                setSelectorName(
+                                    event
+                                        .target
+                                        .value,
+                                )
+                            }
+                            inputProps={{
+                              maxLength:
+                                  500,
+                            }}
+                        />
+                      </Stack>
+                  ) : (
+                      selectorStrategy && (
+                          <TextField
+                              fullWidth
+                              required
+                              label="Selector Value"
+                              value={
+                                selectorValue
+                              }
+                              onChange={(
+                                  event,
+                              ) =>
+                                  setSelectorValue(
+                                      event
+                                          .target
+                                          .value,
+                                  )
+                              }
+                              inputProps={{
+                                maxLength:
+                                    2000,
+                              }}
+                              helperText={
+                                selectorStrategy ===
+                                'TEST_ID'
+                                    ? 'Example: login-button'
+                                    : selectorStrategy ===
+                                    'CSS'
+                                        ? 'Example: #login-button'
+                                        : selectorStrategy ===
+                                        'XPATH'
+                                            ? 'Example: //button[@type="submit"]'
+                                            : undefined
+                              }
+                          />
+                      )
+                  )}
+
+                  <FormControlLabel
+                      control={
+                        <Checkbox
+                            checked={
+                              selectorExact
+                            }
+                            onChange={(
+                                event,
+                            ) =>
+                                setSelectorExact(
+                                    event
+                                        .target
+                                        .checked,
+                                )
+                            }
+                        />
+                      }
+                      label="Exact selector match"
+                  />
+                </>
+            )}
+
+            {requiresInput && (
+                <TextField
                     fullWidth
                     required
-                    label="Accessible Name"
+                    multiline={
+                        actionType ===
+                        'WAIT'
+                    }
+                    minRows={
+                      actionType ===
+                      'WAIT'
+                          ? 2
+                          : undefined
+                    }
+                    label={
+                      inputLabel(
+                          actionType,
+                      )
+                    }
                     value={
-                      selectorName
+                      inputValue
                     }
                     onChange={(
-                      event,
+                        event,
                     ) =>
-                      setSelectorName(
-                        event
-                          .target
-                          .value,
-                      )
+                        setInputValue(
+                            event
+                                .target
+                                .value,
+                        )
                     }
                     inputProps={{
                       maxLength:
-                        500,
+                          4000,
                     }}
-                  />
-                </Stack>
-              ) : (
-                selectorStrategy && (
-                  <TextField
+                />
+            )}
+
+            {showApiBody && (
+                <TextField
                     fullWidth
-                    required
-                    label="Selector Value"
+                    multiline
+                    minRows={4}
+                    label="Request Body"
                     value={
-                      selectorValue
+                      inputValue
                     }
                     onChange={(
-                      event,
+                        event,
                     ) =>
-                      setSelectorValue(
-                        event
-                          .target
-                          .value,
-                      )
+                        setInputValue(
+                            event
+                                .target
+                                .value,
+                        )
                     }
                     inputProps={{
                       maxLength:
-                        2000,
+                          4000,
                     }}
-                    helperText={
-                      selectorStrategy ===
-                      'TEST_ID'
-                        ? 'Example: login-button'
-                        : selectorStrategy ===
-                            'CSS'
-                          ? 'Example: #login-button'
-                          : selectorStrategy ===
-                              'XPATH'
-                            ? 'Example: //button[@type="submit"]'
-                            : undefined
-                    }
-                  />
-                )
-              )}
+                    helperText="Optional request body. JSON text can be entered directly."
+                />
+            )}
 
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={
-                      selectorExact
-                    }
-                    onChange={(
-                      event,
-                    ) =>
-                      setSelectorExact(
-                        event
-                          .target
-                          .checked,
-                      )
-                    }
-                  />
-                }
-                label="Exact selector match"
-              />
-            </>
-          )}
-
-          {requiresInput && (
-            <TextField
-              fullWidth
-              required
-              multiline={
-                actionType ===
-                'WAIT'
-              }
-              minRows={
-                actionType ===
-                'WAIT'
-                  ? 2
-                  : undefined
-              }
-              label={
-                actionType ===
-                'NAVIGATE'
-                  ? 'URL'
-                  : actionType ===
-                      'FILL'
-                    ? 'Input Value'
-                    : actionType ===
-                        'SELECT'
-                      ? 'Option Value'
-                      : actionType ===
-                          'PRESS'
-                        ? 'Keyboard Key'
-                        : 'Wait Time (milliseconds)'
-              }
-              value={
-                inputValue
-              }
-              onChange={(
-                event,
-              ) =>
-                setInputValue(
-                  event
-                    .target
-                    .value,
-                )
-              }
-              inputProps={{
-                maxLength:
-                  4000,
-              }}
-            />
-          )}
-
-          {showApiBody && (
-            <TextField
-              fullWidth
-              multiline
-              minRows={4}
-              label="Request Body"
-              value={
-                inputValue
-              }
-              onChange={(
-                event,
-              ) =>
-                setInputValue(
-                  event
-                    .target
-                    .value,
-                )
-              }
-              inputProps={{
-                maxLength:
-                  4000,
-              }}
-              helperText="Optional request body. JSON text can be entered directly."
-            />
-          )}
-
-          {requiresExpected && (
-            <TextField
-              fullWidth
-              required
-              multiline={
-                actionType !==
-                'ASSERT_API_STATUS'
-              }
-              minRows={
-                actionType !==
-                'ASSERT_API_STATUS'
-                  ? 2
-                  : undefined
-              }
-              label={
-                actionType ===
-                'ASSERT_URL'
-                  ? 'Expected URL'
-                  : actionType ===
-                      'ASSERT_TITLE'
-                    ? 'Expected Title'
-                    : actionType ===
+            {requiresExpected && (
+                <TextField
+                    fullWidth
+                    required
+                    multiline={
+                        actionType !==
                         'ASSERT_API_STATUS'
-                      ? 'Expected HTTP Status'
-                      : actionType ===
-                          'ASSERT_API_BODY_CONTAINS'
-                        ? 'Expected Body Text'
-                        : 'Expected Value'
-              }
-              value={
-                expectedValue
-              }
-              onChange={(
-                event,
-              ) =>
-                setExpectedValue(
-                  event
-                    .target
-                    .value,
-                )
-              }
-              inputProps={{
-                maxLength:
-                  4000,
-              }}
-            />
-          )}
+                    }
+                    minRows={
+                      actionType !==
+                      'ASSERT_API_STATUS'
+                          ? 2
+                          : undefined
+                    }
+                    label={
+                      expectedLabel(
+                          actionType,
+                      )
+                    }
+                    value={
+                      expectedValue
+                    }
+                    onChange={(
+                        event,
+                    ) =>
+                        setExpectedValue(
+                            event
+                                .target
+                                .value,
+                        )
+                    }
+                    inputProps={{
+                      maxLength:
+                          4000,
+                    }}
+                />
+            )}
 
-          {automationType ===
-            'UI_API' && (
-            <Alert
-              severity="info"
-              variant="outlined"
-            >
-              This Test Case supports both
-              UI and API automation actions.
-              Steps are executed according
-              to Automation Step Order.
-            </Alert>
-          )}
-        </Stack>
-      </DialogContent>
+            {automationType ===
+                'UI_API' && (
+                    <Alert
+                        severity="info"
+                        variant="outlined"
+                    >
+                      This Test Case supports both
+                      UI and API automation actions.
+                      Steps are executed according
+                      to Automation Step Order.
+                    </Alert>
+                )}
+          </Stack>
+        </DialogContent>
 
-      <DialogActions
-        sx={{
-          px: 3,
-          pb: 3,
-        }}
-      >
-        <Button
-          disabled={
-            saving
-          }
-          onClick={
-            onClose
-          }
+        <DialogActions
+            sx={{
+              px: 3,
+              pb: 3,
+            }}
         >
-          Cancel
-        </Button>
+          <Button
+              disabled={
+                saving
+              }
+              onClick={
+                onClose
+              }
+          >
+            Cancel
+          </Button>
 
-        <Button
-          variant="contained"
-          disabled={
-            saving
-          }
-          onClick={
-            handleSubmit
-          }
-          startIcon={
-            saving ? (
-              <CircularProgress
-                size={
-                  18
-                }
-                color="inherit"
-              />
-            ) : undefined
-          }
-        >
-          {saving
-            ? 'Saving...'
-            : mode ===
+          <Button
+              variant="contained"
+              disabled={
+                saving
+              }
+              onClick={
+                handleSubmit
+              }
+              startIcon={
+                saving ? (
+                    <CircularProgress
+                        size={
+                          18
+                        }
+                        color="inherit"
+                    />
+                ) : undefined
+              }
+          >
+            {saving
+                ? 'Saving...'
+                : mode ===
                 'create'
-              ? 'Add Step'
-              : 'Save Changes'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+                    ? 'Add Step'
+                    : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
   );
 }

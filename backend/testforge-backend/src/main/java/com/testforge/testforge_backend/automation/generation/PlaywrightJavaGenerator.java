@@ -74,7 +74,11 @@ public class PlaywrightJavaGenerator {
         );
 
         source.append(
-                "import org.junit.jupiter.api.Test;\n\n"
+                "import org.junit.jupiter.api.Test;\n"
+        );
+
+        source.append(
+                "import java.nio.file.Paths;\n\n"
         );
 
         source.append(
@@ -290,10 +294,63 @@ public class PlaywrightJavaGenerator {
                                     + ");"
                     );
 
+            case GO_BACK ->
+                    line(
+                            "page.goBack();"
+                    );
+
+            case GO_FORWARD ->
+                    line(
+                            "page.goForward();"
+                    );
+
+            case RELOAD ->
+                    line(
+                            "page.reload();"
+                    );
+
             case CLICK ->
                     line(
                             locator(step)
                                     + ".click();"
+                    );
+
+            case CLICK_NEW_TAB ->
+                    line(
+                            "page = page.waitForPopup(() -> "
+                                    + locator(step)
+                                    + ".click());"
+                    );
+
+            case CLICK_DOWNLOAD ->
+                    line(
+                            "Download download"
+                                    + step.getStepOrder()
+                                    + " = page.waitForDownload(() -> "
+                                    + locator(step)
+                                    + ".click()); download"
+                                    + step.getStepOrder()
+                                    + ".saveAs(Paths.get("
+                                    + quote(requireInput(step))
+                                    + "));"
+                    );
+
+            case DOUBLE_CLICK ->
+                    line(
+                            locator(step)
+                                    + ".dblclick();"
+                    );
+
+            case HOVER ->
+                    line(
+                            locator(step)
+                                    + ".hover();"
+                    );
+
+            case FOCUS ->
+                    line(
+                            locator(step)
+                                    + ".focus();"
                     );
 
             case FILL ->
@@ -306,6 +363,12 @@ public class PlaywrightJavaGenerator {
                                     )
                             )
                                     + ");"
+                    );
+
+            case CLEAR ->
+                    line(
+                            locator(step)
+                                    + ".clear();"
                     );
 
             case SELECT ->
@@ -344,6 +407,42 @@ public class PlaywrightJavaGenerator {
                                     + ");"
                     );
 
+            case SET_INPUT_FILES ->
+                    line(
+                            locator(step)
+                                    + ".setInputFiles(Paths.get("
+                                    + quote(
+                                    requireInput(
+                                            step
+                                    )
+                            )
+                                    + "));"
+                    );
+
+            case FRAME_CLICK ->
+                    line(
+                            frameLocator(step)
+                                    + ".click();"
+                    );
+
+            case FRAME_FILL ->
+                    line(
+                            frameLocator(step)
+                                    + ".fill("
+                                    + quote(requireInput(step))
+                                    + ");"
+                    );
+
+            case ACCEPT_DIALOG ->
+                    line(
+                            "page.onDialog(dialog -> dialog.accept());"
+                    );
+
+            case DISMISS_DIALOG ->
+                    line(
+                            "page.onDialog(dialog -> dialog.dismiss());"
+                    );
+
             case WAIT ->
                     line(
                             "page.waitForTimeout("
@@ -351,6 +450,39 @@ public class PlaywrightJavaGenerator {
                                     step
                             )
                                     + ");"
+                    );
+
+            case WAIT_FOR_SELECTOR ->
+                    line(
+                            locator(step)
+                                    + ".waitFor();"
+                    );
+
+            case WAIT_FOR_URL ->
+                    line(
+                            "page.waitForURL("
+                                    + quote(
+                                    requireInput(
+                                            step
+                                    )
+                            )
+                                    + ");"
+                    );
+
+            case WAIT_FOR_LOAD_STATE ->
+                    line(
+                            "page.waitForLoadState();"
+                    );
+
+            case TAKE_SCREENSHOT ->
+                    line(
+                            "page.screenshot(new Page.ScreenshotOptions().setPath(Paths.get("
+                                    + quote(
+                                    requireInput(
+                                            step
+                                    )
+                            )
+                                    + ")));"
                     );
 
             case ASSERT_VISIBLE ->
@@ -367,6 +499,34 @@ public class PlaywrightJavaGenerator {
                                     + ").isHidden();"
                     );
 
+            case ASSERT_ENABLED ->
+                    line(
+                            "assertThat("
+                                    + locator(step)
+                                    + ").isEnabled();"
+                    );
+
+            case ASSERT_DISABLED ->
+                    line(
+                            "assertThat("
+                                    + locator(step)
+                                    + ").isDisabled();"
+                    );
+
+            case ASSERT_EDITABLE ->
+                    line(
+                            "assertThat("
+                                    + locator(step)
+                                    + ").isEditable();"
+                    );
+
+            case ASSERT_CHECKED ->
+                    line(
+                            "assertThat("
+                                    + locator(step)
+                                    + ").isChecked();"
+                    );
+
             case ASSERT_TEXT ->
                     line(
                             "assertThat("
@@ -376,6 +536,30 @@ public class PlaywrightJavaGenerator {
                                     requireExpected(
                                             step
                                     )
+                            )
+                                    + ");"
+                    );
+
+            case ASSERT_CONTAINS_TEXT ->
+                    line(
+                            "assertThat("
+                                    + locator(step)
+                                    + ").containsText("
+                                    + quote(
+                                    requireExpected(
+                                            step
+                                    )
+                            )
+                                    + ");"
+                    );
+
+            case ASSERT_COUNT ->
+                    line(
+                            "assertThat("
+                                    + locator(step)
+                                    + ").hasCount("
+                                    + parseExpectedCount(
+                                    step
                             )
                                     + ");"
                     );
@@ -525,6 +709,29 @@ public class PlaywrightJavaGenerator {
                 )
                         + "));"
         );
+    }
+
+    private String frameLocator(
+            AutomationStep step
+    ) {
+        String frame = "page.frameLocator("
+                + quote(requireTarget(step))
+                + ")";
+
+        return switch (step.getSelectorStrategy()) {
+            case CSS -> frame
+                    + ".locator("
+                    + quote(requireSelectorValue(step))
+                    + ")";
+            case XPATH -> frame
+                    + ".locator("
+                    + quote("xpath=" + requireSelectorValue(step))
+                    + ")";
+            default -> throw new AutomationValidationException(
+                    step.getActionType()
+                            + " currently requires a CSS or XPATH element selector"
+            );
+        };
     }
 
     private String locator(
@@ -902,4 +1109,27 @@ public class PlaywrightJavaGenerator {
             String source
     ) {
     }
+    private int parseExpectedCount(
+            AutomationStep step
+    ) {
+
+        try {
+            int count = Integer.parseInt(
+                    requireExpected(step).trim()
+            );
+
+            if (count < 0) {
+                throw new AutomationValidationException(
+                        "ASSERT_COUNT expected value must be zero or greater"
+                );
+            }
+
+            return count;
+        } catch (NumberFormatException exception) {
+            throw new AutomationValidationException(
+                    "ASSERT_COUNT expected value must be a whole number"
+            );
+        }
+    }
+
 }

@@ -120,7 +120,23 @@ public class AutomationActionValidator {
                 );
             }
 
-            case CLICK -> {
+            case GO_BACK,
+                 GO_FORWARD,
+                 RELOAD -> {
+
+                requireNoSelector(
+                        action
+                );
+            }
+
+            case CLICK,
+                 CLICK_NEW_TAB,
+                 DOUBLE_CLICK,
+                 HOVER,
+                 FOCUS,
+                 CLEAR,
+                 CHECK,
+                 UNCHECK -> {
 
                 requireSelector(
                         action
@@ -151,20 +167,6 @@ public class AutomationActionValidator {
                 );
             }
 
-            case CHECK -> {
-
-                requireSelector(
-                        action
-                );
-            }
-
-            case UNCHECK -> {
-
-                requireSelector(
-                        action
-                );
-            }
-
             case PRESS -> {
 
                 requireSelector(
@@ -175,6 +177,57 @@ public class AutomationActionValidator {
                         action,
                         "PRESS requires a keyboard key value"
                 );
+            }
+
+            case SET_INPUT_FILES -> {
+
+                requireSelector(
+                        action
+                );
+
+                requireValue(
+                        action,
+                        "SET_INPUT_FILES requires a file path"
+                );
+            }
+
+            case CLICK_DOWNLOAD -> {
+
+                requireSelector(action);
+                requireValue(
+                        action,
+                        "CLICK_DOWNLOAD requires a download output path"
+                );
+            }
+
+            case FRAME_CLICK -> {
+
+                requireSelector(action);
+                requireTarget(
+                        action,
+                        "FRAME_CLICK requires a frame selector in target"
+                );
+                requireFrameCompatibleSelector(action);
+            }
+
+            case FRAME_FILL -> {
+
+                requireSelector(action);
+                requireTarget(
+                        action,
+                        "FRAME_FILL requires a frame selector in target"
+                );
+                requireValue(
+                        action,
+                        "FRAME_FILL requires an input value"
+                );
+                requireFrameCompatibleSelector(action);
+            }
+
+            case ACCEPT_DIALOG,
+                 DISMISS_DIALOG -> {
+
+                requireNoSelector(action);
             }
 
             case WAIT -> {
@@ -193,20 +246,56 @@ public class AutomationActionValidator {
                 );
             }
 
-            /*
-             * =================================================
-             * UI ASSERTIONS
-             * =================================================
-             */
-
-            case ASSERT_VISIBLE -> {
+            case WAIT_FOR_SELECTOR -> {
 
                 requireSelector(
                         action
                 );
             }
 
-            case ASSERT_HIDDEN -> {
+            case WAIT_FOR_URL -> {
+
+                requireNoSelector(
+                        action
+                );
+
+                requireValue(
+                        action,
+                        "WAIT_FOR_URL requires a URL"
+                );
+            }
+
+            case WAIT_FOR_LOAD_STATE -> {
+
+                requireNoSelector(
+                        action
+                );
+            }
+
+            case TAKE_SCREENSHOT -> {
+
+                requireNoSelector(
+                        action
+                );
+
+                requireValue(
+                        action,
+                        "TAKE_SCREENSHOT requires an output file path"
+                );
+            }
+
+            /*
+             * =================================================
+             * UI ASSERTIONS
+             * =================================================
+             */
+
+            case ASSERT_VISIBLE,
+                 ASSERT_HIDDEN,
+                 ASSERT_ENABLED,
+                 ASSERT_DISABLED,
+                 ASSERT_EDITABLE,
+                 ASSERT_CHECKED -> {
 
                 requireSelector(
                         action
@@ -222,6 +311,34 @@ public class AutomationActionValidator {
                 requireExpectedValue(
                         action,
                         "ASSERT_TEXT requires an expected value"
+                );
+            }
+
+            case ASSERT_CONTAINS_TEXT -> {
+
+                requireSelector(
+                        action
+                );
+
+                requireExpectedValue(
+                        action,
+                        "ASSERT_CONTAINS_TEXT requires an expected value"
+                );
+            }
+
+            case ASSERT_COUNT -> {
+
+                requireSelector(
+                        action
+                );
+
+                requireExpectedValue(
+                        action,
+                        "ASSERT_COUNT requires an expected count"
+                );
+
+                validateExpectedCount(
+                        action
                 );
             }
 
@@ -548,6 +665,19 @@ public class AutomationActionValidator {
      * =========================================================
      */
 
+    private void requireFrameCompatibleSelector(
+            NormalizedAutomationAction action
+    ) {
+        if (action.getSelector() == null
+                || (action.getSelector().getStrategy() != SelectorStrategy.CSS
+                && action.getSelector().getStrategy() != SelectorStrategy.XPATH)) {
+            throw new AutomationValidationException(
+                    action.getActionType()
+                            + " currently requires a CSS or XPATH element selector"
+            );
+        }
+    }
+
     private void requireSelector(
             NormalizedAutomationAction action
     ) {
@@ -695,6 +825,27 @@ public class AutomationActionValidator {
 
             throw new AutomationValidationException(
                     "WAIT value must be a valid number of milliseconds"
+            );
+        }
+    }
+
+    private void validateExpectedCount(
+            NormalizedAutomationAction action
+    ) {
+
+        try {
+            int count = Integer.parseInt(
+                    action.getExpectedValue().trim()
+            );
+
+            if (count < 0) {
+                throw new AutomationValidationException(
+                        "ASSERT_COUNT expected value must be zero or greater"
+                );
+            }
+        } catch (NumberFormatException exception) {
+            throw new AutomationValidationException(
+                    "ASSERT_COUNT expected value must be a whole number"
             );
         }
     }

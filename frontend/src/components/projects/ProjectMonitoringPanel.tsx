@@ -15,6 +15,7 @@ import {
     Box,
     Button,
     Card,
+    CardActionArea,
     CardContent,
     Chip,
     Divider,
@@ -42,6 +43,7 @@ interface MetricCardProps {
     value: string | number;
     description: string;
     icon: ReactNode;
+    onClick?: () => void;
 }
 
 function MetricCard({
@@ -49,7 +51,60 @@ function MetricCard({
                         value,
                         description,
                         icon,
+                        onClick,
                     }: MetricCardProps) {
+    const content = (
+        <CardContent>
+            <Stack
+                direction="row"
+                spacing={2}
+                justifyContent="space-between"
+                alignItems="flex-start"
+            >
+                <Box>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        fontWeight={600}
+                    >
+                        {title}
+                    </Typography>
+
+                    <Typography
+                        variant="h4"
+                        fontWeight={800}
+                        sx={{ mt: 0.75 }}
+                    >
+                        {value}
+                    </Typography>
+
+                    <Typography
+                        variant="caption"
+                        color="text.secondary"
+                    >
+                        {description}
+                    </Typography>
+                </Box>
+
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 42,
+                        height: 42,
+                        borderRadius: 2,
+                        bgcolor: 'action.hover',
+                        color: 'primary.main',
+                        flexShrink: 0,
+                    }}
+                >
+                    {icon}
+                </Box>
+            </Stack>
+        </CardContent>
+    );
+
     return (
         <Card
             variant="outlined"
@@ -58,55 +113,11 @@ function MetricCard({
                 minWidth: 0,
             }}
         >
-            <CardContent>
-                <Stack
-                    direction="row"
-                    spacing={2}
-                    justifyContent="space-between"
-                    alignItems="flex-start"
-                >
-                    <Box>
-                        <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            fontWeight={600}
-                        >
-                            {title}
-                        </Typography>
-
-                        <Typography
-                            variant="h4"
-                            fontWeight={800}
-                            sx={{ mt: 0.75 }}
-                        >
-                            {value}
-                        </Typography>
-
-                        <Typography
-                            variant="caption"
-                            color="text.secondary"
-                        >
-                            {description}
-                        </Typography>
-                    </Box>
-
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: 42,
-                            height: 42,
-                            borderRadius: 2,
-                            bgcolor: 'action.hover',
-                            color: 'primary.main',
-                            flexShrink: 0,
-                        }}
-                    >
-                        {icon}
-                    </Box>
-                </Stack>
-            </CardContent>
+            {onClick ? (
+                <CardActionArea onClick={onClick}>
+                    {content}
+                </CardActionArea>
+            ) : content}
         </Card>
     );
 }
@@ -228,6 +239,12 @@ export default function ProjectMonitoringPanel({
                                                }: Props) {
     const navigate = useNavigate();
 
+    const openDrilldown = (status: string) => {
+        navigate(
+            `/monitoring/project/${encodeURIComponent(monitoring.projectId)}/test-cases?status=${status}`,
+        );
+    };
+
     return (
         <Stack spacing={3}>
             <Box>
@@ -262,6 +279,7 @@ export default function ProjectMonitoringPanel({
                     value={monitoring.totalTestCases}
                     description={`${monitoring.automatableTestCases} automatable`}
                     icon={<Assessment />}
+                    onClick={() => openDrilldown('ALL')}
                 />
 
                 <MetricCard
@@ -294,6 +312,7 @@ export default function ProjectMonitoringPanel({
                     value={monitoring.passedTestCases}
                     description="Current latest result"
                     icon={<CheckCircle />}
+                    onClick={() => openDrilldown('PASSED')}
                 />
 
                 <MetricCard
@@ -301,6 +320,7 @@ export default function ProjectMonitoringPanel({
                     value={monitoring.needsAttentionTestCases}
                     description={`${monitoring.failedTestCases} failed · ${monitoring.timedOutTestCases} timed out · ${monitoring.errorTestCases} errors`}
                     icon={<ErrorOutlineOutlined />}
+                    onClick={() => openDrilldown('NEEDS_ATTENTION')}
                 />
 
                 <MetricCard
@@ -308,6 +328,7 @@ export default function ProjectMonitoringPanel({
                     value={monitoring.notRunTestCases}
                     description="Automatable with no completed run"
                     icon={<TimerOff />}
+                    onClick={() => openDrilldown('NOT_RUN')}
                 />
 
                 <MetricCard
@@ -315,6 +336,7 @@ export default function ProjectMonitoringPanel({
                     value={monitoring.manualTestCases}
                     description="No automation result expected"
                     icon={<Description />}
+                    onClick={() => openDrilldown('MANUAL')}
                 />
             </Stack>
 
