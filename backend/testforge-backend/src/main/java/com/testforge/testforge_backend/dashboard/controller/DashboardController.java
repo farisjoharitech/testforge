@@ -4,6 +4,7 @@ import com.testforge.testforge_backend.dashboard.dto.AutomationTypeSummaryRespon
 import com.testforge.testforge_backend.dashboard.dto.DashboardSummaryResponse;
 import com.testforge.testforge_backend.dashboard.dto.ExecutionStatusSummaryResponse;
 import com.testforge.testforge_backend.dashboard.dto.RecentExecutionResponse;
+import com.testforge.testforge_backend.dashboard.dto.PortfolioDashboardResponse;
 import com.testforge.testforge_backend.dashboard.service.DashboardService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -85,6 +86,11 @@ public class DashboardController {
      * GET
      * /api/dashboard/recent-results
      */
+    @GetMapping("/portfolio")
+    public ResponseEntity<PortfolioDashboardResponse> getPortfolio() {
+        return ResponseEntity.ok(dashboardService.getPortfolio());
+    }
+
     @GetMapping(
             "/recent-results"
     )

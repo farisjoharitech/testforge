@@ -1472,7 +1472,7 @@ export default function AutomationStepDialog({
       >
         <DialogTitle>
           {mode === 'create'
-              ? 'Add Automation Step'
+              ? 'Create Automation Step'
               : 'Edit Automation Step'}
         </DialogTitle>
 
@@ -1676,7 +1676,7 @@ export default function AutomationStepDialog({
               </InputLabel>
 
               <Select
-                  label="Automation Action"
+                  label="Action"
                   value={
                     actionType
                   }
@@ -1950,7 +1950,7 @@ export default function AutomationStepDialog({
                             }
                         />
                       }
-                      label="Exact selector match"
+                      label="Exact match"
                   />
                 </>
             )}
@@ -2001,10 +2001,10 @@ export default function AutomationStepDialog({
                   </Alert>
 
                   <FormControl fullWidth>
-                    <InputLabel>API Authentication</InputLabel>
+                    <InputLabel>Authentication</InputLabel>
                     <Select
                         value={apiAuthType}
-                        label="API Authentication"
+                        label="Authentication"
                         onChange={(event) => setApiAuthType(event.target.value as ApiAuthenticationType)}
                     >
                       <MenuItem value="NONE">None</MenuItem>
@@ -2019,7 +2019,7 @@ export default function AutomationStepDialog({
                         <TextField
                             fullWidth
                             required
-                            label="Basic Username"
+                            label="Username"
                             value={apiBasicUsername}
                             onChange={(event) => setApiBasicUsername(event.target.value)}
                             helperText="Username may be stored because it is not treated as the secret."
@@ -2083,7 +2083,7 @@ export default function AutomationStepDialog({
 
                   <TextField
                       fullWidth multiline minRows={3}
-                      label="Request Headers (JSON)"
+                      label="Request Headers (JSON, Optional)"
                       value={apiHeaders}
                       onChange={(event) => setApiHeaders(event.target.value)}
                       helperText='Example: {"Accept":"application/json","X-Tenant":"qa"}'
@@ -2091,7 +2091,7 @@ export default function AutomationStepDialog({
 
                   <TextField
                       fullWidth multiline minRows={3}
-                      label="Query Parameters (JSON)"
+                      label="Query Parameters (JSON, Optional)"
                       value={apiQueryParams}
                       onChange={(event) => setApiQueryParams(event.target.value)}
                       helperText='Example: {"page":"1","status":"ACTIVE"}'
@@ -2220,7 +2220,7 @@ export default function AutomationStepDialog({
                 ? 'Saving...'
                 : mode ===
                 'create'
-                    ? 'Add Step'
+                    ? 'Create Automation Step'
                     : 'Save Changes'}
           </Button>
         </DialogActions>

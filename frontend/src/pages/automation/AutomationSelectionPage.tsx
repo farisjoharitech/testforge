@@ -676,7 +676,7 @@ export default function AutomationSelectionPage() {
                 value={
                   automationTypeFilter
                 }
-                label="Automation Type"
+                label="Automation Scope"
                 onChange={(
                   event,
                 ) =>

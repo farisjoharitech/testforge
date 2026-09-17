@@ -210,11 +210,11 @@ export default function CreateAutomationScriptDialog({
             inputProps={{
               maxLength: 50,
             }}
-            helperText={`${automationScriptId.length}/50`}
+            helperText={`Required business ID. ${automationScriptId.length}/50 characters`}
           />
 
           <TextField
-            label="Name"
+            label="Script Name"
             value={
               name
             }
@@ -230,7 +230,7 @@ export default function CreateAutomationScriptDialog({
             inputProps={{
               maxLength: 255,
             }}
-            helperText={`${name.length}/255`}
+            helperText={`Required. ${name.length}/255 characters`}
           />
         </Stack>
       </DialogContent>
@@ -263,7 +263,7 @@ export default function CreateAutomationScriptDialog({
         >
           {creating
             ? 'Creating...'
-            : 'Create Script'}
+            : 'Create Automation Script'}
         </Button>
       </DialogActions>
     </Dialog>

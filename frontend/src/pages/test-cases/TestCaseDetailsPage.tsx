@@ -248,10 +248,10 @@ export default function TestCaseDetailsPage() {
                 <Typography variant="body2" color="text.secondary">{workflowMessage}</Typography>
               </Box>
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Button size="small" variant="outlined" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Add Step</Button>
-                <Button size="small" variant={automationScript ? 'outlined' : 'contained'} startIcon={<AutoAwesome />} disabled={!automationReady} onClick={() => navigate(`/automation/${encodeURIComponent(testCase.testCaseId)}`)}>Builder</Button>
-                <Button size="small" variant="outlined" startIcon={<Code />} disabled={!automationScript} onClick={() => navigate(`/automation/${encodeURIComponent(testCase.testCaseId)}/script`)}>Script</Button>
-                <Button size="small" variant="outlined" startIcon={<PlayArrow />} disabled={!automationScript} onClick={() => navigate(`/automation/${encodeURIComponent(testCase.testCaseId)}/execute`)}>Execute</Button>
+                <Button size="small" variant="outlined" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Create Test Step</Button>
+                <Button size="small" variant={automationScript ? 'outlined' : 'contained'} startIcon={<AutoAwesome />} disabled={!automationReady} onClick={() => navigate(`/automation/${encodeURIComponent(testCase.testCaseId)}`)}>Automation Builder</Button>
+                <Button size="small" variant="outlined" startIcon={<Code />} disabled={!automationScript} onClick={() => navigate(`/automation/${encodeURIComponent(testCase.testCaseId)}/script`)}>Generated Script</Button>
+                <Button size="small" variant="outlined" startIcon={<PlayArrow />} disabled={!automationScript} onClick={() => navigate(`/automation/${encodeURIComponent(testCase.testCaseId)}/execute`)}>Run Test Case</Button>
                 {latestExecution && <Button size="small" startIcon={<Assessment />} onClick={() => navigate(`/results/${latestExecution.id}`)}>Latest Result</Button>}
               </Stack>
             </Stack>
@@ -276,7 +276,7 @@ export default function TestCaseDetailsPage() {
         pageSize={pageSize}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
-        actions={<Button variant="contained" size="small" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Add Test Step</Button>}
+        actions={<Button variant="contained" size="small" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Create Test Step</Button>}
       >
         {testSteps.length === 0 ? (
           <Card variant="outlined"><CardContent><Stack spacing={1.5} alignItems="center" sx={{ py: 5 }}><Typography fontWeight={700}>No Test Steps yet</Typography><Typography variant="body2" color="text.secondary">Define the execution flow before building automation.</Typography><Button variant="contained" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Add First Step</Button></Stack></CardContent></Card>

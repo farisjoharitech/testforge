@@ -138,7 +138,7 @@ export default function EditRequirementDialog({
 
         if (!trimmed) {
           setError(
-              'Description is required.',
+              'Requirement description is required.',
           );
 
           return;
@@ -239,7 +239,7 @@ export default function EditRequirementDialog({
               </Alert>
 
               <TextField
-                  label="Description"
+                  label="Requirement Description"
                   required
                   multiline
                   minRows={4}
@@ -264,7 +264,7 @@ export default function EditRequirementDialog({
 
               <TextField
                   select
-                  label="Priority"
+                  label="Requirement Priority"
                   value={priority}
                   disabled={
                     submitting
@@ -299,7 +299,7 @@ export default function EditRequirementDialog({
 
               <TextField
                   select
-                  label="Status"
+                  label="Requirement Status"
                   value={status}
                   disabled={
                     submitting

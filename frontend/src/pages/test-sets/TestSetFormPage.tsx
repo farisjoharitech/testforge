@@ -227,7 +227,7 @@ export default function TestSetFormPage() {
         {editing ? 'Edit Test Set' : 'Create Test Set'}
       </Typography>
       <Typography color="text.secondary" sx={{ mb: 2.5 }}>
-        Save an ordered reusable selection of automation-ready Test Cases from one Test Plan.
+        Save an ordered reusable selection of automation-eligible Test Cases from one Test Plan.
       </Typography>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -238,7 +238,7 @@ export default function TestSetFormPage() {
             <Stack spacing={2}>
               <Typography variant="h6">Test Set Details</Typography>
 
-              <FormControl fullWidth disabled={editing}>
+              <FormControl fullWidth disabled={editing} required>
                 <InputLabel id="test-set-plan-label">Test Plan</InputLabel>
                 <Select
                   labelId="test-set-plan-label"
@@ -264,7 +264,7 @@ export default function TestSetFormPage() {
               />
 
               <TextField
-                label="Description"
+                label="Description (Optional)"
                 value={description}
                 onChange={event => setDescription(event.target.value)}
                 inputProps={{ maxLength: 2000 }}
@@ -282,7 +282,7 @@ export default function TestSetFormPage() {
               <Box>
                 <Typography variant="h6">Available Test Cases</Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Only automatable UI, API, and UI+API Test Cases from the selected Test Plan are shown.
+                  Only automation-eligible UI, API, and UI + API Test Cases from the selected Test Plan are shown.
                 </Typography>
               </Box>
 
@@ -326,7 +326,7 @@ export default function TestSetFormPage() {
                   Selected Order ({selectedIds.length})
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  This order is saved with the Test Set and will be used by Task 36.25M execution.
+                  This saved order is the execution order used whenever you run this Test Set.
                 </Typography>
               </Box>
 

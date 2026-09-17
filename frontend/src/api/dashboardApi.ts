@@ -7,6 +7,7 @@ import type {
   DashboardSummary,
   ExecutionStatusSummary,
   RecentExecution,
+  PortfolioDashboard,
 } from '../types/dashboard';
 
 export const dashboardApi = {
@@ -54,6 +55,12 @@ export const dashboardApi = {
       RecentExecution[]
     >(
       '/api/dashboard/recent-results',
+    );
+  },
+
+  getPortfolio(): Promise<PortfolioDashboard> {
+    return apiClient.get<PortfolioDashboard>(
+      '/api/dashboard/portfolio',
     );
   },
 

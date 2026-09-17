@@ -39,6 +39,8 @@ import type {
     ProjectStatus,
 } from '../../types/project';
 
+import { humanizeEnumValue } from '../../utils/uiText';
+
 const statuses:
     ProjectStatus[] = [
     'ACTIVE',
@@ -92,7 +94,7 @@ export default function CreateProjectPage() {
 
             if (!trimmedName) {
                 setError(
-                    'Name is required.',
+                    'Project name is required.',
                 );
                 return;
             }
@@ -189,7 +191,7 @@ export default function CreateProjectPage() {
                             </Alert>
 
                             <TextField
-                                label="Name"
+                                label="Project Name"
                                 required
                                 value={name}
                                 disabled={
@@ -198,6 +200,7 @@ export default function CreateProjectPage() {
                                 inputProps={{
                                     maxLength: 255,
                                 }}
+                                helperText="Required. Use a short, recognizable Project name."
                                 onChange={
                                     event =>
                                         setName(
@@ -207,7 +210,7 @@ export default function CreateProjectPage() {
                             />
 
                             <TextField
-                                label="Description"
+                                label="Project Description (Optional)"
                                 multiline
                                 minRows={4}
                                 value={
@@ -219,6 +222,7 @@ export default function CreateProjectPage() {
                                 inputProps={{
                                     maxLength: 1000,
                                 }}
+                                helperText="Optional. Describe the product, service, or initiative covered by this Project."
                                 onChange={
                                     event =>
                                         setDescription(
@@ -229,7 +233,7 @@ export default function CreateProjectPage() {
 
                             <TextField
                                 select
-                                label="Status"
+                                label="Project Status"
                                 value={status}
                                 disabled={
                                     submitting
@@ -251,7 +255,7 @@ export default function CreateProjectPage() {
                                                 option
                                             }
                                         >
-                                            {option}
+                                            {humanizeEnumValue(option)}
                                         </MenuItem>
                                     ),
                                 )}

@@ -275,7 +275,7 @@ export default function EditTestCaseDialog({
 
       if (!trimmedName) {
         setError(
-          'Name is required.',
+          'Test Case name is required.',
         );
 
         return;
@@ -486,7 +486,7 @@ export default function EditTestCaseDialog({
             </Alert>
 
             <TextField
-              label="Name"
+              label="Test Case Name"
               required
               fullWidth
               value={name}
@@ -504,7 +504,7 @@ export default function EditTestCaseDialog({
             />
 
             <TextField
-              label="Preconditions"
+              label="Preconditions (Optional)"
               multiline
               minRows={3}
               fullWidth
@@ -525,7 +525,7 @@ export default function EditTestCaseDialog({
             />
 
             <TextField
-              label="Test Data"
+              label="Test Data (Optional)"
               multiline
               minRows={3}
               fullWidth
@@ -568,7 +568,7 @@ export default function EditTestCaseDialog({
             <TextField
               select
               fullWidth
-              label="Priority"
+              label="Test Case Priority"
               value={priority}
               disabled={
                 submitting
@@ -638,13 +638,13 @@ export default function EditTestCaseDialog({
                   }
                 />
               }
-              label="Automatable"
+              label="Automation Eligible"
             />
 
             <TextField
               select
               fullWidth
-              label="Automation Type"
+              label="Automation Scope"
               value={
                 automationType
               }
@@ -721,7 +721,7 @@ export default function EditTestCaseDialog({
             <TextField
               select
               fullWidth
-              label="Status"
+              label="Test Case Status"
               value={status}
               disabled={
                 submitting

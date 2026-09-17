@@ -127,7 +127,7 @@ export default function MonitoringSummaryCards({
                 />
 
                 <MetricCard
-                    label="Automatable"
+                    label="Automation Eligible"
                     value={summary.automatableTestCases}
                 />
 

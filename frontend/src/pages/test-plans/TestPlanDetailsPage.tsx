@@ -228,10 +228,10 @@ export default function TestPlanDetailsPage() {
             </Select>
           </Stack>
         }
-        actions={<Button variant="contained" size="small" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Add Requirement</Button>}
+        actions={<Button variant="contained" size="small" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Create Requirement</Button>}
       >
         {requirements.length === 0 ? (
-          <Card variant="outlined"><CardContent><Stack spacing={1.5} alignItems="center" sx={{ py: 5 }}><Typography fontWeight={700}>No Requirements yet</Typography><Typography variant="body2" color="text.secondary">Add the first requirement for this Test Plan.</Typography><Button variant="contained" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Add Requirement</Button></Stack></CardContent></Card>
+          <Card variant="outlined"><CardContent><Stack spacing={1.5} alignItems="center" sx={{ py: 5 }}><Typography fontWeight={700}>No Requirements yet</Typography><Typography variant="body2" color="text.secondary">Create the first Requirement for this Test Plan.</Typography><Button variant="contained" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Create Requirement</Button></Stack></CardContent></Card>
         ) : filteredRequirements.length === 0 ? (
           <Alert severity="info">No Requirements match the current search or filters.</Alert>
         ) : (

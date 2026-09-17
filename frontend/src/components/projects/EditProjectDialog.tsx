@@ -34,6 +34,8 @@ import type {
     ProjectStatus,
 } from '../../types/project';
 
+import { humanizeEnumValue } from '../../utils/uiText';
+
 interface EditProjectDialogProps {
     open: boolean;
     project: Project;
@@ -125,7 +127,7 @@ export default function EditProjectDialog({
 
             if (!trimmedName) {
                 setError(
-                    'Name is required.',
+                    'Project name is required.',
                 );
                 return;
             }
@@ -217,7 +219,7 @@ export default function EditProjectDialog({
     </Alert>
 
     <TextField
-    label="Name"
+    label="Project Name"
     required
     value={name}
     disabled={
@@ -235,7 +237,7 @@ export default function EditProjectDialog({
     />
 
     <TextField
-    label="Description"
+    label="Project Description (Optional)"
     multiline
     minRows={4}
     value={
@@ -257,7 +259,7 @@ export default function EditProjectDialog({
 
     <TextField
     select
-    label="Status"
+    label="Project Status"
     value={status}
     disabled={
         submitting
@@ -279,7 +281,7 @@ export default function EditProjectDialog({
                 option
             }
             >
-            {option}
+            {humanizeEnumValue(option)}
             </MenuItem>
     ),
     )}

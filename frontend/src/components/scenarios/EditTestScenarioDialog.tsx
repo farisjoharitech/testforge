@@ -162,7 +162,7 @@ export default function EditTestScenarioDialog({
 
             if (!trimmed) {
                 setError(
-                    'Description is required.',
+                    'Scenario description is required.',
                 );
 
                 return;
@@ -254,7 +254,7 @@ export default function EditTestScenarioDialog({
                         </Alert>
 
                         <TextField
-                            label="Description"
+                            label="Scenario Description"
                             required
                             multiline
                             minRows={4}
@@ -314,7 +314,7 @@ export default function EditTestScenarioDialog({
 
                         <TextField
                             select
-                            label="Priority"
+                            label="Scenario Priority"
                             value={priority}
                             disabled={
                                 submitting
@@ -349,7 +349,7 @@ export default function EditTestScenarioDialog({
 
                         <TextField
                             select
-                            label="Status"
+                            label="Scenario Status"
                             value={status}
                             disabled={
                                 submitting

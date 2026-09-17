@@ -157,7 +157,7 @@ export default function EditTestStepDialog({
 
       if (!trimmedAction) {
         setError(
-          'Action is required.',
+          'Test Step action is required.',
         );
 
         return;
@@ -311,7 +311,7 @@ export default function EditTestStepDialog({
             />
 
             <TextField
-              label="Target"
+              label="Target (Optional)"
               multiline
               minRows={2}
               value={target}
@@ -332,7 +332,7 @@ export default function EditTestStepDialog({
             />
 
             <TextField
-              label="Input Value"
+              label="Input Value (Optional)"
               multiline
               minRows={2}
               value={
@@ -355,7 +355,7 @@ export default function EditTestStepDialog({
             />
 
             <TextField
-              label="Expected Result"
+              label="Expected Result (Optional)"
               multiline
               minRows={3}
               value={

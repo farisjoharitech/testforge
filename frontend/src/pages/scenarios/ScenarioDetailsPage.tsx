@@ -200,10 +200,10 @@ export default function ScenarioDetailsPage() {
             </Select>
           </Stack>
         }
-        actions={<Button variant="contained" size="small" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Add Test Case</Button>}
+        actions={<Button variant="contained" size="small" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Create Test Case</Button>}
       >
         {testCases.length === 0 ? (
-          <Card variant="outlined"><CardContent><Stack spacing={1.5} alignItems="center" sx={{ py: 5 }}><Typography fontWeight={700}>No Test Cases yet</Typography><Typography variant="body2" color="text.secondary">Create the first executable Test Case for this Scenario.</Typography><Button variant="contained" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Add Test Case</Button></Stack></CardContent></Card>
+          <Card variant="outlined"><CardContent><Stack spacing={1.5} alignItems="center" sx={{ py: 5 }}><Typography fontWeight={700}>No Test Cases yet</Typography><Typography variant="body2" color="text.secondary">Create the first executable Test Case for this Scenario.</Typography><Button variant="contained" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Create Test Case</Button></Stack></CardContent></Card>
         ) : filteredCases.length === 0 ? (
           <Alert severity="info">No Test Cases match the current search or filters.</Alert>
         ) : (

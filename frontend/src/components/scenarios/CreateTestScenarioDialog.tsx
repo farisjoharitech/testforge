@@ -154,7 +154,7 @@ export default function CreateTestScenarioDialog({
 
             if (!trimmedDescription) {
                 setError(
-                    'Description is required.',
+                    'Scenario description is required.',
                 );
 
                 return;
@@ -283,7 +283,7 @@ export default function CreateTestScenarioDialog({
             maxWidth="sm"
         >
             <DialogTitle>
-                Add Test Scenario
+                Create Test Scenario
             </DialogTitle>
 
             <DialogContent>
@@ -311,7 +311,7 @@ export default function CreateTestScenarioDialog({
                         )}
 
                         <TextField
-                            label="Description"
+                            label="Scenario Description"
                             required
                             fullWidth
                             multiline
@@ -419,7 +419,7 @@ export default function CreateTestScenarioDialog({
                             </InputLabel>
 
                             <Select
-                                label="Priority"
+                                label="Scenario Priority"
                                 value={
                                     priority
                                 }
@@ -469,7 +469,7 @@ export default function CreateTestScenarioDialog({
                             </InputLabel>
 
                             <Select
-                                label="Status"
+                                label="Scenario Status"
                                 value={
                                     status
                                 }

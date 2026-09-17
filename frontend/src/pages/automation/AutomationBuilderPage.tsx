@@ -1491,7 +1491,7 @@ export default function AutomationBuilderPage() {
                       openCreateStep
                     }
                   >
-                    Add Automation Step
+                    Create Automation Step
                   </Button>
                 </Stack>
               </Stack>

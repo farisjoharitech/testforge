@@ -232,7 +232,7 @@ export default function CreateTestCaseDialog({
 
         if (!trimmedName) {
           setError(
-              'Name is required.',
+              'Test Case name is required.',
           );
 
           return;
@@ -406,7 +406,7 @@ export default function CreateTestCaseDialog({
           maxWidth="md"
       >
         <DialogTitle>
-          Add Test Case
+          Create Test Case
         </DialogTitle>
 
         <DialogContent>
@@ -434,7 +434,7 @@ export default function CreateTestCaseDialog({
               )}
 
               <TextField
-                  label="Name"
+                  label="Test Case Name"
                   required
                   fullWidth
                   disabled={
@@ -453,7 +453,7 @@ export default function CreateTestCaseDialog({
               />
 
               <TextField
-                  label="Preconditions"
+                  label="Preconditions (Optional)"
                   fullWidth
                   multiline
                   minRows={3}
@@ -475,7 +475,7 @@ export default function CreateTestCaseDialog({
               />
 
               <TextField
-                  label="Test Data"
+                  label="Test Data (Optional)"
                   fullWidth
                   multiline
                   minRows={3}
@@ -527,7 +527,7 @@ export default function CreateTestCaseDialog({
                 </InputLabel>
 
                 <Select
-                    label="Priority"
+                    label="Test Case Priority"
                     value={priority}
                     disabled={
                       submitting
@@ -654,7 +654,7 @@ export default function CreateTestCaseDialog({
                         }
                     />
                   }
-                  label="Automatable"
+                  label="Automation Eligible"
               />
 
               <FormControl
@@ -665,7 +665,7 @@ export default function CreateTestCaseDialog({
                 </InputLabel>
 
                 <Select
-                    label="Automation Type"
+                    label="Automation Scope"
                     value={
                       automationType
                     }
@@ -719,9 +719,7 @@ export default function CreateTestCaseDialog({
                   severity="info"
                   variant="outlined"
               >
-                Automation Status is
-                managed automatically by
-                TestForge. New
+                Automation Status is read-only and managed automatically by TestForge. New
                 automatable Test Cases
                 start as{' '}
                 <strong>
@@ -742,7 +740,7 @@ export default function CreateTestCaseDialog({
                 </InputLabel>
 
                 <Select
-                    label="Status"
+                    label="Test Case Status"
                     value={status}
                     disabled={
                       submitting

@@ -192,7 +192,7 @@ export default function RequirementDetailsPage() {
         actions={<Button variant="contained" size="small" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Add Scenario</Button>}
       >
         {scenarios.length === 0 ? (
-          <Card variant="outlined"><CardContent><Stack spacing={1.5} alignItems="center" sx={{ py: 5 }}><Typography fontWeight={700}>No Test Scenarios yet</Typography><Typography variant="body2" color="text.secondary">Create the first scenario for this Requirement.</Typography><Button variant="contained" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Add Test Scenario</Button></Stack></CardContent></Card>
+          <Card variant="outlined"><CardContent><Stack spacing={1.5} alignItems="center" sx={{ py: 5 }}><Typography fontWeight={700}>No Test Scenarios yet</Typography><Typography variant="body2" color="text.secondary">Create the first scenario for this Requirement.</Typography><Button variant="contained" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Create Test Scenario</Button></Stack></CardContent></Card>
         ) : filteredScenarios.length === 0 ? (
           <Alert severity="info">No Test Scenarios match the current search or filters.</Alert>
         ) : (

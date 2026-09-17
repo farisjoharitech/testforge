@@ -128,7 +128,7 @@ export default function CreateRequirementDialog({
 
             if (!trimmedDescription) {
                 setError(
-                    'Description is required.',
+                    'Requirement description is required.',
                 );
 
                 return;
@@ -215,7 +215,7 @@ export default function CreateRequirementDialog({
             maxWidth="sm"
         >
             <DialogTitle>
-                Add Requirement
+                Create Requirement
             </DialogTitle>
 
             <DialogContent>
@@ -243,7 +243,7 @@ export default function CreateRequirementDialog({
                         )}
 
                         <TextField
-                            label="Description"
+                            label="Requirement Description"
                             required
                             fullWidth
                             multiline
@@ -257,7 +257,8 @@ export default function CreateRequirementDialog({
                             inputProps={{
                                 maxLength: 1000,
                             }}
-                            placeholder="Describe the requirement"
+                            placeholder="Describe the behavior, capability, or constraint that must be verified."
+                            helperText="Required. Keep the requirement specific enough to design Test Scenarios against it."
                             onChange={(
                                 event,
                             ) =>
@@ -279,7 +280,7 @@ export default function CreateRequirementDialog({
                                 value={
                                     priority
                                 }
-                                label="Priority"
+                                label="Requirement Priority"
                                 disabled={
                                     submitting
                                 }
@@ -329,7 +330,7 @@ export default function CreateRequirementDialog({
                                 value={
                                     status
                                 }
-                                label="Status"
+                                label="Requirement Status"
                                 disabled={
                                     submitting
                                 }

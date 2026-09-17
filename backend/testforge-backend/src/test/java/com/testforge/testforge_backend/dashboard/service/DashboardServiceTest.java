@@ -13,6 +13,9 @@ import com.testforge.testforge_backend.domain.enums.AutomationType;
 import com.testforge.testforge_backend.repository.AutomationExecutionRepository;
 import com.testforge.testforge_backend.repository.AutomationScriptRepository;
 import com.testforge.testforge_backend.repository.TestCaseRepository;
+import com.testforge.testforge_backend.repository.ProjectRepository;
+import com.testforge.testforge_backend.repository.AutomationRunRepository;
+import com.testforge.testforge_backend.projectmonitoring.service.ProjectMonitoringService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,6 +41,10 @@ class DashboardServiceTest {
     private DashboardService
             dashboardService;
 
+    private ProjectRepository projectRepository;
+    private ProjectMonitoringService projectMonitoringService;
+    private AutomationRunRepository automationRunRepository;
+
     @BeforeEach
     void setUp() {
 
@@ -56,11 +63,18 @@ class DashboardServiceTest {
                         AutomationExecutionRepository.class
                 );
 
+        projectRepository = mock(ProjectRepository.class);
+        projectMonitoringService = mock(ProjectMonitoringService.class);
+        automationRunRepository = mock(AutomationRunRepository.class);
+
         dashboardService =
                 new DashboardService(
                         testCaseRepository,
                         automationScriptRepository,
-                        automationExecutionRepository
+                        automationExecutionRepository,
+                        projectRepository,
+                        projectMonitoringService,
+                        automationRunRepository
                 );
     }
 

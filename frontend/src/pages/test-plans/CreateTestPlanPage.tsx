@@ -50,6 +50,8 @@ import type {
     TestPlanStatus,
 } from '../../types/testPlan';
 
+import { humanizeEnumValue } from '../../utils/uiText';
+
 const statuses:
     TestPlanStatus[] = [
     'DRAFT',
@@ -241,7 +243,7 @@ export default function CreateTestPlanPage() {
 
             if (!trimmedName) {
                 setError(
-                    'Name is required.',
+                    'Test Plan name is required.',
                 );
                 return;
             }
@@ -418,7 +420,7 @@ export default function CreateTestPlanPage() {
                             </TextField>
 
                             <TextField
-                                label="Name"
+                                label="Test Plan Name"
                                 required
                                 value={name}
                                 disabled={
@@ -436,7 +438,7 @@ export default function CreateTestPlanPage() {
                             />
 
                             <TextField
-                                label="Version"
+                                label="Version (Optional)"
                                 value={version}
                                 disabled={
                                     submitting
@@ -453,7 +455,7 @@ export default function CreateTestPlanPage() {
                             />
 
                             <TextField
-                                label="Application"
+                                label="Application (Optional)"
                                 value={
                                     application
                                 }
@@ -472,7 +474,7 @@ export default function CreateTestPlanPage() {
                             />
 
                             <TextField
-                                label="Environment"
+                                label="Environment (Optional)"
                                 value={
                                     environment
                                 }
@@ -491,7 +493,7 @@ export default function CreateTestPlanPage() {
                             />
 
                             <TextField
-                                label="Prepared By"
+                                label="Prepared By (Optional)"
                                 value={
                                     preparedBy
                                 }
@@ -511,7 +513,7 @@ export default function CreateTestPlanPage() {
 
                             <TextField
                                 select
-                                label="Status"
+                                label="Test Plan Status"
                                 value={status}
                                 disabled={
                                     submitting
@@ -533,7 +535,7 @@ export default function CreateTestPlanPage() {
                                                 option
                                             }
                                         >
-                                            {option}
+                                            {humanizeEnumValue(option)}
                                         </MenuItem>
                                     ),
                                 )}
@@ -565,7 +567,7 @@ export default function CreateTestPlanPage() {
                                                 option
                                             }
                                         >
-                                            {option}
+                                            {humanizeEnumValue(option)}
                                         </MenuItem>
                                     ),
                                 )}

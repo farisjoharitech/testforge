@@ -43,6 +43,8 @@ import type {
   TestPlanStatus,
 } from '../../types/testPlan';
 
+import { humanizeEnumValue } from '../../utils/uiText';
+
 interface EditTestPlanDialogProps {
   open: boolean;
   testPlan: TestPlan;
@@ -251,7 +253,7 @@ export default function EditTestPlanDialog({
 
         if (!trimmedName) {
           setError(
-              'Name is required.',
+              'Test Plan name is required.',
           );
           return;
         }
@@ -393,7 +395,7 @@ export default function EditTestPlanDialog({
               </TextField>
 
               <TextField
-                  label="Name"
+                  label="Test Plan Name"
                   required
                   value={name}
                   disabled={
@@ -411,7 +413,7 @@ export default function EditTestPlanDialog({
               />
 
               <TextField
-                  label="Version"
+                  label="Version (Optional)"
                   value={version}
                   disabled={
                     submitting
@@ -428,7 +430,7 @@ export default function EditTestPlanDialog({
               />
 
               <TextField
-                  label="Application"
+                  label="Application (Optional)"
                   value={
                     application
                   }
@@ -447,7 +449,7 @@ export default function EditTestPlanDialog({
               />
 
               <TextField
-                  label="Environment"
+                  label="Environment (Optional)"
                   value={
                     environment
                   }
@@ -466,7 +468,7 @@ export default function EditTestPlanDialog({
               />
 
               <TextField
-                  label="Prepared By"
+                  label="Prepared By (Optional)"
                   value={
                     preparedBy
                   }
@@ -486,7 +488,7 @@ export default function EditTestPlanDialog({
 
               <TextField
                   select
-                  label="Status"
+                  label="Test Plan Status"
                   value={status}
                   disabled={
                     submitting
@@ -508,7 +510,7 @@ export default function EditTestPlanDialog({
                               option
                             }
                         >
-                          {option}
+                          {humanizeEnumValue(option)}
                         </MenuItem>
                     ),
                 )}
@@ -540,7 +542,7 @@ export default function EditTestPlanDialog({
                               option
                             }
                         >
-                          {option}
+                          {humanizeEnumValue(option)}
                         </MenuItem>
                     ),
                 )}

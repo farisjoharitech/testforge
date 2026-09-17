@@ -145,7 +145,7 @@ export default function CreateTestStepDialog({
 
         if (!trimmedAction) {
           setError(
-              'Action is required.',
+              'Test Step action is required.',
           );
 
           return;
@@ -279,7 +279,7 @@ export default function CreateTestStepDialog({
           maxWidth="md"
       >
         <DialogTitle>
-          Add Test Step
+          Create Test Step
         </DialogTitle>
 
         <DialogContent>
@@ -334,7 +334,7 @@ export default function CreateTestStepDialog({
               />
 
               <TextField
-                  label="Target"
+                  label="Target (Optional)"
                   fullWidth
                   multiline
                   minRows={2}
@@ -361,7 +361,7 @@ export default function CreateTestStepDialog({
               />
 
               <TextField
-                  label="Input Value"
+                  label="Input Value (Optional)"
                   fullWidth
                   multiline
                   minRows={2}
@@ -388,7 +388,7 @@ export default function CreateTestStepDialog({
               />
 
               <TextField
-                  label="Expected Result"
+                  label="Expected Result (Optional)"
                   fullWidth
                   multiline
                   minRows={3}

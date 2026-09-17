@@ -795,7 +795,7 @@ export default function TestDesignWorkspacePage() {
       </Card>
 
       {requirements.length === 0 && (
-        <Card variant="outlined"><CardContent><Stack py={5} spacing={2} alignItems="center"><Typography variant="h6" fontWeight={700}>No Requirements</Typography><Typography color="text.secondary">Create the first Requirement and build the complete test design here.</Typography><Button variant="contained" startIcon={<Add />} onClick={() => setRequirements([newRequirement()])}>Add Requirement</Button></Stack></CardContent></Card>
+        <Card variant="outlined"><CardContent><Stack py={5} spacing={2} alignItems="center"><Typography variant="h6" fontWeight={700}>No Requirements</Typography><Typography color="text.secondary">Create the first Requirement and build the complete test design here.</Typography><Button variant="contained" startIcon={<Add />} onClick={() => setRequirements([newRequirement()])}>Create Requirement</Button></Stack></CardContent></Card>
       )}
 
       {requirements.map((requirement, requirementIndex) => (
@@ -810,8 +810,8 @@ export default function TestDesignWorkspacePage() {
               </Stack>
               <TextField required multiline minRows={2} label="Requirement Description" value={requirement.description} onChange={(e) => updateRequirement(requirement.key, { description: e.target.value })} />
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField select label="Priority" value={requirement.priority} sx={{ minWidth: 160 }} onChange={(e) => updateRequirement(requirement.key, { priority: e.target.value as RequirementPriority })}>{REQUIREMENT_PRIORITIES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
-                <TextField select label="Status" value={requirement.status} sx={{ minWidth: 160 }} onChange={(e) => updateRequirement(requirement.key, { status: e.target.value as RequirementStatus })}>{REQUIREMENT_STATUSES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
+                <TextField select label="Requirement Priority" value={requirement.priority} sx={{ minWidth: 160 }} onChange={(e) => updateRequirement(requirement.key, { priority: e.target.value as RequirementPriority })}>{REQUIREMENT_PRIORITIES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
+                <TextField select label="Requirement Status" value={requirement.status} sx={{ minWidth: 160 }} onChange={(e) => updateRequirement(requirement.key, { status: e.target.value as RequirementStatus })}>{REQUIREMENT_STATUSES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
               </Stack>
               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                 <Button size="small" startIcon={<Add />} onClick={() => addScenario(requirement.key)}>Scenario</Button>
@@ -831,8 +831,8 @@ export default function TestDesignWorkspacePage() {
                       <TextField required multiline minRows={2} label="Scenario Description" value={scenario.description} onChange={(e) => updateScenario(requirement.key, scenario.key, { description: e.target.value })} />
                       <Stack direction={{ xs: 'column', lg: 'row' }} spacing={2}>
                         <TextField select label="Test Type" value={scenario.testType} sx={{ minWidth: 180 }} onChange={(e) => updateScenario(requirement.key, scenario.key, { testType: e.target.value as ScenarioTestType })}>{TEST_TYPES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
-                        <TextField select label="Priority" value={scenario.priority} sx={{ minWidth: 160 }} onChange={(e) => updateScenario(requirement.key, scenario.key, { priority: e.target.value as TestScenarioPriority })}>{SCENARIO_PRIORITIES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
-                        <TextField select label="Status" value={scenario.status} sx={{ minWidth: 160 }} onChange={(e) => updateScenario(requirement.key, scenario.key, { status: e.target.value as TestScenarioStatus })}>{SCENARIO_STATUSES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
+                        <TextField select label="Scenario Priority" value={scenario.priority} sx={{ minWidth: 160 }} onChange={(e) => updateScenario(requirement.key, scenario.key, { priority: e.target.value as TestScenarioPriority })}>{SCENARIO_PRIORITIES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
+                        <TextField select label="Scenario Status" value={scenario.status} sx={{ minWidth: 160 }} onChange={(e) => updateScenario(requirement.key, scenario.key, { status: e.target.value as TestScenarioStatus })}>{SCENARIO_STATUSES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
                       </Stack>
                       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                         <Button size="small" startIcon={<Add />} onClick={() => addTestCase(requirement.key, scenario.key)}>Test Case</Button>
@@ -854,9 +854,9 @@ export default function TestDesignWorkspacePage() {
                               <TextField multiline minRows={2} label="Test Data" value={testCase.testData} onChange={(e) => updateTestCase(requirement.key, scenario.key, testCase.key, { testData: e.target.value })} />
                               <TextField required multiline minRows={2} label="Expected Result" value={testCase.expectedResult} onChange={(e) => updateTestCase(requirement.key, scenario.key, testCase.key, { expectedResult: e.target.value })} />
                               <Stack direction={{ xs: 'column', lg: 'row' }} spacing={2}>
-                                <TextField select label="Priority" value={testCase.priority} sx={{ minWidth: 150 }} onChange={(e) => updateTestCase(requirement.key, scenario.key, testCase.key, { priority: e.target.value as TestCasePriority })}>{TEST_CASE_PRIORITIES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
+                                <TextField select label="Test Case Priority" value={testCase.priority} sx={{ minWidth: 150 }} onChange={(e) => updateTestCase(requirement.key, scenario.key, testCase.key, { priority: e.target.value as TestCasePriority })}>{TEST_CASE_PRIORITIES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
                                 <TextField select label="Test Type" value={testCase.testType} sx={{ minWidth: 180 }} onChange={(e) => updateTestCase(requirement.key, scenario.key, testCase.key, { testType: e.target.value as TestCaseTestType })}>{TEST_TYPES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
-                                <TextField select label="Status" value={testCase.status} sx={{ minWidth: 150 }} onChange={(e) => updateTestCase(requirement.key, scenario.key, testCase.key, { status: e.target.value as TestCaseStatus })}>{TEST_CASE_STATUSES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
+                                <TextField select label="Test Case Status" value={testCase.status} sx={{ minWidth: 150 }} onChange={(e) => updateTestCase(requirement.key, scenario.key, testCase.key, { status: e.target.value as TestCaseStatus })}>{TEST_CASE_STATUSES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
                               </Stack>
                               <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'stretch', md: 'center' }}>
                                 <FormControlLabel
@@ -867,9 +867,9 @@ export default function TestDesignWorkspacePage() {
                                       automationType: checked ? (testCase.automationType === 'MANUAL' ? 'UI' : testCase.automationType) : 'MANUAL',
                                     });
                                   }} />}
-                                  label="Automatable"
+                                  label="Automation Eligible"
                                 />
-                                <TextField select label="Automation Type" value={testCase.automationType} disabled={!testCase.automatable} sx={{ minWidth: 180 }} onChange={(e) => updateTestCase(requirement.key, scenario.key, testCase.key, { automationType: e.target.value as AutomationType })}>
+                                <TextField select label="Automation Scope" value={testCase.automationType} disabled={!testCase.automatable} sx={{ minWidth: 180 }} onChange={(e) => updateTestCase(requirement.key, scenario.key, testCase.key, { automationType: e.target.value as AutomationType })}>
                                   {AUTOMATION_TYPES.filter((value) => testCase.automatable ? value !== 'MANUAL' : value === 'MANUAL').map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}
                                 </TextField>
                               </Stack>
@@ -891,9 +891,9 @@ export default function TestDesignWorkspacePage() {
                                         {step.isNew && <Chip size="small" color="info" label="New" />}
                                       </Stack>
                                       <TextField required multiline minRows={2} label="Action" value={step.action} onChange={(e) => updateStep(requirement.key, scenario.key, testCase.key, step.key, { action: e.target.value })} />
-                                      <TextField label="Target" value={step.target} onChange={(e) => updateStep(requirement.key, scenario.key, testCase.key, step.key, { target: e.target.value })} />
-                                      <TextField multiline minRows={2} label="Input Value" value={step.inputValue} onChange={(e) => updateStep(requirement.key, scenario.key, testCase.key, step.key, { inputValue: e.target.value })} />
-                                      <TextField multiline minRows={2} label="Expected Result" value={step.expectedResult} onChange={(e) => updateStep(requirement.key, scenario.key, testCase.key, step.key, { expectedResult: e.target.value })} />
+                                      <TextField label="Target (Optional)" value={step.target} onChange={(e) => updateStep(requirement.key, scenario.key, testCase.key, step.key, { target: e.target.value })} />
+                                      <TextField multiline minRows={2} label="Input Value (Optional)" value={step.inputValue} onChange={(e) => updateStep(requirement.key, scenario.key, testCase.key, step.key, { inputValue: e.target.value })} />
+                                      <TextField multiline minRows={2} label="Expected Result (Optional)" value={step.expectedResult} onChange={(e) => updateStep(requirement.key, scenario.key, testCase.key, step.key, { expectedResult: e.target.value })} />
                                       <Stack direction="row" spacing={1}>
                                         <Button size="small" startIcon={<ContentCopy />} onClick={() => duplicateStep(requirement.key, scenario.key, testCase.key, step.key)}>Duplicate</Button>
                                         <Button size="small" color="error" startIcon={<Delete />} onClick={() => deleteStep(requirement.key, scenario.key, testCase.key, step)}>Delete</Button>
