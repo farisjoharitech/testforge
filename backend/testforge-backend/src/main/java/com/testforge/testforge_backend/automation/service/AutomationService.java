@@ -239,6 +239,18 @@ public class AutomationService {
                 testStep
         );
 
+        if (automationStepRepository
+                .existsByAutomationScriptIdAndTestStepId(
+                        automationScriptId,
+                        testStep.getId()
+                )) {
+
+            throw new AutomationConflictException(
+                    "Source Test Step is already mapped in this Automation Script: "
+                            + testStep.getTestStepId()
+            );
+        }
+
         NormalizedAutomationAction action =
                 buildNormalizedAction(
                         testStep,

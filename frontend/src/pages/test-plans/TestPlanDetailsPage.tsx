@@ -1,5 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { Add, ArrowForward, Delete, Edit, Refresh } from '@mui/icons-material';
+import { AccountTree, Add, ArrowForward, Delete, Edit, Refresh } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -144,7 +144,17 @@ export default function TestPlanDetailsPage() {
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
             <Chip size="small" label={testPlan.status} color={statusColor(testPlan.status)} variant="outlined" />
             <Chip size="small" label={testPlan.approvalStatus} color={statusColor(testPlan.approvalStatus)} variant="outlined" />
-            <Button size="small" startIcon={<Refresh />} disabled={refreshing} onClick={() => void loadPage(true)}>Refresh</Button>
+            <Button
+            size="small"
+            variant="contained"
+            startIcon={<AccountTree />}
+            onClick={() =>
+              navigate(`/test-plans/${encodeURIComponent(testPlan.testPlanId)}/design`)
+            }
+          >
+            Design Workspace
+          </Button>
+          <Button size="small" startIcon={<Refresh />} disabled={refreshing} onClick={() => void loadPage(true)}>Refresh</Button>
             <Button size="small" startIcon={<Edit />} onClick={() => setEditDialogOpen(true)}>Edit</Button>
             <Button size="small" color="error" startIcon={<Delete />} onClick={() => setDeleteDialogOpen(true)}>Delete</Button>
           </Stack>

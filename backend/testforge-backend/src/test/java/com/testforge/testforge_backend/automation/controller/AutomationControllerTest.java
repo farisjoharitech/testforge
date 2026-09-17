@@ -7,6 +7,7 @@ import com.testforge.testforge_backend.automation.exception.AutomationExceptionH
 import com.testforge.testforge_backend.automation.exception.AutomationNotFoundException;
 import com.testforge.testforge_backend.automation.model.AutomationActionType;
 import com.testforge.testforge_backend.automation.model.SelectorStrategy;
+import com.testforge.testforge_backend.automation.service.AutomationExecutionLogStreamService;
 import com.testforge.testforge_backend.automation.service.AutomationExecutionService;
 import com.testforge.testforge_backend.automation.service.AutomationGenerationService;
 import com.testforge.testforge_backend.automation.service.AutomationService;
@@ -42,6 +43,8 @@ class AutomationControllerTest {
 
     private AutomationExecutionService automationExecutionService;
 
+    private AutomationExecutionLogStreamService automationExecutionLogStreamService;
+
     private AutomationController automationController;
 
 
@@ -63,11 +66,17 @@ class AutomationControllerTest {
                         AutomationExecutionService.class
                 );
 
+        automationExecutionLogStreamService =
+                mock(
+                        AutomationExecutionLogStreamService.class
+                );
+
         automationController =
                 new AutomationController(
                         automationService,
                         automationGenerationService,
-                        automationExecutionService
+                        automationExecutionService,
+                        automationExecutionLogStreamService
                 );
 
         mockMvc =
@@ -80,6 +89,7 @@ class AutomationControllerTest {
                         )
                         .build();
     }
+
 
     @Test
     void shouldCreateAutomationScript()
@@ -161,6 +171,7 @@ class AutomationControllerTest {
                 );
     }
 
+
     @Test
     void shouldGetAutomationScriptByTestCase()
             throws Exception {
@@ -209,6 +220,7 @@ class AutomationControllerTest {
                         )
                 );
     }
+
 
     @Test
     void shouldCreateAutomationStep()
@@ -311,6 +323,7 @@ class AutomationControllerTest {
                 );
     }
 
+
     @Test
     void shouldGetAutomationStepsInServiceOrder()
             throws Exception {
@@ -393,6 +406,7 @@ class AutomationControllerTest {
                 );
     }
 
+
     @Test
     void shouldUpdateAutomationStep()
             throws Exception {
@@ -472,6 +486,7 @@ class AutomationControllerTest {
                 );
     }
 
+
     @Test
     void shouldDeleteAutomationStep()
             throws Exception {
@@ -491,6 +506,7 @@ class AutomationControllerTest {
                 32L
         );
     }
+
 
     @Test
     void shouldReturn404WhenAutomationScriptNotFound()
@@ -529,6 +545,7 @@ class AutomationControllerTest {
                         )
                 );
     }
+
 
     @Test
     void shouldReturn409ForConflict()
@@ -579,6 +596,7 @@ class AutomationControllerTest {
                         )
                 );
     }
+
 
     @Test
     void shouldReturn400ForInvalidCreateScriptRequest()

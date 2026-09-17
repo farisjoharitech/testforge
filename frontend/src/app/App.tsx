@@ -25,6 +25,9 @@ import CreateTestPlanPage
 import TestPlanDetailsPage
     from '../pages/test-plans/TestPlanDetailsPage';
 
+import TestDesignWorkspacePage
+    from '../pages/test-plans/TestDesignWorkspacePage';
+
 import RequirementDetailsPage
     from '../pages/requirements/RequirementDetailsPage';
 
@@ -115,6 +118,13 @@ export default function App() {
                     path="/test-plans/:testPlanId"
                     element={
                         <TestPlanDetailsPage />
+                    }
+                />
+
+                <Route
+                    path="/test-plans/:testPlanId/design"
+                    element={
+                        <TestDesignWorkspacePage />
                     }
                 />
 

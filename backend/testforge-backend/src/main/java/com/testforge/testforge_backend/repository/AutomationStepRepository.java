@@ -22,6 +22,11 @@ public interface AutomationStepRepository
             Integer stepOrder
     );
 
+    boolean existsByAutomationScriptIdAndTestStepId(
+            Long automationScriptId,
+            Long testStepId
+    );
+
     List<AutomationStep> findByAutomationScriptIdOrderByStepOrderAsc(
             Long automationScriptId
     );

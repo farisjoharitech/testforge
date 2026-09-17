@@ -36,6 +36,13 @@ import java.time.LocalDateTime;
                                 "automation_script_id",
                                 "step_order"
                         }
+                ),
+                @UniqueConstraint(
+                        name = "uq_automation_step_script_test_step",
+                        columnNames = {
+                                "automation_script_id",
+                                "test_step_id"
+                        }
                 )
         }
 )

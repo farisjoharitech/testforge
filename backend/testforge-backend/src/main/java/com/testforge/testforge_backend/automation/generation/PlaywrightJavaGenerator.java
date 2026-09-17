@@ -7,8 +7,8 @@ import com.testforge.testforge_backend.automation.model.SelectorStrategy;
 import com.testforge.testforge_backend.automation.validation.AutomationValidationException;
 import org.springframework.stereotype.Component;
 
-import java.util.Base64;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -199,7 +199,7 @@ public class PlaywrightJavaGenerator {
                             + " START - "
                             + step.getActionType()
                             + " | "
-                            + escapeJavaString(step.getAutomationStepId())
+                            + escapeJava(step.getAutomationStepId())
                             + "\");\n"
             );
 
@@ -699,15 +699,35 @@ public class PlaywrightJavaGenerator {
                                     + ");"
                     );
 
-            case API_GET -> apiRequest("get", step);
+            case API_GET ->
+                    apiRequest(
+                            "get",
+                            step
+                    );
 
-            case API_DELETE -> apiRequest("delete", step);
+            case API_DELETE ->
+                    apiRequest(
+                            "delete",
+                            step
+                    );
 
-            case API_POST -> apiRequest("post", step);
+            case API_POST ->
+                    apiRequest(
+                            "post",
+                            step
+                    );
 
-            case API_PUT -> apiRequest("put", step);
+            case API_PUT ->
+                    apiRequest(
+                            "put",
+                            step
+                    );
 
-            case API_PATCH -> apiRequest("patch", step);
+            case API_PATCH ->
+                    apiRequest(
+                            "patch",
+                            step
+                    );
 
             case ASSERT_API_STATUS -> {
 
@@ -741,29 +761,117 @@ public class PlaywrightJavaGenerator {
                     );
 
             case ASSERT_API_BODY_EQUALS ->
-                    line("assertNotNull(apiResponse, \"No API response is available for body assertion\");")
-                            + line("assertEquals(" + runtimeValue(requireExpected(step)) + ", apiResponse.text());");
+                    line(
+                            "assertNotNull(apiResponse, \"No API response is available for body assertion\");"
+                    )
+                            + line(
+                            "assertEquals("
+                                    + runtimeValue(
+                                    requireExpected(
+                                            step
+                                    )
+                            )
+                                    + ", apiResponse.text());"
+                    );
 
             case ASSERT_API_JSON_FIELD_EQUALS -> {
-                String suffix = String.valueOf(step.getStepOrder());
-                yield line("assertNotNull(apiResponse, \"No API response is available for JSON assertion\");")
-                        + line("JsonNode apiJson" + suffix + " = new ObjectMapper().readTree(apiResponse.text());")
-                        + line("JsonNode apiJsonValue" + suffix + " = jsonPath(apiJson" + suffix + ", " + quote(requireTarget(step)) + ");")
-                        + line("assertNotNull(apiJsonValue" + suffix + ", \"JSON path not found: " + escapeJava(requireTarget(step)) + "\");")
-                        + line("assertEquals(" + runtimeValue(requireExpected(step)) + ", apiJsonValue" + suffix + ".isTextual() ? apiJsonValue" + suffix + ".asText() : apiJsonValue" + suffix + ".toString());");
+
+                String suffix =
+                        String.valueOf(
+                                step.getStepOrder()
+                        );
+
+                yield line(
+                        "assertNotNull(apiResponse, \"No API response is available for JSON assertion\");"
+                )
+                        + line(
+                        "JsonNode apiJson"
+                                + suffix
+                                + " = new ObjectMapper().readTree(apiResponse.text());"
+                )
+                        + line(
+                        "JsonNode apiJsonValue"
+                                + suffix
+                                + " = jsonPath(apiJson"
+                                + suffix
+                                + ", "
+                                + quote(requireTarget(step))
+                                + ");"
+                )
+                        + line(
+                        "assertNotNull(apiJsonValue"
+                                + suffix
+                                + ", \"JSON path not found: "
+                                + escapeJava(requireTarget(step))
+                                + "\");"
+                )
+                        + line(
+                        "assertEquals("
+                                + runtimeValue(requireExpected(step))
+                                + ", apiJsonValue"
+                                + suffix
+                                + ".isTextual() ? apiJsonValue"
+                                + suffix
+                                + ".asText() : apiJsonValue"
+                                + suffix
+                                + ".toString());"
+                );
             }
 
             case ASSERT_API_HEADER ->
-                    line("assertNotNull(apiResponse, \"No API response is available for header assertion\");")
-                            + line("assertEquals(" + runtimeValue(requireExpected(step)) + ", apiResponse.headers().get(" + runtimeValue(requireTarget(step)) + "));");
+                    line(
+                            "assertNotNull(apiResponse, \"No API response is available for header assertion\");"
+                    )
+                            + line(
+                            "assertEquals("
+                                    + runtimeValue(requireExpected(step))
+                                    + ", apiResponse.headers().get("
+                                    + runtimeValue(requireTarget(step))
+                                    + "));"
+                    );
 
             case EXTRACT_API_JSON_VALUE -> {
-                String suffix = String.valueOf(step.getStepOrder());
-                yield line("assertNotNull(apiResponse, \"No API response is available for JSON extraction\");")
-                        + line("JsonNode extractedJson" + suffix + " = new ObjectMapper().readTree(apiResponse.text());")
-                        + line("JsonNode extractedValue" + suffix + " = jsonPath(extractedJson" + suffix + ", " + quote(requireTarget(step)) + ");")
-                        + line("assertNotNull(extractedValue" + suffix + ", \"JSON path not found: " + escapeJava(requireTarget(step)) + "\");")
-                        + line("runtimeData.put(" + quote(requireInput(step)) + ", extractedValue" + suffix + ".isTextual() ? extractedValue" + suffix + ".asText() : extractedValue" + suffix + ".toString());");
+
+                String suffix =
+                        String.valueOf(
+                                step.getStepOrder()
+                        );
+
+                yield line(
+                        "assertNotNull(apiResponse, \"No API response is available for JSON extraction\");"
+                )
+                        + line(
+                        "JsonNode extractedJson"
+                                + suffix
+                                + " = new ObjectMapper().readTree(apiResponse.text());"
+                )
+                        + line(
+                        "JsonNode extractedValue"
+                                + suffix
+                                + " = jsonPath(extractedJson"
+                                + suffix
+                                + ", "
+                                + quote(requireTarget(step))
+                                + ");"
+                )
+                        + line(
+                        "assertNotNull(extractedValue"
+                                + suffix
+                                + ", \"JSON path not found: "
+                                + escapeJava(requireTarget(step))
+                                + "\");"
+                )
+                        + line(
+                        "runtimeData.put("
+                                + quote(requireInput(step))
+                                + ", extractedValue"
+                                + suffix
+                                + ".isTextual() ? extractedValue"
+                                + suffix
+                                + ".asText() : extractedValue"
+                                + suffix
+                                + ".toString());"
+                );
             }
         };
     }
@@ -772,187 +880,590 @@ public class PlaywrightJavaGenerator {
             String method,
             AutomationStep step
     ) {
-        StringBuilder code = new StringBuilder();
-        ApiConfig config = parseApiConfig(step.getApiConfig());
 
-        String suffix = String.valueOf(step.getStepOrder());
-        String optionsVar = "apiOptions" + suffix;
-        String formVar = "apiForm" + suffix;
-        code.append(line("RequestOptions " + optionsVar + " = RequestOptions.create();"));
+        StringBuilder code =
+                new StringBuilder();
 
-        for (Map.Entry<String, String> header : config.headers().entrySet()) {
-            code.append(line(
-                    optionsVar + ".setHeader(" + quote(header.getKey()) + ", resolveRuntimeValue("
-                            + quote(header.getValue()) + ", runtimeData));"
-            ));
+        ApiConfig config =
+                parseApiConfig(
+                        step.getApiConfig()
+                );
+
+        String suffix =
+                String.valueOf(
+                        step.getStepOrder()
+                );
+
+        String optionsVar =
+                "apiOptions"
+                        + suffix;
+
+        String formVar =
+                "apiForm"
+                        + suffix;
+
+        code.append(
+                line(
+                        "RequestOptions "
+                                + optionsVar
+                                + " = RequestOptions.create();"
+                )
+        );
+
+        for (
+                Map.Entry<String, String> header :
+                config.headers().entrySet()
+        ) {
+
+            code.append(
+                    line(
+                            optionsVar
+                                    + ".setHeader("
+                                    + quote(header.getKey())
+                                    + ", resolveRuntimeValue("
+                                    + quote(header.getValue())
+                                    + ", runtimeData));"
+                    )
+            );
         }
 
-        for (Map.Entry<String, String> query : config.queryParams().entrySet()) {
-            code.append(line(
-                    optionsVar + ".setQueryParam(" + quote(query.getKey()) + ", resolveRuntimeValue("
-                            + quote(query.getValue()) + ", runtimeData));"
-            ));
+        for (
+                Map.Entry<String, String> query :
+                config.queryParams().entrySet()
+        ) {
+
+            code.append(
+                    line(
+                            optionsVar
+                                    + ".setQueryParam("
+                                    + quote(query.getKey())
+                                    + ", resolveRuntimeValue("
+                                    + quote(query.getValue())
+                                    + ", runtimeData));"
+                    )
+            );
         }
 
-        ApiAuth auth = config.auth();
-        switch (auth.type()) {
+        ApiAuth auth =
+                config.auth();
+
+        switch (
+                auth.type()
+        ) {
+
             case "NONE" -> {
                 // No authentication.
             }
-            case "BASIC" -> {
-                String username = requireConfigValue(auth.username(), "BASIC username");
-                String secretRef = requireSecretReference(auth.passwordSecretRef(), "BASIC passwordSecretRef");
-                String credentialsVar = "basicCredentials" + suffix;
-                code.append(line(
-                        "String " + credentialsVar + " = resolveRuntimeValue(" + quote(username)
-                                + ", runtimeData) + \":\" + resolveSecretReference(" + quote(secretRef) + ");"
-                ));
-                code.append(line(
-                        optionsVar + ".setHeader(\"Authorization\", \"Basic \" + Base64.getEncoder().encodeToString("
-                                + credentialsVar + ".getBytes(StandardCharsets.UTF_8)));"
-                ));
-            }
-            case "BEARER_TOKEN" -> {
-                String secretRef = requireSecretReference(auth.tokenSecretRef(), "Bearer tokenSecretRef");
-                code.append(line(
-                        optionsVar + ".setHeader(\"Authorization\", \"Bearer \" + resolveSecretReference("
-                                + quote(secretRef) + "));"
-                ));
-            }
-            case "API_KEY" -> {
-                String keyName = requireConfigValue(auth.keyName(), "API key name");
-                String secretRef = requireSecretReference(auth.valueSecretRef(), "API key valueSecretRef");
-                String location = auth.location() == null ? "HEADER" : auth.location().toUpperCase(Locale.ROOT);
-                if ("HEADER".equals(location)) {
-                    code.append(line(
-                            optionsVar + ".setHeader(" + quote(keyName) + ", resolveSecretReference("
-                                    + quote(secretRef) + "));"
-                    ));
-                } else if ("QUERY".equals(location)) {
-                    code.append(line(
-                            optionsVar + ".setQueryParam(" + quote(keyName) + ", resolveSecretReference("
-                                    + quote(secretRef) + "));"
-                    ));
-                } else {
-                    throw new AutomationValidationException("API key location must be HEADER or QUERY");
-                }
-            }
-            default -> throw new AutomationValidationException(
-                    "Unsupported API authentication type: " + auth.type()
-            );
-        }
 
-        String body = config.body();
-        if (body != null && !body.isBlank() && !"NONE".equals(config.bodyType())) {
-            switch (config.bodyType()) {
-                case "JSON" -> {
-                    code.append(line(optionsVar + ".setHeader(\"Content-Type\", \"application/json\");"));
-                    code.append(line(optionsVar + ".setData(resolveRuntimeValue(" + quote(body) + ", runtimeData));"));
-                }
-                case "TEXT" -> {
-                    code.append(line(optionsVar + ".setHeader(\"Content-Type\", \"text/plain\");"));
-                    code.append(line(optionsVar + ".setData(resolveRuntimeValue(" + quote(body) + ", runtimeData));"));
-                }
-                case "FORM" -> {
-                    Map<String, String> form = parseStringMap(body, "API form body");
-                    code.append(line("FormData " + formVar + " = FormData.create();"));
-                    for (Map.Entry<String, String> entry : form.entrySet()) {
-                        code.append(line(formVar + ".set(" + quote(entry.getKey()) + ", resolveRuntimeValue("
-                                + quote(entry.getValue()) + ", runtimeData));"));
-                    }
-                    code.append(line(optionsVar + ".setForm(" + formVar + ");"));
-                }
-                default -> throw new AutomationValidationException(
-                        "Unsupported API body type: " + config.bodyType()
+            case "BASIC" -> {
+
+                String username =
+                        requireConfigValue(
+                                auth.username(),
+                                "BASIC username"
+                        );
+
+                String secretRef =
+                        requireSecretReference(
+                                auth.passwordSecretRef(),
+                                "BASIC passwordSecretRef"
+                        );
+
+                String credentialsVar =
+                        "basicCredentials"
+                                + suffix;
+
+                code.append(
+                        line(
+                                "String "
+                                        + credentialsVar
+                                        + " = resolveRuntimeValue("
+                                        + quote(username)
+                                        + ", runtimeData) + \":\" + resolveSecretReference("
+                                        + quote(secretRef)
+                                        + ");"
+                        )
+                );
+
+                code.append(
+                        line(
+                                optionsVar
+                                        + ".setHeader(\"Authorization\", \"Basic \" + Base64.getEncoder().encodeToString("
+                                        + credentialsVar
+                                        + ".getBytes(StandardCharsets.UTF_8)));"
+                        )
                 );
             }
+
+            case "BEARER_TOKEN" -> {
+
+                String secretRef =
+                        requireSecretReference(
+                                auth.tokenSecretRef(),
+                                "Bearer tokenSecretRef"
+                        );
+
+                code.append(
+                        line(
+                                optionsVar
+                                        + ".setHeader(\"Authorization\", \"Bearer \" + resolveSecretReference("
+                                        + quote(secretRef)
+                                        + "));"
+                        )
+                );
+            }
+
+            case "API_KEY" -> {
+
+                String keyName =
+                        requireConfigValue(
+                                auth.keyName(),
+                                "API key name"
+                        );
+
+                String secretRef =
+                        requireSecretReference(
+                                auth.valueSecretRef(),
+                                "API key valueSecretRef"
+                        );
+
+                String location =
+                        auth.location() == null
+                                ? "HEADER"
+                                : auth.location()
+                                .toUpperCase(
+                                        Locale.ROOT
+                                );
+
+                if (
+                        "HEADER".equals(
+                                location
+                        )
+                ) {
+
+                    code.append(
+                            line(
+                                    optionsVar
+                                            + ".setHeader("
+                                            + quote(keyName)
+                                            + ", resolveSecretReference("
+                                            + quote(secretRef)
+                                            + "));"
+                            )
+                    );
+
+                } else if (
+                        "QUERY".equals(
+                                location
+                        )
+                ) {
+
+                    code.append(
+                            line(
+                                    optionsVar
+                                            + ".setQueryParam("
+                                            + quote(keyName)
+                                            + ", resolveSecretReference("
+                                            + quote(secretRef)
+                                            + "));"
+                            )
+                    );
+
+                } else {
+
+                    throw new AutomationValidationException(
+                            "API key location must be HEADER or QUERY"
+                    );
+                }
+            }
+
+            default ->
+                    throw new AutomationValidationException(
+                            "Unsupported API authentication type: "
+                                    + auth.type()
+                    );
         }
 
-        code.append(line(
-                "apiResponse = apiRequest." + method + "(resolveRuntimeValue("
-                        + quote(requireTarget(step)) + ", runtimeData), " + optionsVar + ");"
-        ));
+        String body =
+                config.body();
+
+        if (
+                body != null
+                        && !body.isBlank()
+                        && !"NONE".equals(
+                        config.bodyType()
+                )
+        ) {
+
+            switch (
+                    config.bodyType()
+            ) {
+
+                case "JSON" -> {
+
+                    code.append(
+                            line(
+                                    optionsVar
+                                            + ".setHeader(\"Content-Type\", \"application/json\");"
+                            )
+                    );
+
+                    code.append(
+                            line(
+                                    optionsVar
+                                            + ".setData(resolveRuntimeValue("
+                                            + quote(body)
+                                            + ", runtimeData));"
+                            )
+                    );
+                }
+
+                case "TEXT" -> {
+
+                    code.append(
+                            line(
+                                    optionsVar
+                                            + ".setHeader(\"Content-Type\", \"text/plain\");"
+                            )
+                    );
+
+                    code.append(
+                            line(
+                                    optionsVar
+                                            + ".setData(resolveRuntimeValue("
+                                            + quote(body)
+                                            + ", runtimeData));"
+                            )
+                    );
+                }
+
+                case "FORM" -> {
+
+                    Map<String, String> form =
+                            parseStringMap(
+                                    body,
+                                    "API form body"
+                            );
+
+                    code.append(
+                            line(
+                                    "FormData "
+                                            + formVar
+                                            + " = FormData.create();"
+                            )
+                    );
+
+                    for (
+                            Map.Entry<String, String> entry :
+                            form.entrySet()
+                    ) {
+
+                        code.append(
+                                line(
+                                        formVar
+                                                + ".set("
+                                                + quote(entry.getKey())
+                                                + ", resolveRuntimeValue("
+                                                + quote(entry.getValue())
+                                                + ", runtimeData));"
+                                )
+                        );
+                    }
+
+                    code.append(
+                            line(
+                                    optionsVar
+                                            + ".setForm("
+                                            + formVar
+                                            + ");"
+                            )
+                    );
+                }
+
+                default ->
+                        throw new AutomationValidationException(
+                                "Unsupported API body type: "
+                                        + config.bodyType()
+                        );
+            }
+        }
+
+        code.append(
+                line(
+                        "apiResponse = apiRequest."
+                                + method
+                                + "(resolveRuntimeValue("
+                                + quote(requireTarget(step))
+                                + ", runtimeData), "
+                                + optionsVar
+                                + ");"
+                )
+        );
+
         return code.toString();
     }
 
-    private ApiConfig parseApiConfig(String json) {
-        if (json == null || json.isBlank()) {
-            return new ApiConfig(Map.of(), Map.of(), "NONE", null, ApiAuth.none());
-        }
-        try {
-            com.fasterxml.jackson.databind.JsonNode root =
-                    new com.fasterxml.jackson.databind.ObjectMapper().readTree(json);
+    private ApiConfig parseApiConfig(
+            String json
+    ) {
+
+        if (
+                json == null
+                        || json.isBlank()
+        ) {
+
             return new ApiConfig(
-                    jsonObjectToMap(root.path("headers")),
-                    jsonObjectToMap(root.path("queryParams")),
-                    root.path("bodyType").asText("NONE").toUpperCase(Locale.ROOT),
-                    root.path("body").isMissingNode() || root.path("body").isNull()
-                            ? null : root.path("body").asText(),
-                    parseApiAuth(root.path("auth"))
+                    Map.of(),
+                    Map.of(),
+                    "NONE",
+                    null,
+                    ApiAuth.none()
             );
-        } catch (Exception exception) {
-            throw new AutomationValidationException("Invalid API configuration JSON");
+        }
+
+        try {
+
+            com.fasterxml.jackson.databind.JsonNode root =
+                    new com.fasterxml.jackson.databind.ObjectMapper()
+                            .readTree(
+                                    json
+                            );
+
+            return new ApiConfig(
+                    jsonObjectToMap(
+                            root.path(
+                                    "headers"
+                            )
+                    ),
+                    jsonObjectToMap(
+                            root.path(
+                                    "queryParams"
+                            )
+                    ),
+                    root.path(
+                                    "bodyType"
+                            )
+                            .asText(
+                                    "NONE"
+                            )
+                            .toUpperCase(
+                                    Locale.ROOT
+                            ),
+                    root.path(
+                            "body"
+                    ).isMissingNode()
+                            || root.path(
+                            "body"
+                    ).isNull()
+                            ? null
+                            : root.path(
+                            "body"
+                    ).asText(),
+                    parseApiAuth(
+                            root.path(
+                                    "auth"
+                            )
+                    )
+            );
+
+        } catch (
+                Exception exception
+        ) {
+
+            throw new AutomationValidationException(
+                    "Invalid API configuration JSON"
+            );
         }
     }
 
-    private Map<String, String> jsonObjectToMap(com.fasterxml.jackson.databind.JsonNode node) {
-        Map<String, String> values = new LinkedHashMap<>();
-        if (node != null && node.isObject()) {
-            node.fields().forEachRemaining(entry -> values.put(entry.getKey(), entry.getValue().asText()));
+    private Map<String, String> jsonObjectToMap(
+            com.fasterxml.jackson.databind.JsonNode node
+    ) {
+
+        Map<String, String> values =
+                new LinkedHashMap<>();
+
+        if (
+                node != null
+                        && node.isObject()
+        ) {
+
+            node.fields()
+                    .forEachRemaining(
+                            entry ->
+                                    values.put(
+                                            entry.getKey(),
+                                            entry.getValue()
+                                                    .asText()
+                                    )
+                    );
         }
+
         return values;
     }
 
-    private Map<String, String> parseStringMap(String json, String label) {
+    private Map<String, String> parseStringMap(
+            String json,
+            String label
+    ) {
+
         try {
+
             com.fasterxml.jackson.databind.JsonNode node =
-                    new com.fasterxml.jackson.databind.ObjectMapper().readTree(json);
-            if (!node.isObject()) {
-                throw new AutomationValidationException(label + " must be a JSON object");
+                    new com.fasterxml.jackson.databind.ObjectMapper()
+                            .readTree(
+                                    json
+                            );
+
+            if (
+                    !node.isObject()
+            ) {
+
+                throw new AutomationValidationException(
+                        label
+                                + " must be a JSON object"
+                );
             }
-            return jsonObjectToMap(node);
-        } catch (AutomationValidationException exception) {
+
+            return jsonObjectToMap(
+                    node
+            );
+
+        } catch (
+                AutomationValidationException exception
+        ) {
+
             throw exception;
-        } catch (Exception exception) {
-            throw new AutomationValidationException(label + " must be valid JSON");
+
+        } catch (
+                Exception exception
+        ) {
+
+            throw new AutomationValidationException(
+                    label
+                            + " must be valid JSON"
+            );
         }
     }
 
-    private ApiAuth parseApiAuth(com.fasterxml.jackson.databind.JsonNode auth) {
-        if (auth == null || auth.isMissingNode() || auth.isNull()) {
+    private ApiAuth parseApiAuth(
+            com.fasterxml.jackson.databind.JsonNode auth
+    ) {
+
+        if (
+                auth == null
+                        || auth.isMissingNode()
+                        || auth.isNull()
+        ) {
+
             return ApiAuth.none();
         }
-        if (!auth.isObject()) {
-            throw new AutomationValidationException("API authentication configuration must be a JSON object");
+
+        if (
+                !auth.isObject()
+        ) {
+
+            throw new AutomationValidationException(
+                    "API authentication configuration must be a JSON object"
+            );
         }
+
         return new ApiAuth(
-                auth.path("type").asText("NONE").toUpperCase(Locale.ROOT),
-                nullableText(auth, "username"),
-                nullableText(auth, "passwordSecretRef"),
-                nullableText(auth, "tokenSecretRef"),
-                nullableText(auth, "keyName"),
-                nullableText(auth, "valueSecretRef"),
-                nullableText(auth, "location")
+                auth.path(
+                                "type"
+                        )
+                        .asText(
+                                "NONE"
+                        )
+                        .toUpperCase(
+                                Locale.ROOT
+                        ),
+                nullableText(
+                        auth,
+                        "username"
+                ),
+                nullableText(
+                        auth,
+                        "passwordSecretRef"
+                ),
+                nullableText(
+                        auth,
+                        "tokenSecretRef"
+                ),
+                nullableText(
+                        auth,
+                        "keyName"
+                ),
+                nullableText(
+                        auth,
+                        "valueSecretRef"
+                ),
+                nullableText(
+                        auth,
+                        "location"
+                )
         );
     }
 
-    private String nullableText(com.fasterxml.jackson.databind.JsonNode node, String field) {
-        com.fasterxml.jackson.databind.JsonNode value = node.path(field);
-        return value.isMissingNode() || value.isNull() ? null : value.asText();
+    private String nullableText(
+            com.fasterxml.jackson.databind.JsonNode node,
+            String field
+    ) {
+
+        com.fasterxml.jackson.databind.JsonNode value =
+                node.path(
+                        field
+                );
+
+        return value.isMissingNode()
+                || value.isNull()
+                ? null
+                : value.asText();
     }
 
-    private String requireConfigValue(String value, String label) {
-        if (value == null || value.isBlank()) {
-            throw new AutomationValidationException(label + " is required");
+    private String requireConfigValue(
+            String value,
+            String label
+    ) {
+
+        if (
+                value == null
+                        || value.isBlank()
+        ) {
+
+            throw new AutomationValidationException(
+                    label
+                            + " is required"
+            );
         }
+
         return value;
     }
 
-    private String requireSecretReference(String value, String label) {
-        String reference = requireConfigValue(value, label).trim();
-        if (!reference.matches("^\\$\\{[A-Z][A-Z0-9_]*}$")) {
-            throw new AutomationValidationException(label + " must use ${ENV_NAME} format");
+    private String requireSecretReference(
+            String value,
+            String label
+    ) {
+
+        String reference =
+                requireConfigValue(
+                        value,
+                        label
+                )
+                        .trim();
+
+        if (
+                !reference.matches(
+                        "^\\$\\{[A-Z][A-Z0-9_]*}$"
+                )
+        ) {
+
+            throw new AutomationValidationException(
+                    label
+                            + " must use ${ENV_NAME} format"
+            );
         }
+
         return reference;
     }
 
@@ -962,7 +1473,8 @@ public class PlaywrightJavaGenerator {
             String bodyType,
             String body,
             ApiAuth auth
-    ) {}
+    ) {
+    }
 
     private record ApiAuth(
             String type,
@@ -973,31 +1485,63 @@ public class PlaywrightJavaGenerator {
             String valueSecretRef,
             String location
     ) {
+
         private static ApiAuth none() {
-            return new ApiAuth("NONE", null, null, null, null, null, null);
+
+            return new ApiAuth(
+                    "NONE",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+            );
         }
     }
 
     private String frameLocator(
             AutomationStep step
     ) {
-        String frame = "page.frameLocator("
-                + runtimeValue(requireTarget(step))
-                + ")";
 
-        return switch (step.getSelectorStrategy()) {
-            case CSS -> frame
-                    + ".locator("
-                    + runtimeValue(requireSelectorValue(step))
-                    + ")";
-            case XPATH -> frame
-                    + ".locator(\"xpath=\" + "
-                    + runtimeValue(requireSelectorValue(step))
-                    + ")";
-            default -> throw new AutomationValidationException(
-                    step.getActionType()
-                            + " currently requires a CSS or XPATH element selector"
-            );
+        String frame =
+                "page.frameLocator("
+                        + runtimeValue(
+                        requireTarget(
+                                step
+                        )
+                )
+                        + ")";
+
+        return switch (
+                step.getSelectorStrategy()
+                ) {
+
+            case CSS ->
+                    frame
+                            + ".locator("
+                            + runtimeValue(
+                            requireSelectorValue(
+                                    step
+                            )
+                    )
+                            + ")";
+
+            case XPATH ->
+                    frame
+                            + ".locator(\"xpath=\" + "
+                            + runtimeValue(
+                            requireSelectorValue(
+                                    step
+                            )
+                    )
+                            + ")";
+
+            default ->
+                    throw new AutomationValidationException(
+                            step.getActionType()
+                                    + " currently requires a CSS or XPATH element selector"
+                    );
         };
     }
 
@@ -1008,6 +1552,7 @@ public class PlaywrightJavaGenerator {
         if (
                 step.getSelectorStrategy() == null
         ) {
+
             throw new AutomationValidationException(
                     step.getActionType()
                             + " requires a selector"
@@ -1017,7 +1562,9 @@ public class PlaywrightJavaGenerator {
         SelectorStrategy strategy =
                 step.getSelectorStrategy();
 
-        return switch (strategy) {
+        return switch (
+                strategy
+                ) {
 
             case ROLE ->
                     roleLocator(
@@ -1081,7 +1628,10 @@ public class PlaywrightJavaGenerator {
             AutomationStep step
     ) {
 
-        if (step.getSelectorRole() == null) {
+        if (
+                step.getSelectorRole() == null
+        ) {
+
             throw new AutomationValidationException(
                     "ROLE selector requires a UI element role"
             );
@@ -1091,6 +1641,7 @@ public class PlaywrightJavaGenerator {
                 step.getSelectorName() == null
                         || step.getSelectorName().isBlank()
         ) {
+
             throw new AutomationValidationException(
                     "ROLE selector requires an accessible name"
             );
@@ -1098,7 +1649,8 @@ public class PlaywrightJavaGenerator {
 
         return "page.getByRole("
                 + "AriaRole."
-                + step.getSelectorRole().name()
+                + step.getSelectorRole()
+                .name()
                 + ", new Page.GetByRoleOptions()"
                 + ".setName("
                 + runtimeValue(
@@ -1121,6 +1673,7 @@ public class PlaywrightJavaGenerator {
                 value == null
                         || value.isBlank()
         ) {
+
             throw new AutomationValidationException(
                     method
                             + " requires a selector value"
@@ -1130,7 +1683,9 @@ public class PlaywrightJavaGenerator {
         return "page."
                 + method
                 + "("
-                + runtimeValue(value)
+                + runtimeValue(
+                value
+        )
                 + ", new Page."
                 + optionType
                 + "().setExact("
@@ -1146,6 +1701,7 @@ public class PlaywrightJavaGenerator {
                 step.getInputValue() == null
                         || step.getInputValue().isBlank()
         ) {
+
             throw new AutomationValidationException(
                     step.getActionType()
                             + " requires an input value"
@@ -1163,6 +1719,7 @@ public class PlaywrightJavaGenerator {
                 step.getExpectedValue() == null
                         || step.getExpectedValue().isBlank()
         ) {
+
             throw new AutomationValidationException(
                     step.getActionType()
                             + " requires an expected value"
@@ -1180,6 +1737,7 @@ public class PlaywrightJavaGenerator {
                 step.getTarget() == null
                         || step.getTarget().isBlank()
         ) {
+
             throw new AutomationValidationException(
                     step.getActionType()
                             + " requires a target URL"
@@ -1197,6 +1755,7 @@ public class PlaywrightJavaGenerator {
                 step.getSelectorValue() == null
                         || step.getSelectorValue().isBlank()
         ) {
+
             throw new AutomationValidationException(
                     step.getSelectorStrategy()
                             + " requires a selector value"
@@ -1222,7 +1781,10 @@ public class PlaywrightJavaGenerator {
                             value
                     );
 
-            if (milliseconds < 0) {
+            if (
+                    milliseconds < 0
+            ) {
+
                 throw new NumberFormatException();
             }
 
@@ -1258,6 +1820,7 @@ public class PlaywrightJavaGenerator {
                     status < 100
                             || status > 599
             ) {
+
                 throw new NumberFormatException();
             }
 
@@ -1277,7 +1840,9 @@ public class PlaywrightJavaGenerator {
             AutomationActionType type
     ) {
 
-        return switch (type) {
+        return switch (
+                type
+                ) {
 
             case API_GET,
                  API_POST,
@@ -1309,8 +1874,11 @@ public class PlaywrightJavaGenerator {
     private String runtimeValue(
             String value
     ) {
+
         return "resolveRuntimeValue("
-                + quote(value)
+                + quote(
+                value
+        )
                 + ", runtimeData)";
     }
 
@@ -1337,6 +1905,12 @@ public class PlaywrightJavaGenerator {
     private String escapeJava(
             String value
     ) {
+
+        if (
+                value == null
+        ) {
+            return "";
+        }
 
         return value
                 .replace(
@@ -1365,7 +1939,9 @@ public class PlaywrightJavaGenerator {
             String value
     ) {
 
-        if (value == null) {
+        if (
+                value == null
+        ) {
             return "";
         }
 
@@ -1387,27 +1963,39 @@ public class PlaywrightJavaGenerator {
             String source
     ) {
     }
+
     private int parseExpectedCount(
             AutomationStep step
     ) {
 
         try {
-            int count = Integer.parseInt(
-                    requireExpected(step).trim()
-            );
 
-            if (count < 0) {
+            int count =
+                    Integer.parseInt(
+                            requireExpected(
+                                    step
+                            )
+                                    .trim()
+                    );
+
+            if (
+                    count < 0
+            ) {
+
                 throw new AutomationValidationException(
                         "ASSERT_COUNT expected value must be zero or greater"
                 );
             }
 
             return count;
-        } catch (NumberFormatException exception) {
+
+        } catch (
+                NumberFormatException exception
+        ) {
+
             throw new AutomationValidationException(
                     "ASSERT_COUNT expected value must be a whole number"
             );
         }
     }
-
 }

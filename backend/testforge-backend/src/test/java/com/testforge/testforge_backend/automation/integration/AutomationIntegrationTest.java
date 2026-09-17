@@ -219,12 +219,28 @@ class AutomationIntegrationTest {
                         "TC-AUTO-003"
                 );
 
-        TestStep sourceStep =
+        TestStep firstSourceStep =
                 createTestStep(
                         testCase,
-                        "STEP-AUTO-002",
+                        "STEP-AUTO-002-A",
                         1,
-                        "Login"
+                        "First source step"
+                );
+
+        TestStep secondSourceStep =
+                createTestStep(
+                        testCase,
+                        "STEP-AUTO-002-B",
+                        2,
+                        "Second source step"
+                );
+
+        TestStep thirdSourceStep =
+                createTestStep(
+                        testCase,
+                        "STEP-AUTO-002-C",
+                        3,
+                        "Third source step"
                 );
 
         AutomationScriptResponse script =
@@ -234,21 +250,21 @@ class AutomationIntegrationTest {
 
         createClickStep(
                 script.id(),
-                sourceStep.getId(),
+                thirdSourceStep.getId(),
                 3,
                 "Third"
         );
 
         createClickStep(
                 script.id(),
-                sourceStep.getId(),
+                firstSourceStep.getId(),
                 1,
                 "First"
         );
 
         createClickStep(
                 script.id(),
-                sourceStep.getId(),
+                secondSourceStep.getId(),
                 2,
                 "Second"
         );
@@ -276,6 +292,21 @@ class AutomationIntegrationTest {
         assertEquals(
                 3,
                 steps.get(2).stepOrder()
+        );
+
+        assertEquals(
+                firstSourceStep.getId(),
+                steps.get(0).sourceTestStepId()
+        );
+
+        assertEquals(
+                secondSourceStep.getId(),
+                steps.get(1).sourceTestStepId()
+        );
+
+        assertEquals(
+                thirdSourceStep.getId(),
+                steps.get(2).sourceTestStepId()
         );
     }
 
@@ -472,12 +503,20 @@ class AutomationIntegrationTest {
                         "TC-AUTO-008"
                 );
 
-        TestStep sourceStep =
+        TestStep firstSourceStep =
                 createTestStep(
                         testCase,
-                        "STEP-AUTO-005",
+                        "STEP-AUTO-005-A",
                         1,
                         "Login"
+                );
+
+        TestStep secondSourceStep =
+                createTestStep(
+                        testCase,
+                        "STEP-AUTO-005-B",
+                        2,
+                        "Submit"
                 );
 
         AutomationScriptResponse script =
@@ -487,14 +526,14 @@ class AutomationIntegrationTest {
 
         createClickStep(
                 script.id(),
-                sourceStep.getId(),
+                firstSourceStep.getId(),
                 1,
                 "Login"
         );
 
         CreateAutomationStepRequest duplicateOrder =
                 createClickRequest(
-                        sourceStep.getId(),
+                        secondSourceStep.getId(),
                         1,
                         "Submit"
                 );
@@ -510,7 +549,7 @@ class AutomationIntegrationTest {
     }
 
     @Test
-    void shouldAllowMultipleAutomationStepsForSameSourceTestStep() {
+    void shouldRejectMultipleAutomationStepsForSameSourceTestStep() {
 
         TestCase testCase =
                 createTestCase(
@@ -530,7 +569,7 @@ class AutomationIntegrationTest {
                         testCase
                 );
 
-        CreateAutomationStepRequest username =
+        CreateAutomationStepRequest firstMapping =
                 new CreateAutomationStepRequest(
                         uniqueId(
                                 "AUTO-STEP"
@@ -548,7 +587,22 @@ class AutomationIntegrationTest {
                         null
                 );
 
-        CreateAutomationStepRequest password =
+        AutomationStepResponse created =
+                automationService.createStep(
+                        script.id(),
+                        firstMapping
+                );
+
+        assertNotNull(
+                created.id()
+        );
+
+        assertEquals(
+                sourceStep.getId(),
+                created.sourceTestStepId()
+        );
+
+        CreateAutomationStepRequest duplicateSourceMapping =
                 new CreateAutomationStepRequest(
                         uniqueId(
                                 "AUTO-STEP"
@@ -566,37 +620,22 @@ class AutomationIntegrationTest {
                         null
                 );
 
-        CreateAutomationStepRequest login =
-                new CreateAutomationStepRequest(
-                        uniqueId(
-                                "AUTO-STEP"
-                        ),
-                        sourceStep.getId(),
-                        3,
-                        AutomationActionType.CLICK,
-                        "Login button",
-                        SelectorStrategy.ROLE,
-                        null,
-                        UiElementRole.BUTTON,
-                        "Login",
-                        true,
-                        null,
-                        null
+        AutomationConflictException exception =
+                assertThrows(
+                        AutomationConflictException.class,
+                        () ->
+                                automationService.createStep(
+                                        script.id(),
+                                        duplicateSourceMapping
+                                )
                 );
 
-        automationService.createStep(
-                script.id(),
-                username
-        );
-
-        automationService.createStep(
-                script.id(),
-                password
-        );
-
-        automationService.createStep(
-                script.id(),
-                login
+        assertTrue(
+                exception
+                        .getMessage()
+                        .contains(
+                                "Source Test Step is already mapped"
+                        )
         );
 
         List<AutomationStepResponse> steps =
@@ -605,19 +644,13 @@ class AutomationIntegrationTest {
                 );
 
         assertEquals(
-                3,
+                1,
                 steps.size()
         );
 
-        assertTrue(
-                steps.stream()
-                        .allMatch(
-                                step ->
-                                        step.sourceTestStepId()
-                                                .equals(
-                                                        sourceStep.getId()
-                                                )
-                        )
+        assertEquals(
+                sourceStep.getId(),
+                steps.get(0).sourceTestStepId()
         );
     }
 

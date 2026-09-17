@@ -245,6 +245,141 @@ class AutomationServiceTest {
     }
 
     @Test
+    void shouldRejectDuplicateSourceTestStepMappingInSameScript() {
+
+        TestCase testCase =
+                mock(
+                        TestCase.class
+                );
+
+        when(
+                testCase.getId()
+        ).thenReturn(
+                10L
+        );
+
+        TestStep testStep =
+                mock(
+                        TestStep.class
+                );
+
+        when(
+                testStep.getId()
+        ).thenReturn(
+                20L
+        );
+
+        when(
+                testStep.getTestStepId()
+        ).thenReturn(
+                "STEP-001"
+        );
+
+        when(
+                testStep.getTestCase()
+        ).thenReturn(
+                testCase
+        );
+
+        AutomationScript automationScript =
+                mock(
+                        AutomationScript.class
+                );
+
+        when(
+                automationScript.getId()
+        ).thenReturn(
+                30L
+        );
+
+        when(
+                automationScript.getTestCase()
+        ).thenReturn(
+                testCase
+        );
+
+        when(
+                automationScriptRepository.findById(
+                        30L
+                )
+        ).thenReturn(
+                Optional.of(
+                        automationScript
+                )
+        );
+
+        when(
+                testStepRepository.findById(
+                        20L
+                )
+        ).thenReturn(
+                Optional.of(
+                        testStep
+                )
+        );
+
+        when(
+                automationStepRepository
+                        .existsByAutomationStepId(
+                                "AUTO-STEP-002"
+                        )
+        ).thenReturn(
+                false
+        );
+
+        when(
+                automationStepRepository
+                        .existsByAutomationScriptIdAndStepOrder(
+                                30L,
+                                2
+                        )
+        ).thenReturn(
+                false
+        );
+
+        when(
+                automationStepRepository
+                        .existsByAutomationScriptIdAndTestStepId(
+                                30L,
+                                20L
+                        )
+        ).thenReturn(
+                true
+        );
+
+        CreateAutomationStepRequest request =
+                new CreateAutomationStepRequest(
+                        "AUTO-STEP-002",
+                        20L,
+                        2,
+                        AutomationActionType.CLICK,
+                        "Login button",
+                        SelectorStrategy.ROLE,
+                        null,
+                        null,
+                        null,
+                        false,
+                        null,
+                        null
+                );
+
+        AutomationConflictException exception =
+                assertThrows(
+                        AutomationConflictException.class,
+                        () ->
+                                automationService.createStep(
+                                        30L,
+                                        request
+                                )
+                );
+
+        assertEquals(
+                "Source Test Step is already mapped in this Automation Script: STEP-001",
+                exception.getMessage()
+        );
+    }
+
+    @Test
     void shouldRejectTestStepFromDifferentTestCase() {
 
         TestCase scriptTestCase =

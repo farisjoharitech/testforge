@@ -23,6 +23,7 @@ import {
   Chip,
   CircularProgress,
   Divider,
+  LinearProgress,
   Stack,
   Typography,
 } from '@mui/material';
@@ -510,6 +511,56 @@ export default function AutomationBuilderPage() {
       ],
     );
 
+  const mappedSourceStepIds =
+    useMemo(
+      () =>
+        new Set(
+          automationSteps.map(
+            (
+              step,
+            ) =>
+              step.sourceTestStepId,
+          ),
+        ),
+      [
+        automationSteps,
+      ],
+    );
+
+  const availableSourceSteps =
+    useMemo(
+      () =>
+        testSteps.filter(
+          (
+            testStep,
+          ) =>
+            !mappedSourceStepIds.has(
+              testStep.id,
+            ),
+        ),
+      [
+        mappedSourceStepIds,
+        testSteps,
+      ],
+    );
+
+  const automationProgress =
+    useMemo(
+      () =>
+        testSteps.length === 0
+          ? 0
+          : Math.min(
+              100,
+              (mappedSourceCount /
+                testSteps.length) *
+                100,
+            ),
+      [
+        mappedSourceCount,
+        testSteps.length,
+      ],
+    );
+
   const uiAutomationStepCount =
     useMemo(
       () =>
@@ -714,6 +765,9 @@ export default function AutomationBuilderPage() {
               expectedValue:
                 values.expectedValue ||
                 null,
+
+              apiConfig:
+                values.apiConfig,
             };
 
           const created =
@@ -785,6 +839,9 @@ export default function AutomationBuilderPage() {
               expectedValue:
                 values.expectedValue ||
                 null,
+
+              apiConfig:
+                values.apiConfig,
             };
 
           const updated =
@@ -1024,6 +1081,77 @@ export default function AutomationBuilderPage() {
         variant="outlined"
       >
         <CardContent>
+          {testSteps.length > 0 && (
+            <Card
+              variant="outlined"
+            >
+              <CardContent>
+                <Stack spacing={1.25}>
+                  <Stack
+                    direction={{
+                      xs: 'column',
+                      sm: 'row',
+                    }}
+                    spacing={1}
+                    justifyContent="space-between"
+                    alignItems={{
+                      xs: 'flex-start',
+                      sm: 'center',
+                    }}
+                  >
+                    <Box>
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight={700}
+                      >
+                        Automation Progress
+                      </Typography>
+
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                      >
+                        {mappedSourceCount} / {testSteps.length} Test Steps automated
+                      </Typography>
+                    </Box>
+
+                    <Chip
+                      size="small"
+                      label={
+                        availableSourceSteps.length === 0
+                          ? 'Complete'
+                          : `${availableSourceSteps.length} remaining`
+                      }
+                      color={
+                        availableSourceSteps.length === 0
+                          ? 'success'
+                          : 'default'
+                      }
+                      variant="outlined"
+                    />
+                  </Stack>
+
+                  <LinearProgress
+                    variant="determinate"
+                    value={automationProgress}
+                    aria-label="Automation progress"
+                  />
+                </Stack>
+              </CardContent>
+            </Card>
+          )}
+
+          {testSteps.length > 0 &&
+            availableSourceSteps.length === 0 && (
+              <Alert
+                severity="success"
+                variant="outlined"
+              >
+                All source Test Steps are already mapped to Automation Steps.
+                Delete an Automation Step if you need to remap its source Test Step.
+              </Alert>
+            )}
+
           <Stack
             spacing={2}
           >
@@ -1356,7 +1484,7 @@ export default function AutomationBuilderPage() {
                       <Add />
                     }
                     disabled={
-                      testSteps.length ===
+                      availableSourceSteps.length ===
                       0
                     }
                     onClick={
@@ -1851,7 +1979,9 @@ export default function AutomationBuilderPage() {
           testCase.automationType
         }
         testSteps={
-          testSteps
+          stepDialogMode === 'create'
+            ? availableSourceSteps
+            : testSteps
         }
         automationStep={
           selectedAutomationStep

@@ -16,6 +16,7 @@ import {
   FormControl,
   FormControlLabel,
   InputLabel,
+  ListSubheader,
   MenuItem,
   Select,
   Stack,
@@ -68,6 +69,8 @@ export interface AutomationStepFormValues {
   inputValue: string;
 
   expectedValue: string;
+
+  apiConfig: string | null;
 }
 
 interface AutomationStepDialogProps {
@@ -102,62 +105,121 @@ interface AutomationStepDialogProps {
   ) => void;
 }
 
-const UI_ACTION_TYPES:
-    AutomationActionType[] = [
-  'NAVIGATE',
-  'GO_BACK',
-  'GO_FORWARD',
-  'RELOAD',
-  'CLICK',
-  'CLICK_NEW_TAB',
-  'CLICK_DOWNLOAD',
-  'DOUBLE_CLICK',
-  'HOVER',
-  'FOCUS',
-  'FILL',
-  'CLEAR',
-  'SELECT',
-  'CHECK',
-  'UNCHECK',
-  'PRESS',
-  'SET_INPUT_FILES',
-  'FRAME_CLICK',
-  'FRAME_FILL',
-  'ACCEPT_DIALOG',
-  'DISMISS_DIALOG',
-  'WAIT',
-  'WAIT_FOR_SELECTOR',
-  'WAIT_FOR_URL',
-  'WAIT_FOR_LOAD_STATE',
-  'TAKE_SCREENSHOT',
-  'ASSERT_VISIBLE',
-  'ASSERT_HIDDEN',
-  'ASSERT_TEXT',
-  'ASSERT_CONTAINS_TEXT',
-  'ASSERT_VALUE',
-  'ASSERT_ENABLED',
-  'ASSERT_DISABLED',
-  'ASSERT_EDITABLE',
-  'ASSERT_CHECKED',
-  'ASSERT_COUNT',
-  'ASSERT_URL',
-  'ASSERT_TITLE',
+interface AutomationActionGroup {
+  label: string;
+
+  actions: AutomationActionType[];
+}
+
+const ACTION_GROUPS: AutomationActionGroup[] = [
+  {
+    label: 'Browser',
+    actions: [
+      'NAVIGATE',
+      'GO_BACK',
+      'GO_FORWARD',
+      'RELOAD',
+      'CLICK_NEW_TAB',
+      'CLICK_DOWNLOAD',
+    ],
+  },
+  {
+    label: 'Interaction',
+    actions: [
+      'CLICK',
+      'DOUBLE_CLICK',
+      'HOVER',
+      'FOCUS',
+      'FILL',
+      'CLEAR',
+      'SELECT',
+      'CHECK',
+      'UNCHECK',
+      'PRESS',
+      'SET_INPUT_FILES',
+    ],
+  },
+  {
+    label: 'Wait',
+    actions: [
+      'WAIT',
+      'WAIT_FOR_SELECTOR',
+      'WAIT_FOR_URL',
+      'WAIT_FOR_LOAD_STATE',
+    ],
+  },
+  {
+    label: 'Assertions',
+    actions: [
+      'ASSERT_VISIBLE',
+      'ASSERT_HIDDEN',
+      'ASSERT_TEXT',
+      'ASSERT_CONTAINS_TEXT',
+      'ASSERT_VALUE',
+      'ASSERT_ENABLED',
+      'ASSERT_DISABLED',
+      'ASSERT_EDITABLE',
+      'ASSERT_CHECKED',
+      'ASSERT_COUNT',
+      'ASSERT_URL',
+      'ASSERT_TITLE',
+    ],
+  },
+  {
+    label: 'Frames / Dialog',
+    actions: [
+      'FRAME_CLICK',
+      'FRAME_FILL',
+      'ACCEPT_DIALOG',
+      'DISMISS_DIALOG',
+    ],
+  },
+  {
+    label: 'Evidence',
+    actions: [
+      'TAKE_SCREENSHOT',
+    ],
+  },
+  {
+    label: 'API Requests',
+    actions: [
+      'API_GET',
+      'API_POST',
+      'API_PUT',
+      'API_PATCH',
+      'API_DELETE',
+    ],
+  },
+  {
+    label: 'API Assertions',
+    actions: [
+      'ASSERT_API_STATUS',
+      'ASSERT_API_BODY_CONTAINS',
+      'ASSERT_API_BODY_EQUALS',
+      'ASSERT_API_JSON_FIELD_EQUALS',
+      'ASSERT_API_HEADER',
+      'EXTRACT_API_JSON_VALUE',
+    ],
+  },
 ];
 
-const API_ACTION_TYPES:
-    AutomationActionType[] = [
-  'API_GET',
-  'API_POST',
-  'API_PUT',
-  'API_PATCH',
-  'API_DELETE',
-  'ASSERT_API_STATUS',
-  'ASSERT_API_BODY_CONTAINS',
-  'ASSERT_API_BODY_EQUALS',
-  'ASSERT_API_JSON_FIELD_EQUALS',
-  'ASSERT_API_HEADER',
-  'EXTRACT_API_JSON_VALUE',
-];
+const UI_ACTION_TYPES: AutomationActionType[] =
+    ACTION_GROUPS
+        .filter((group) =>
+            !group.label.startsWith('API'),
+        )
+        .flatMap((group) =>
+            group.actions,
+        );
+
+const API_ACTION_TYPES: AutomationActionType[] =
+    ACTION_GROUPS
+        .filter((group) =>
+            group.label.startsWith('API'),
+        )
+        .flatMap((group) =>
+            group.actions,
+        );
 
 const SELECTOR_STRATEGIES:
     SelectorStrategy[] = [
@@ -278,7 +340,6 @@ const EXPECTED_REQUIRED_ACTIONS:
   'ASSERT_API_BODY_EQUALS',
   'ASSERT_API_JSON_FIELD_EQUALS',
   'ASSERT_API_HEADER',
-  'EXTRACT_API_JSON_VALUE',
 ];
 
 const API_REQUEST_ACTIONS:
@@ -316,6 +377,113 @@ function actionLabel(
                   .toLowerCase(),
       )
       .join(' ');
+}
+
+function actionDescription(
+    actionType: AutomationActionType | '',
+): string {
+  switch (actionType) {
+    case 'NAVIGATE':
+      return 'Open a URL in the current page.';
+    case 'GO_BACK':
+      return 'Navigate back in browser history.';
+    case 'GO_FORWARD':
+      return 'Navigate forward in browser history.';
+    case 'RELOAD':
+      return 'Reload the current page.';
+    case 'CLICK':
+      return 'Click the selected element.';
+    case 'CLICK_NEW_TAB':
+      return 'Click an element and switch to the popup/new tab.';
+    case 'CLICK_DOWNLOAD':
+      return 'Click an element, wait for a download, and save it to the configured path.';
+    case 'DOUBLE_CLICK':
+      return 'Double-click the selected element.';
+    case 'HOVER':
+      return 'Move the pointer over the selected element.';
+    case 'FOCUS':
+      return 'Move focus to the selected element.';
+    case 'FILL':
+      return 'Replace the selected field value with the configured input.';
+    case 'CLEAR':
+      return 'Clear the selected input field.';
+    case 'SELECT':
+      return 'Select an option from the selected control.';
+    case 'CHECK':
+      return 'Check the selected checkbox or radio control.';
+    case 'UNCHECK':
+      return 'Uncheck the selected checkbox.';
+    case 'PRESS':
+      return 'Press a keyboard key while the selected element is focused.';
+    case 'SET_INPUT_FILES':
+      return 'Upload a file through the selected file input.';
+    case 'WAIT':
+      return 'Pause execution for the configured number of milliseconds.';
+    case 'WAIT_FOR_SELECTOR':
+      return 'Wait until the selected element is available.';
+    case 'WAIT_FOR_URL':
+      return 'Wait until the page reaches the configured URL.';
+    case 'WAIT_FOR_LOAD_STATE':
+      return 'Wait for the page load state.';
+    case 'ASSERT_VISIBLE':
+      return 'Verify that the selected element is visible.';
+    case 'ASSERT_HIDDEN':
+      return 'Verify that the selected element is hidden.';
+    case 'ASSERT_TEXT':
+      return 'Verify that the selected element text exactly matches the expected value.';
+    case 'ASSERT_CONTAINS_TEXT':
+      return 'Verify that the selected element contains the expected text.';
+    case 'ASSERT_VALUE':
+      return 'Verify that the selected element has the expected value.';
+    case 'ASSERT_ENABLED':
+      return 'Verify that the selected element is enabled.';
+    case 'ASSERT_DISABLED':
+      return 'Verify that the selected element is disabled.';
+    case 'ASSERT_EDITABLE':
+      return 'Verify that the selected element is editable.';
+    case 'ASSERT_CHECKED':
+      return 'Verify that the selected element is checked.';
+    case 'ASSERT_COUNT':
+      return 'Verify how many elements match the selector.';
+    case 'ASSERT_URL':
+      return 'Verify the current page URL.';
+    case 'ASSERT_TITLE':
+      return 'Verify the current page title.';
+    case 'FRAME_CLICK':
+      return 'Click an element inside an iframe.';
+    case 'FRAME_FILL':
+      return 'Fill an element inside an iframe.';
+    case 'ACCEPT_DIALOG':
+      return 'Automatically accept the next browser dialog.';
+    case 'DISMISS_DIALOG':
+      return 'Automatically dismiss the next browser dialog.';
+    case 'TAKE_SCREENSHOT':
+      return 'Capture a screenshot to the configured output path.';
+    case 'API_GET':
+      return 'Send an HTTP GET request.';
+    case 'API_POST':
+      return 'Send an HTTP POST request with optional headers, query parameters, authentication, and body.';
+    case 'API_PUT':
+      return 'Send an HTTP PUT request with optional headers, query parameters, authentication, and body.';
+    case 'API_PATCH':
+      return 'Send an HTTP PATCH request with optional headers, query parameters, authentication, and body.';
+    case 'API_DELETE':
+      return 'Send an HTTP DELETE request.';
+    case 'ASSERT_API_STATUS':
+      return 'Verify the status code of the most recent API response.';
+    case 'ASSERT_API_BODY_CONTAINS':
+      return 'Verify that the most recent API response body contains text.';
+    case 'ASSERT_API_BODY_EQUALS':
+      return 'Verify the complete body of the most recent API response.';
+    case 'ASSERT_API_JSON_FIELD_EQUALS':
+      return 'Verify a JSON field in the most recent API response.';
+    case 'ASSERT_API_HEADER':
+      return 'Verify a response header from the most recent API response.';
+    case 'EXTRACT_API_JSON_VALUE':
+      return 'Extract a JSON field from the most recent API response into a runtime variable.';
+    default:
+      return '';
+  }
 }
 
 function inputLabel(
@@ -502,17 +670,11 @@ export default function AutomationStepDialog({
   const availableActionTypes =
       useMemo(
           () => {
-            if (
-                automationType ===
-                'API'
-            ) {
+            if (automationType === 'API') {
               return API_ACTION_TYPES;
             }
 
-            if (
-                automationType ===
-                'UI_API'
-            ) {
+            if (automationType === 'UI_API') {
               return [
                 ...UI_ACTION_TYPES,
                 ...API_ACTION_TYPES,
@@ -521,9 +683,23 @@ export default function AutomationStepDialog({
 
             return UI_ACTION_TYPES;
           },
-          [
-            automationType,
-          ],
+          [automationType],
+      );
+
+  const availableActionGroups =
+      useMemo(
+          () =>
+              ACTION_GROUPS
+                  .map((group) => ({
+                    ...group,
+                    actions: group.actions.filter((action) =>
+                        availableActionTypes.includes(action),
+                    ),
+                  }))
+                  .filter((group) =>
+                      group.actions.length > 0,
+                  ),
+          [availableActionTypes],
       );
 
   useEffect(
@@ -762,6 +938,10 @@ export default function AutomationStepDialog({
               ) ||
           ['ASSERT_API_JSON_FIELD_EQUALS', 'ASSERT_API_HEADER', 'EXTRACT_API_JSON_VALUE']
               .includes(actionType));
+
+  const showTargetField =
+      actionType !== '' &&
+      requiresTarget;
 
   const showApiBody =
       actionType !== '' &&
@@ -1510,28 +1690,43 @@ export default function AutomationStepDialog({
                       )
                   }
               >
-                {availableActionTypes.map(
-                    (
-                        value,
-                    ) => (
-                        <MenuItem
-                            key={
-                              value
-                            }
-                            value={
-                              value
-                            }
-                        >
-                          {actionLabel(
-                              value,
-                          )}
-                        </MenuItem>
-                    ),
+                {availableActionGroups.flatMap(
+                    (group) => [
+                      <ListSubheader
+                          key={`group-${group.label}`}
+                          disableSticky
+                      >
+                        {group.label}
+                      </ListSubheader>,
+                      ...group.actions.map((value) => (
+                          <MenuItem
+                              key={value}
+                              value={value}
+                          >
+                            {actionLabel(value)}
+                          </MenuItem>
+                      )),
+                    ],
                 )}
               </Select>
             </FormControl>
 
-            <TextField
+            {actionType !== '' && (
+                <Alert
+                    severity="info"
+                    variant="outlined"
+                >
+                  <Typography variant="body2" fontWeight={700}>
+                    {actionLabel(actionType)}
+                  </Typography>
+                  <Typography variant="body2">
+                    {actionDescription(actionType)}
+                  </Typography>
+                </Alert>
+            )}
+
+            {showTargetField && (
+              <TextField
                 fullWidth
                 required={
                   requiresTarget
@@ -1565,11 +1760,16 @@ export default function AutomationStepDialog({
                   maxLength: 500,
                 }}
                 helperText={
-                  requiresTarget
-                      ? 'Full API endpoint URL.'
-                      : 'Optional descriptive target.'
+                  FRAME_ACTIONS.includes(actionType)
+                      ? 'CSS or XPath selector for the iframe.'
+                      : actionType === 'ASSERT_API_JSON_FIELD_EQUALS' || actionType === 'EXTRACT_API_JSON_VALUE'
+                          ? 'Dot-separated JSON path, for example data.order.id.'
+                          : actionType === 'ASSERT_API_HEADER'
+                              ? 'Response header name, for example Content-Type.'
+                              : 'Full API endpoint URL.'
                 }
-            />
+              />
+            )}
 
             {requiresSelector && (
                 <>
