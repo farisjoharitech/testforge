@@ -2,6 +2,7 @@ package com.testforge.testforge_backend.controller;
 
 import com.testforge.testforge_backend.domain.TestStep;
 import com.testforge.testforge_backend.dto.CreateTestStepRequest;
+import com.testforge.testforge_backend.dto.TestStepDeleteImpactResponse;
 import com.testforge.testforge_backend.dto.TestStepResponse;
 import com.testforge.testforge_backend.dto.UpdateTestStepRequest;
 import com.testforge.testforge_backend.service.TestStepService;
@@ -122,6 +123,18 @@ public class TestStepController {
                                 request
                         )
                 )
+        );
+    }
+
+
+    @GetMapping(
+            "/test-steps/{id}/delete-impact"
+    )
+    public ResponseEntity<TestStepDeleteImpactResponse> getDeleteImpact(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                testStepService.getDeleteImpact(id)
         );
     }
 

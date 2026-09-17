@@ -26,3 +26,11 @@ export interface TestStep {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface TestStepDeleteImpact {
+  testStepId: number;
+  testStepBusinessId: string;
+  mappedAutomationStepCount: number;
+  affectedAutomationScriptCount: number;
+  generatedScriptWillBecomeStale: boolean;
+}

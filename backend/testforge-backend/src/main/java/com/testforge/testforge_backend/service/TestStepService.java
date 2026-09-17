@@ -1,13 +1,16 @@
 package com.testforge.testforge_backend.service;
 
+import com.testforge.testforge_backend.automation.entity.AutomationStep;
 import com.testforge.testforge_backend.domain.TestCase;
 import com.testforge.testforge_backend.domain.TestStep;
 import com.testforge.testforge_backend.dto.CreateTestStepRequest;
+import com.testforge.testforge_backend.dto.TestStepDeleteImpactResponse;
 import com.testforge.testforge_backend.dto.UpdateTestStepRequest;
 import com.testforge.testforge_backend.exception.DuplicateTestStepException;
 import com.testforge.testforge_backend.exception.DuplicateTestStepOrderException;
 import com.testforge.testforge_backend.exception.TestCaseNotFoundException;
 import com.testforge.testforge_backend.exception.TestStepNotFoundException;
+import com.testforge.testforge_backend.repository.AutomationStepRepository;
 import com.testforge.testforge_backend.repository.TestCaseRepository;
 import com.testforge.testforge_backend.repository.TestStepRepository;
 import org.springframework.stereotype.Service;
@@ -29,10 +32,14 @@ public class TestStepService {
     private final BusinessIdGeneratorService
             businessIdGeneratorService;
 
+    private final AutomationStepRepository
+            automationStepRepository;
+
     public TestStepService(
             TestStepRepository testStepRepository,
             TestCaseRepository testCaseRepository,
-            BusinessIdGeneratorService businessIdGeneratorService) {
+            BusinessIdGeneratorService businessIdGeneratorService,
+            AutomationStepRepository automationStepRepository) {
 
         this.testStepRepository =
                 testStepRepository;
@@ -42,6 +49,9 @@ public class TestStepService {
 
         this.businessIdGeneratorService =
                 businessIdGeneratorService;
+
+        this.automationStepRepository =
+                automationStepRepository;
     }
 
     public TestStep create(
@@ -292,19 +302,66 @@ public class TestStepService {
                 .orElse(1);
     }
 
+    @Transactional(readOnly = true)
+    public TestStepDeleteImpactResponse getDeleteImpact(
+            Long id) {
+
+        TestStep testStep = testStepRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new TestStepNotFoundException(
+                                "Test Step not found with id: "
+                                        + id
+                        )
+                );
+
+        List<AutomationStep> mappedSteps = automationStepRepository
+                .findByTestStepIdOrderByStepOrderAsc(id);
+
+        long affectedScriptCount = mappedSteps.stream()
+                .map(step -> step.getAutomationScript().getId())
+                .distinct()
+                .count();
+
+        boolean generatedScriptWillBecomeStale = mappedSteps.stream()
+                .map(AutomationStep::getAutomationScript)
+                .anyMatch(script ->
+                        script.getGeneratedSource() != null
+                                && !script.getGeneratedSource().isBlank()
+                                && script.getGeneratedAt() != null
+                );
+
+        return new TestStepDeleteImpactResponse(
+                testStep.getId(),
+                testStep.getTestStepId(),
+                mappedSteps.size(),
+                affectedScriptCount,
+                generatedScriptWillBecomeStale
+        );
+    }
+
     public void delete(
             Long id) {
 
-        if (!testStepRepository
-                .existsById(id)) {
+        TestStep testStep = testStepRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new TestStepNotFoundException(
+                                "Test Step not found with id: "
+                                        + id
+                        )
+                );
 
-            throw new TestStepNotFoundException(
-                    "Test Step not found with id: "
-                            + id
-            );
-        }
+        /*
+         * Authoring Test Steps are the source of truth.
+         * Any Automation Step mapped to this source step must disappear
+         * in the same transaction. The V18 FK also enforces this rule
+         * with ON DELETE CASCADE as a database-level safety net.
+         */
+        automationStepRepository
+                .deleteByTestStepId(testStep.getId());
 
         testStepRepository
-                .deleteById(id);
+                .delete(testStep);
     }
 }

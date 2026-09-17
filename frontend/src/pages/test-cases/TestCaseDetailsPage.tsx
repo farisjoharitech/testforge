@@ -33,7 +33,7 @@ import CreateTestStepDialog from '../../components/test-steps/CreateTestStepDial
 import EditTestStepDialog from '../../components/test-steps/EditTestStepDialog';
 import type { AutomationExecution, AutomationScript } from '../../types/automation';
 import type { TestCase } from '../../types/testCase';
-import type { TestStep } from '../../types/testStep';
+import type { TestStep, TestStepDeleteImpact } from '../../types/testStep';
 
 function priorityColor(priority: string): 'default' | 'primary' | 'warning' | 'error' {
   if (priority === 'CRITICAL') return 'error';
@@ -84,6 +84,7 @@ export default function TestCaseDetailsPage() {
   const [deletingTestStep, setDeletingTestStep] = useState<TestStep | null>(null);
   const [deletingStep, setDeletingStep] = useState(false);
   const [deleteStepError, setDeleteStepError] = useState<string | null>(null);
+  const [deleteStepImpact, setDeleteStepImpact] = useState<TestStepDeleteImpact | null>(null);
 
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
@@ -181,6 +182,21 @@ export default function TestCaseDetailsPage() {
     }
   };
 
+  const openDeleteTestStep = async (step: TestStep) => {
+    setDeleteStepError(null);
+    setDeleteStepImpact(null);
+
+    try {
+      const impact = await testStepApi.getDeleteImpact(step.id);
+      setDeleteStepImpact(impact);
+    } catch {
+      // Deletion still remains available if the preview request fails.
+      // The backend delete itself is transactional and authoritative.
+    }
+
+    setDeletingTestStep(step);
+  };
+
   const handleDeleteTestStep = async () => {
     if (!deletingTestStep) return;
     try {
@@ -188,8 +204,14 @@ export default function TestCaseDetailsPage() {
       setDeleteStepError(null);
       await testStepApi.deleteTestStep(deletingTestStep.id);
       setTestSteps((current) => current.filter((step) => step.id !== deletingTestStep.id));
-      setSuccessMessage('Test Step deleted successfully.');
+      const mappedCount = deleteStepImpact?.mappedAutomationStepCount ?? 0;
+      setSuccessMessage(
+        mappedCount > 0
+          ? `Test Step deleted. ${mappedCount} mapped Automation Step${mappedCount === 1 ? '' : 's'} also deleted. Regenerate the Automation Script before the next run.`
+          : 'Test Step deleted successfully.',
+      );
       setDeletingTestStep(null);
+      setDeleteStepImpact(null);
     } catch (err) {
       setDeleteStepError(err instanceof ApiError ? err.message : 'Unable to delete Test Step.');
     } finally {
@@ -305,7 +327,7 @@ export default function TestCaseDetailsPage() {
                     </Stack>
                     <Stack direction="row" spacing={0.5}>
                       <Button size="small" startIcon={<Edit />} onClick={() => setEditingTestStep(step)}>Edit</Button>
-                      <Button size="small" color="error" startIcon={<Delete />} onClick={() => { setDeleteStepError(null); setDeletingTestStep(step); }}>Delete</Button>
+                      <Button size="small" color="error" startIcon={<Delete />} onClick={() => void openDeleteTestStep(step)}>Delete</Button>
                     </Stack>
                   </Stack>
                 </CardContent>
@@ -363,10 +385,14 @@ export default function TestCaseDetailsPage() {
           open
           title="Delete Test Step?"
           entityName={`Step ${deletingTestStep.stepOrder}`}
-          description="This Test Step will be permanently deleted."
+          description={
+            deleteStepImpact && deleteStepImpact.mappedAutomationStepCount > 0
+              ? `This Test Step is mapped to ${deleteStepImpact.mappedAutomationStepCount} Automation Step${deleteStepImpact.mappedAutomationStepCount === 1 ? '' : 's'}. Deleting it will also permanently delete the mapped Automation Step${deleteStepImpact.mappedAutomationStepCount === 1 ? '' : 's'}.${deleteStepImpact.generatedScriptWillBecomeStale ? ' The generated script will become out of date and must be regenerated before execution.' : ''}`
+              : 'This Test Step will be permanently deleted. No mapped Automation Steps were found.'
+          }
           deleting={deletingStep}
           error={deleteStepError}
-          onClose={() => { if (!deletingStep) { setDeletingTestStep(null); setDeleteStepError(null); } }}
+          onClose={() => { if (!deletingStep) { setDeletingTestStep(null); setDeleteStepImpact(null); setDeleteStepError(null); } }}
           onConfirm={() => void handleDeleteTestStep()}
         />
       )}

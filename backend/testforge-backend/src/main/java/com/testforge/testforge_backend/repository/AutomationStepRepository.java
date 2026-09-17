@@ -34,4 +34,8 @@ public interface AutomationStepRepository
     List<AutomationStep> findByTestStepIdOrderByStepOrderAsc(
             Long testStepId
     );
+
+    long deleteByTestStepId(
+            Long testStepId
+    );
 }

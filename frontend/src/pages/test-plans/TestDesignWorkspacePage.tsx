@@ -599,6 +599,12 @@ export default function TestDesignWorkspacePage() {
   };
 
   const deleteStep = (requirementKey: string, scenarioKey: string, testCaseKey: string, step: WorkspaceStep) => {
+    if (step.id && !window.confirm(
+      'Delete this Test Step? If it is mapped to an Automation Step, the mapped Automation Step will also be deleted when you Save All. Any previously generated script will then need to be regenerated before execution.',
+    )) {
+      return;
+    }
+
     if (step.id) {
       setDeleted((current) => ({ ...current, testSteps: unique([...current.testSteps, step.id!]) }));
     }
