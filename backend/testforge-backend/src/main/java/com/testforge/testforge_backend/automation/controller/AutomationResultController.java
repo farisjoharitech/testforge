@@ -3,8 +3,13 @@ package com.testforge.testforge_backend.automation.controller;
 import com.testforge.testforge_backend.automation.dto.AutomationResultResponse;
 import com.testforge.testforge_backend.automation.dto.AutomationResultSummaryResponse;
 import com.testforge.testforge_backend.automation.execution.AutomationExecutionStatus;
+import com.testforge.testforge_backend.automation.service.AutomationArtifactService;
 import com.testforge.testforge_backend.automation.service.AutomationResultService;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,12 +25,19 @@ public class AutomationResultController {
     private final AutomationResultService
             automationResultService;
 
+    private final AutomationArtifactService
+            automationArtifactService;
+
     public AutomationResultController(
-            AutomationResultService automationResultService
+            AutomationResultService automationResultService,
+            AutomationArtifactService automationArtifactService
     ) {
 
         this.automationResultService =
                 automationResultService;
+
+        this.automationArtifactService =
+                automationArtifactService;
     }
 
     /*
@@ -75,6 +87,51 @@ public class AutomationResultController {
                                 executionId
                         )
         );
+    }
+
+    /*
+     * GET
+     * /api/automation-results/{executionId}/artifacts/{artifactType}
+     *
+     * artifactType:
+     * screenshot | trace | log
+     */
+    @GetMapping(
+            "/automation-results/{executionId}/artifacts/{artifactType}"
+    )
+    public ResponseEntity<Resource> getArtifact(
+            @PathVariable String executionId,
+            @PathVariable String artifactType
+    ) {
+
+        AutomationArtifactService.ArtifactDownload artifact =
+                automationArtifactService.getArtifact(
+                        executionId,
+                        artifactType
+                );
+
+        ContentDisposition disposition =
+                artifact.inline()
+                        ? ContentDisposition.inline()
+                                .filename(artifact.filename())
+                                .build()
+                        : ContentDisposition.attachment()
+                                .filename(artifact.filename())
+                                .build();
+
+        return ResponseEntity.ok()
+                .contentType(
+                        MediaType.parseMediaType(
+                                artifact.contentType()
+                        )
+                )
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        disposition.toString()
+                )
+                .body(
+                        artifact.resource()
+                );
     }
 
     /*

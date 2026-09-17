@@ -32,6 +32,18 @@ public record AutomationResultResponse(
 
         String errorMessage,
 
+        Integer failedStepOrder,
+
+        String failedAutomationStepId,
+
+        String failedActionType,
+
+        boolean failureScreenshotAvailable,
+
+        boolean traceAvailable,
+
+        boolean logAvailable,
+
         LocalDateTime startedAt,
 
         LocalDateTime finishedAt,

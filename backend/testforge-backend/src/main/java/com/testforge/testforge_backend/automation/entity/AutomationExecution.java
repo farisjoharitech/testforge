@@ -123,6 +123,42 @@ public class AutomationExecution {
     )
     private String errorMessage;
 
+
+    @Column(
+            name = "failed_step_order"
+    )
+    private Integer failedStepOrder;
+
+    @Column(
+            name = "failed_automation_step_id",
+            length = 100
+    )
+    private String failedAutomationStepId;
+
+    @Column(
+            name = "failed_action_type",
+            length = 50
+    )
+    private String failedActionType;
+
+    @Column(
+            name = "artifact_directory",
+            length = 1000
+    )
+    private String artifactDirectory;
+
+    @Column(
+            name = "failure_screenshot_path",
+            length = 1000
+    )
+    private String failureScreenshotPath;
+
+    @Column(
+            name = "trace_path",
+            length = 1000
+    )
+    private String tracePath;
+
     @Column(
             name = "started_at",
             nullable = false
@@ -349,6 +385,67 @@ public class AutomationExecution {
     ) {
         this.errorMessage =
                 errorMessage;
+    }
+
+
+    public Integer getFailedStepOrder() {
+        return failedStepOrder;
+    }
+
+    public void setFailedStepOrder(
+            Integer failedStepOrder
+    ) {
+        this.failedStepOrder = failedStepOrder;
+    }
+
+    public String getFailedAutomationStepId() {
+        return failedAutomationStepId;
+    }
+
+    public void setFailedAutomationStepId(
+            String failedAutomationStepId
+    ) {
+        this.failedAutomationStepId = failedAutomationStepId;
+    }
+
+    public String getFailedActionType() {
+        return failedActionType;
+    }
+
+    public void setFailedActionType(
+            String failedActionType
+    ) {
+        this.failedActionType = failedActionType;
+    }
+
+    public String getArtifactDirectory() {
+        return artifactDirectory;
+    }
+
+    public void setArtifactDirectory(
+            String artifactDirectory
+    ) {
+        this.artifactDirectory = artifactDirectory;
+    }
+
+    public String getFailureScreenshotPath() {
+        return failureScreenshotPath;
+    }
+
+    public void setFailureScreenshotPath(
+            String failureScreenshotPath
+    ) {
+        this.failureScreenshotPath = failureScreenshotPath;
+    }
+
+    public String getTracePath() {
+        return tracePath;
+    }
+
+    public void setTracePath(
+            String tracePath
+    ) {
+        this.tracePath = tracePath;
     }
 
     public LocalDateTime getStartedAt() {

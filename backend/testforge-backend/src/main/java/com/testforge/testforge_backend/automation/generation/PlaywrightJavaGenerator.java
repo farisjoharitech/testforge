@@ -98,6 +98,10 @@ public class PlaywrightJavaGenerator {
         );
 
         source.append(
+                "import java.nio.file.Files;\n"
+        );
+
+        source.append(
                 "import java.util.Base64;\n"
         );
 
@@ -162,7 +166,18 @@ public class PlaywrightJavaGenerator {
             );
 
             source.append(
-                    "            Page page = context.newPage();\n\n"
+                    "            Page page = context.newPage();\n"
+            );
+
+            source.append(
+                    "            boolean testforgeTraceStopped = false;\n"
+            );
+
+            source.append(
+                    "            context.tracing().start(new Tracing.StartOptions()\n"
+                            + "                    .setScreenshots(true)\n"
+                            + "                    .setSnapshots(true)\n"
+                            + "                    .setSources(true));\n\n"
             );
         }
 
@@ -178,7 +193,15 @@ public class PlaywrightJavaGenerator {
         }
 
         source.append(
-                "            Map<String, String> runtimeData = new HashMap<>();\n\n"
+                "            Map<String, String> runtimeData = new HashMap<>();\n"
+        );
+
+        source.append(
+                "            boolean testforgeSucceeded = false;\n"
+        );
+
+        source.append(
+                "            try {\n\n"
         );
 
         for (AutomationStep step : steps) {
@@ -242,21 +265,53 @@ public class PlaywrightJavaGenerator {
             );
         }
 
+        source.append(
+                "                testforgeSucceeded = true;\n"
+        );
+
+        source.append(
+                "            } finally {\n"
+        );
+
         if (needsUi) {
             source.append(
-                    "            context.close();\n"
-            );
-
-            source.append(
-                    "            browser.close();\n"
+                    "                if (!testforgeSucceeded) {\n"
+                            + "                    Files.createDirectories(Paths.get(\"testforge-artifacts\"));\n"
+                            + "                    try {\n"
+                            + "                        page.screenshot(new Page.ScreenshotOptions()\n"
+                            + "                                .setPath(Paths.get(\"testforge-artifacts\", \"failure.png\"))\n"
+                            + "                                .setFullPage(true));\n"
+                            + "                    } catch (Throwable screenshotFailure) {\n"
+                            + "                        System.out.println(\"[TestForge] Unable to capture failure screenshot: \" + screenshotFailure.getMessage());\n"
+                            + "                    }\n"
+                            + "                    try {\n"
+                            + "                        context.tracing().stop(new Tracing.StopOptions()\n"
+                            + "                                .setPath(Paths.get(\"testforge-artifacts\", \"trace.zip\")));\n"
+                            + "                        testforgeTraceStopped = true;\n"
+                            + "                    } catch (Throwable traceFailure) {\n"
+                            + "                        System.out.println(\"[TestForge] Unable to save Playwright trace: \" + traceFailure.getMessage());\n"
+                            + "                    }\n"
+                            + "                }\n"
+                            + "                if (!testforgeTraceStopped) {\n"
+                            + "                    try {\n"
+                            + "                        context.tracing().stop();\n"
+                            + "                    } catch (Throwable ignored) {\n"
+                            + "                    }\n"
+                            + "                }\n"
+                            + "                context.close();\n"
+                            + "                browser.close();\n"
             );
         }
 
         if (needsApi) {
             source.append(
-                    "            apiRequest.dispose();\n"
+                    "                apiRequest.dispose();\n"
             );
         }
+
+        source.append(
+                "            }\n"
+        );
 
         source.append(
                 "        }\n"

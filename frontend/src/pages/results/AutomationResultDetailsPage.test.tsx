@@ -43,6 +43,15 @@ vi.mock(
 
       getResultsByTestCase:
         vi.fn(),
+
+      getArtifactUrl:
+        vi.fn(
+          (
+            executionId: string,
+            artifactType: string,
+          ) =>
+            `http://localhost:8080/api/automation-results/${executionId}/artifacts/${artifactType}`,
+        ),
     },
   }),
 );
@@ -88,6 +97,24 @@ const result:
 
     errorMessage:
       null,
+
+    failedStepOrder:
+      null,
+
+    failedAutomationStepId:
+      null,
+
+    failedActionType:
+      null,
+
+    failureScreenshotAvailable:
+      false,
+
+    traceAvailable:
+      false,
+
+    logAvailable:
+      true,
 
     startedAt:
       '2026-09-13T20:00:00',

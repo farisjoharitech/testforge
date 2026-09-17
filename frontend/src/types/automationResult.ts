@@ -83,6 +83,25 @@ export interface AutomationResult {
     | string
     | null;
 
+
+  failedStepOrder:
+    | number
+    | null;
+
+  failedAutomationStepId:
+    | string
+    | null;
+
+  failedActionType:
+    | string
+    | null;
+
+  failureScreenshotAvailable: boolean;
+
+  traceAvailable: boolean;
+
+  logAvailable: boolean;
+
   startedAt: string;
 
   finishedAt:

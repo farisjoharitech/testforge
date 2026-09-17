@@ -1,3 +1,7 @@
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  'http://localhost:8080';
+
 import {
   apiClient,
 } from './apiClient';
@@ -41,6 +45,19 @@ export const automationResultApi = {
         executionId,
       )}`,
     );
+  },
+
+  getArtifactUrl(
+    executionId: string,
+    artifactType:
+      | 'screenshot'
+      | 'trace'
+      | 'log',
+  ): string {
+
+    return `${API_BASE_URL}/api/automation-results/${encodeURIComponent(
+      executionId,
+    )}/artifacts/${artifactType}`;
   },
 
   getResultsByScript(

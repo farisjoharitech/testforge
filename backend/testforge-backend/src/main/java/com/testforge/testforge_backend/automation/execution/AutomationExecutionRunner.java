@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -48,6 +49,11 @@ public class AutomationExecutionRunner {
             "${testforge.automation.execution.browser-install-timeout-seconds:300}"
     )
     private long browserInstallTimeoutSeconds;
+
+    @Value(
+            "${testforge.automation.artifacts.directory:automation/artifacts}"
+    )
+    private String artifactDirectory;
 
     public RunnerResult execute(
             String executionId,
@@ -148,7 +154,9 @@ public class AutomationExecutionRunner {
                             null,
                             completeLog.toString(),
                             "Playwright Chromium installation timed out.",
-                            startedAt
+                            startedAt,
+                            executionId,
+                            workingDirectory
                     );
                 }
 
@@ -162,7 +170,9 @@ public class AutomationExecutionRunner {
                             browserInstallResult.exitCode(),
                             completeLog.toString(),
                             "Unable to install or verify the Playwright Chromium browser.",
-                            startedAt
+                            startedAt,
+                            executionId,
+                            workingDirectory
                     );
                 }
             }
@@ -196,7 +206,9 @@ public class AutomationExecutionRunner {
                         null,
                         completeLog.toString(),
                         "Automation execution exceeded the configured timeout.",
-                        startedAt
+                        startedAt,
+                        executionId,
+                        workingDirectory
                 );
             }
 
@@ -210,7 +222,9 @@ public class AutomationExecutionRunner {
                         0,
                         completeLog.toString(),
                         null,
-                        startedAt
+                        startedAt,
+                        executionId,
+                        workingDirectory
                 );
             }
 
@@ -219,7 +233,9 @@ public class AutomationExecutionRunner {
                     testResult.exitCode(),
                     completeLog.toString(),
                     "Generated automation test failed.",
-                    startedAt
+                    startedAt,
+                    executionId,
+                    workingDirectory
             );
 
         } catch (
@@ -233,7 +249,9 @@ public class AutomationExecutionRunner {
                             exception
                     ),
                     exception.getMessage(),
-                    startedAt
+                    startedAt,
+                    executionId,
+                    workingDirectory
             );
 
         } finally {
@@ -1137,7 +1155,9 @@ public class AutomationExecutionRunner {
             Integer exitCode,
             String logOutput,
             String errorMessage,
-            LocalDateTime startedAt
+            LocalDateTime startedAt,
+            String executionId,
+            Path workingDirectory
     ) {
 
         LocalDateTime finishedAt =
@@ -1151,6 +1171,19 @@ public class AutomationExecutionRunner {
                         )
                         .toMillis();
 
+        FailureStep failureStep =
+                status == AutomationExecutionStatus.PASSED
+                        ? null
+                        : findFailureStep(logOutput);
+
+        PersistedArtifacts artifacts =
+                status == AutomationExecutionStatus.PASSED
+                        ? PersistedArtifacts.empty()
+                        : persistFailureArtifacts(
+                                executionId,
+                                workingDirectory
+                        );
+
         return new RunnerResult(
                 status,
                 exitCode,
@@ -1158,8 +1191,149 @@ public class AutomationExecutionRunner {
                 errorMessage,
                 startedAt,
                 finishedAt,
-                durationMs
+                durationMs,
+                failureStep == null ? null : failureStep.stepOrder(),
+                failureStep == null ? null : failureStep.automationStepId(),
+                failureStep == null ? null : failureStep.actionType(),
+                artifacts.artifactDirectory(),
+                artifacts.screenshotPath(),
+                artifacts.tracePath()
         );
+    }
+
+    private FailureStep findFailureStep(
+            String logOutput
+    ) {
+        if (logOutput == null || logOutput.isBlank()) {
+            return null;
+        }
+
+        FailureStep active = null;
+
+        for (String rawLine : logOutput.split("\\R")) {
+            int markerIndex = rawLine.indexOf("TF_EVENT|");
+
+            if (markerIndex < 0) {
+                continue;
+            }
+
+            String[] parts = rawLine
+                    .substring(markerIndex)
+                    .trim()
+                    .split("\\|", -1);
+
+            if (parts.length < 5) {
+                continue;
+            }
+
+            int stepOrder;
+
+            try {
+                stepOrder = Integer.parseInt(parts[2]);
+            } catch (NumberFormatException exception) {
+                continue;
+            }
+
+            FailureStep candidate = new FailureStep(
+                    stepOrder,
+                    parts[3],
+                    parts[4]
+            );
+
+            if ("STEP_STARTED".equals(parts[1])) {
+                active = candidate;
+            } else if (
+                    "STEP_PASSED".equals(parts[1])
+                            && active != null
+                            && active.stepOrder() == stepOrder
+            ) {
+                active = null;
+            }
+        }
+
+        return active;
+    }
+
+    private PersistedArtifacts persistFailureArtifacts(
+            String executionId,
+            Path workingDirectory
+    ) {
+        if (workingDirectory == null) {
+            return PersistedArtifacts.empty();
+        }
+
+        Path generatedArtifacts = workingDirectory
+                .resolve("testforge-artifacts")
+                .normalize();
+
+        if (!Files.isDirectory(generatedArtifacts)) {
+            return PersistedArtifacts.empty();
+        }
+
+        try {
+            Path root = Path.of(artifactDirectory)
+                    .toAbsolutePath()
+                    .normalize();
+
+            Files.createDirectories(root);
+
+            String safeExecutionId = sanitizeFileName(executionId);
+            Path executionDirectory = root
+                    .resolve(safeExecutionId)
+                    .normalize();
+
+            if (!executionDirectory.startsWith(root)) {
+                return PersistedArtifacts.empty();
+            }
+
+            Files.createDirectories(executionDirectory);
+
+            String screenshotPath = copyArtifactIfPresent(
+                    generatedArtifacts.resolve("failure.png"),
+                    root,
+                    executionDirectory.resolve("failure.png")
+            );
+
+            String tracePath = copyArtifactIfPresent(
+                    generatedArtifacts.resolve("trace.zip"),
+                    root,
+                    executionDirectory.resolve("trace.zip")
+            );
+
+            if (screenshotPath == null && tracePath == null) {
+                deleteRecursively(executionDirectory);
+                return PersistedArtifacts.empty();
+            }
+
+            return new PersistedArtifacts(
+                    root.relativize(executionDirectory).toString(),
+                    screenshotPath,
+                    tracePath
+            );
+
+        } catch (IOException exception) {
+            return PersistedArtifacts.empty();
+        }
+    }
+
+    private String copyArtifactIfPresent(
+            Path source,
+            Path artifactRoot,
+            Path destination
+    ) throws IOException {
+        if (!Files.isRegularFile(source)) {
+            return null;
+        }
+
+        Files.copy(
+                source,
+                destination,
+                StandardCopyOption.REPLACE_EXISTING
+        );
+
+        return artifactRoot
+                .relativize(destination)
+                .toString();
     }
 
     private String sanitizeFileName(
@@ -1315,6 +1489,27 @@ public class AutomationExecutionRunner {
     ) {
     }
 
+    private record FailureStep(
+            int stepOrder,
+            String automationStepId,
+            String actionType
+    ) {
+    }
+
+    private record PersistedArtifacts(
+            String artifactDirectory,
+            String screenshotPath,
+            String tracePath
+    ) {
+        private static PersistedArtifacts empty() {
+            return new PersistedArtifacts(
+                    null,
+                    null,
+                    null
+            );
+        }
+    }
+
     public record RunnerResult(
 
             AutomationExecutionStatus status,
@@ -1329,7 +1524,19 @@ public class AutomationExecutionRunner {
 
             LocalDateTime finishedAt,
 
-            Long durationMs
+            Long durationMs,
+
+            Integer failedStepOrder,
+
+            String failedAutomationStepId,
+
+            String failedActionType,
+
+            String artifactDirectory,
+
+            String failureScreenshotPath,
+
+            String tracePath
     ) {
     }
 }

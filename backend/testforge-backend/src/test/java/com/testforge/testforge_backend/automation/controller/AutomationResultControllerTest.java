@@ -6,6 +6,7 @@ import com.testforge.testforge_backend.automation.exception.AutomationConflictEx
 import com.testforge.testforge_backend.automation.exception.AutomationExceptionHandler;
 import com.testforge.testforge_backend.automation.exception.AutomationNotFoundException;
 import com.testforge.testforge_backend.automation.execution.AutomationExecutionStatus;
+import com.testforge.testforge_backend.automation.service.AutomationArtifactService;
 import com.testforge.testforge_backend.automation.service.AutomationResultService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,9 @@ class AutomationResultControllerTest {
     private AutomationResultService
             automationResultService;
 
+    private AutomationArtifactService
+            automationArtifactService;
+
     private MockMvc
             mockMvc;
 
@@ -38,9 +42,15 @@ class AutomationResultControllerTest {
                         AutomationResultService.class
                 );
 
+        automationArtifactService =
+                mock(
+                        AutomationArtifactService.class
+                );
+
         AutomationResultController controller =
                 new AutomationResultController(
-                        automationResultService
+                        automationResultService,
+                        automationArtifactService
                 );
 
         mockMvc =
@@ -519,6 +529,24 @@ class AutomationResultControllerTest {
                 successful
                         ? null
                         : "Assertion failed",
+
+                successful
+                        ? null
+                        : 2,
+
+                successful
+                        ? null
+                        : "AUTO-STEP-002",
+
+                successful
+                        ? null
+                        : "ASSERT_TEXT",
+
+                false,
+
+                false,
+
+                true,
 
                 startedAt,
 

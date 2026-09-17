@@ -270,6 +270,21 @@ public class AutomationResultService {
 
                 execution.getErrorMessage(),
 
+                execution.getFailedStepOrder(),
+
+                execution.getFailedAutomationStepId(),
+
+                execution.getFailedActionType(),
+
+                execution.getFailureScreenshotPath() != null
+                        && !execution.getFailureScreenshotPath().isBlank(),
+
+                execution.getTracePath() != null
+                        && !execution.getTracePath().isBlank(),
+
+                execution.getLogOutput() != null
+                        && !execution.getLogOutput().isBlank(),
+
                 execution.getStartedAt(),
 
                 execution.getFinishedAt(),

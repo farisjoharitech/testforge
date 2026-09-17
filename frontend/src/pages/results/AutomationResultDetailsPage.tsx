@@ -6,7 +6,10 @@ import {
 
 import {
   ArrowBack,
+  BugReport,
   ContentCopy,
+  Download,
+  Image,
 } from '@mui/icons-material';
 
 import {
@@ -624,6 +627,204 @@ export default function AutomationResultDetailsPage() {
           </Stack>
         </CardContent>
       </Card>
+
+      {!result.successful && (
+        <Card
+          variant="outlined"
+        >
+          <CardContent>
+            <Stack
+              spacing={2}
+            >
+              <Stack
+                direction={{
+                  xs: 'column',
+                  md: 'row',
+                }}
+                justifyContent="space-between"
+                spacing={2}
+              >
+                <Box>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                  >
+                    <BugReport
+                      color="error"
+                    />
+
+                    <Typography
+                      variant="h6"
+                      fontWeight={700}
+                    >
+                      Failure Diagnostics
+                    </Typography>
+                  </Stack>
+
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      mt: 0.5,
+                    }}
+                  >
+                    Failing automation step and captured execution artifacts.
+                  </Typography>
+                </Box>
+
+                <Stack
+                  direction={{
+                    xs: 'column',
+                    sm: 'row',
+                  }}
+                  spacing={1}
+                >
+                  {result.failureScreenshotAvailable && (
+                    <Button
+                      component="a"
+                      href={
+                        automationResultApi.getArtifactUrl(
+                          result.executionId,
+                          'screenshot',
+                        )
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                      variant="outlined"
+                      startIcon={
+                        <Image />
+                      }
+                    >
+                      View Screenshot
+                    </Button>
+                  )}
+
+                  {result.traceAvailable && (
+                    <Button
+                      component="a"
+                      href={
+                        automationResultApi.getArtifactUrl(
+                          result.executionId,
+                          'trace',
+                        )
+                      }
+                      variant="outlined"
+                      startIcon={
+                        <Download />
+                      }
+                    >
+                      Download Trace
+                    </Button>
+                  )}
+
+                  {result.logAvailable && (
+                    <Button
+                      component="a"
+                      href={
+                        automationResultApi.getArtifactUrl(
+                          result.executionId,
+                          'log',
+                        )
+                      }
+                      variant="outlined"
+                      startIcon={
+                        <Download />
+                      }
+                    >
+                      Download Log
+                    </Button>
+                  )}
+                </Stack>
+              </Stack>
+
+              <Divider />
+
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: 'repeat(3, minmax(0, 1fr))',
+                  },
+                  gap: 2,
+                }}
+              >
+                <Box>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                  >
+                    Failed Step
+                  </Typography>
+
+                  <Typography
+                    fontWeight={700}
+                  >
+                    {
+                      result.failedStepOrder !== null
+                        && result.failedStepOrder !== undefined
+                        ? `Step ${result.failedStepOrder}`
+                        : '—'
+                    }
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                  >
+                    Action
+                  </Typography>
+
+                  <Typography
+                    fontWeight={700}
+                  >
+                    {
+                      result.failedActionType
+                      ?? '—'
+                    }
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                  >
+                    Automation Step ID
+                  </Typography>
+
+                  <Typography
+                    fontFamily="monospace"
+                    sx={{
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    {
+                      result.failedAutomationStepId
+                      ?? '—'
+                    }
+                  </Typography>
+                </Box>
+              </Box>
+
+              {
+                !result.failureScreenshotAvailable
+                && !result.traceAvailable
+                && (
+                  <Alert
+                    severity="info"
+                  >
+                    No browser screenshot or trace is available for this failure. API-only failures and infrastructure failures may only provide the failing step, error message and execution log.
+                  </Alert>
+                )
+              }
+            </Stack>
+          </CardContent>
+        </Card>
+      )}
 
       {result.errorMessage && (
         <Card

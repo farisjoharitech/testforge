@@ -183,6 +183,12 @@ public class AutomationExecutionPersistenceService {
         execution.setExitCode(result.exitCode());
         execution.setLogOutput(result.logOutput());
         execution.setErrorMessage(result.errorMessage());
+        execution.setFailedStepOrder(result.failedStepOrder());
+        execution.setFailedAutomationStepId(result.failedAutomationStepId());
+        execution.setFailedActionType(result.failedActionType());
+        execution.setArtifactDirectory(result.artifactDirectory());
+        execution.setFailureScreenshotPath(result.failureScreenshotPath());
+        execution.setTracePath(result.tracePath());
         execution.setFinishedAt(result.finishedAt());
         execution.setDurationMs(result.durationMs());
 
