@@ -6,6 +6,9 @@ import {
   Outlet,
 } from 'react-router-dom';
 
+import AppBreadcrumbs
+  from '../navigation/AppBreadcrumbs';
+
 import Sidebar
   from './Sidebar';
 
@@ -40,6 +43,8 @@ export default function AppLayout() {
           },
         }}
       >
+
+        <AppBreadcrumbs />
 
         <Outlet />
 

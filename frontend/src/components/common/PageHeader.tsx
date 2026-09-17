@@ -2,12 +2,9 @@ import type { ReactNode } from 'react';
 
 import {
   Box,
-  Breadcrumbs,
-  Link as MuiLink,
   Stack,
   Typography,
 } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
 
 interface BreadcrumbItem {
   label: string;
@@ -18,7 +15,14 @@ interface PageHeaderProps {
   title: string;
   subtitle?: string;
   description?: string;
+
+  /**
+   * Kept for source compatibility with pages created before Task 36.26.
+   * Breadcrumb rendering is now centralized in AppLayout/AppBreadcrumbs,
+   * so individual pages no longer create a second breadcrumb row.
+   */
   breadcrumbs?: BreadcrumbItem[];
+
   actions?: ReactNode;
 }
 
@@ -26,52 +30,12 @@ export function PageHeader({
   title,
   subtitle,
   description,
-  breadcrumbs,
   actions,
 }: PageHeaderProps) {
   const supportingText = description ?? subtitle;
 
   return (
     <Stack spacing={1.25}>
-      {breadcrumbs && breadcrumbs.length > 0 && (
-        <Breadcrumbs
-          aria-label="breadcrumb"
-          sx={{
-            '& .MuiBreadcrumbs-li': { fontSize: '0.8rem' },
-            color: 'text.secondary',
-          }}
-        >
-          {breadcrumbs.map((item, index) => {
-            const isLast = index === breadcrumbs.length - 1;
-
-            if (item.to && !isLast) {
-              return (
-                <MuiLink
-                  key={`${item.label}-${index}`}
-                  component={RouterLink}
-                  to={item.to}
-                  underline="hover"
-                  color="inherit"
-                >
-                  {item.label}
-                </MuiLink>
-              );
-            }
-
-            return (
-              <Typography
-                key={`${item.label}-${index}`}
-                variant="caption"
-                color={isLast ? 'text.primary' : 'text.secondary'}
-                fontWeight={isLast ? 600 : 400}
-              >
-                {item.label}
-              </Typography>
-            );
-          })}
-        </Breadcrumbs>
-      )}
-
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         spacing={2}
