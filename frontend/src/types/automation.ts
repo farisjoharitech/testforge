@@ -111,6 +111,13 @@ export type AutomationExecutionStatus =
     | 'TIMED_OUT'
     | 'ERROR';
 
+export type AutomationRunEventType =
+    | 'TEST_CASE_STARTED'
+    | 'STEP_STARTED'
+    | 'STEP_PASSED'
+    | 'STEP_FAILED'
+    | 'RUN_COMPLETED';
+
 export interface CreateAutomationScriptRequest {
   automationScriptId: string;
   name: string;
@@ -200,6 +207,22 @@ export interface AutomationRun {
   startedAt: string;
   finishedAt?: string | null;
   durationMs?: number | null;
+}
+
+export interface AutomationRunEvent {
+  sequence: number;
+  eventType: AutomationRunEventType;
+  runId: number;
+  runBusinessId: string;
+  executionId?: number | null;
+  executionBusinessId?: string | null;
+  testCaseId?: number | null;
+  testCaseBusinessId?: string | null;
+  stepOrder?: number | null;
+  automationStepId?: string | null;
+  actionType?: string | null;
+  message?: string | null;
+  occurredAt: string;
 }
 
 export interface AutomationExecution {

@@ -194,6 +194,16 @@ public class PlaywrightJavaGenerator {
             );
 
             source.append(
+                    "            System.out.println(\"TF_EVENT|STEP_STARTED|"
+                            + step.getStepOrder()
+                            + "|"
+                            + escapeJava(step.getAutomationStepId())
+                            + "|"
+                            + step.getActionType()
+                            + "\");\n"
+            );
+
+            source.append(
                     "            System.out.println(\"[TestForge] STEP "
                             + step.getStepOrder()
                             + " START - "
@@ -207,6 +217,16 @@ public class PlaywrightJavaGenerator {
                     generateStep(
                             step
                     )
+            );
+
+            source.append(
+                    "            System.out.println(\"TF_EVENT|STEP_PASSED|"
+                            + step.getStepOrder()
+                            + "|"
+                            + escapeJava(step.getAutomationStepId())
+                            + "|"
+                            + step.getActionType()
+                            + "\");\n"
             );
 
             source.append(

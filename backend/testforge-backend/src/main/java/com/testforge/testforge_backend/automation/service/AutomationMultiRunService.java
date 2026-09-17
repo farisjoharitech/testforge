@@ -8,6 +8,7 @@ import com.testforge.testforge_backend.automation.exception.AutomationConflictEx
 import com.testforge.testforge_backend.automation.exception.AutomationNotFoundException;
 import com.testforge.testforge_backend.automation.execution.AutomationExecutionRunner;
 import com.testforge.testforge_backend.automation.execution.AutomationExecutionStatus;
+import com.testforge.testforge_backend.automation.execution.AutomationRunStatus;
 import com.testforge.testforge_backend.automation.execution.AutomationRunType;
 import com.testforge.testforge_backend.repository.AutomationExecutionRepository;
 import com.testforge.testforge_backend.repository.AutomationScriptRepository;
@@ -30,6 +31,9 @@ public class AutomationMultiRunService {
     private final AutomationExecutionPersistenceService persistenceService;
     private final AutomationExecutionRunner automationExecutionRunner;
     private final AutomationExecutionLogStreamService logStreamService;
+    private final AutomationStructuredEventService structuredEventService;
+    private final AutomationRunService automationRunService;
+    private final AutomationRunEventStreamService runEventStreamService;
 
     public AutomationMultiRunService(
             TestCaseRepository testCaseRepository,
@@ -38,7 +42,10 @@ public class AutomationMultiRunService {
             AutomationGenerationService automationGenerationService,
             AutomationExecutionPersistenceService persistenceService,
             AutomationExecutionRunner automationExecutionRunner,
-            AutomationExecutionLogStreamService logStreamService
+            AutomationExecutionLogStreamService logStreamService,
+            AutomationStructuredEventService structuredEventService,
+            AutomationRunService automationRunService,
+            AutomationRunEventStreamService runEventStreamService
     ) {
         this.testCaseRepository = testCaseRepository;
         this.automationScriptRepository = automationScriptRepository;
@@ -47,6 +54,9 @@ public class AutomationMultiRunService {
         this.persistenceService = persistenceService;
         this.automationExecutionRunner = automationExecutionRunner;
         this.logStreamService = logStreamService;
+        this.structuredEventService = structuredEventService;
+        this.automationRunService = automationRunService;
+        this.runEventStreamService = runEventStreamService;
     }
 
     public AutomationRunResponse executeTestCases(List<Long> testCaseIds) {
@@ -113,7 +123,8 @@ public class AutomationMultiRunService {
 
         if (uniqueIds.size() != testCaseIds.size()) {
             throw new AutomationConflictException(
-                    "The same Test Case cannot be selected more than once");
+                    "The same Test Case cannot be selected more than once"
+            );
         }
 
         List<ExecutionJob> jobs = new ArrayList<>();
@@ -125,13 +136,15 @@ public class AutomationMultiRunService {
 
             if (!testCaseRepository.existsById(testCaseId)) {
                 throw new AutomationNotFoundException(
-                        "Test Case not found: " + testCaseId);
+                        "Test Case not found: " + testCaseId
+                );
             }
 
             AutomationScript script = automationScriptRepository
                     .findByTestCaseId(testCaseId)
                     .orElseThrow(() -> new AutomationNotFoundException(
-                            "Automation Script not found for Test Case: " + testCaseId));
+                            "Automation Script not found for Test Case: " + testCaseId
+                    ));
 
             if (automationExecutionRepository.existsByAutomationScript_IdAndStatus(
                     script.getId(),
@@ -139,16 +152,18 @@ public class AutomationMultiRunService {
             )) {
                 throw new AutomationConflictException(
                         "Automation Script already has a RUNNING execution: "
-                                + script.getAutomationScriptId());
+                                + script.getAutomationScriptId()
+                );
             }
 
-            GeneratedScriptResponse generated = automationGenerationService
-                    .getGenerated(script.getId());
+            GeneratedScriptResponse generated =
+                    automationGenerationService.getGenerated(script.getId());
 
             if (generated.stale()) {
                 throw new AutomationConflictException(
                         "Generated script is stale for Test Case: " + testCaseId
-                                + ". Regenerate it before starting the run.");
+                                + ". Regenerate it before starting the run."
+                );
             }
 
             jobs.add(new ExecutionJob(script.getId(), generated));
@@ -160,15 +175,17 @@ public class AutomationMultiRunService {
     private void executeSequentially(Long runId, List<ExecutionJob> jobs) {
         try {
             for (ExecutionJob job : jobs) {
-                AutomationExecutionResponse runningExecution = persistenceService
-                        .startExecutionInRun(
+                AutomationExecutionResponse runningExecution =
+                        persistenceService.startExecutionInRun(
                                 runId,
                                 job.scriptId(),
                                 job.generatedScript()
                         );
 
-                AutomationExecutionRunner.RunnerResult result = automationExecutionRunner
-                        .execute(
+                structuredEventService.testCaseStarted(runningExecution);
+
+                AutomationExecutionRunner.RunnerResult result =
+                        automationExecutionRunner.execute(
                                 runningExecution.executionId(),
                                 job.generatedScript().className(),
                                 job.generatedScript().source(),
@@ -182,22 +199,40 @@ public class AutomationMultiRunService {
                                             runningExecution.id(),
                                             chunk
                                     );
+
+                                    structuredEventService.acceptOutput(
+                                            runningExecution,
+                                            chunk
+                                    );
                                 }
                         );
 
-                AutomationExecutionResponse finishedExecution = persistenceService
-                        .finishExecution(
+                AutomationExecutionResponse finishedExecution =
+                        persistenceService.finishExecution(
                                 runningExecution.id(),
                                 result
                         );
+
+                structuredEventService.executionFinished(finishedExecution);
 
                 logStreamService.publishCompleted(
                         runningExecution.id(),
                         finishedExecution.status().name()
                 );
             }
+
+            publishCompletedRunIfFinished(runId);
         } catch (RuntimeException exception) {
             persistenceService.markRunInfrastructureError(runId);
+            publishCompletedRunIfFinished(runId);
+        }
+    }
+
+    private void publishCompletedRunIfFinished(Long runId) {
+        AutomationRunResponse run = automationRunService.getById(runId);
+
+        if (run.status() != AutomationRunStatus.RUNNING) {
+            runEventStreamService.publishRunCompleted(run);
         }
     }
 

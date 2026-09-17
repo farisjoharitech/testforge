@@ -218,4 +218,10 @@ export const automationApi = {
   ): string {
     return `${API_BASE_URL}/api/automation-executions/${executionId}/log-stream`;
   },
+
+  getRunEventStreamUrl(
+    runId: number,
+  ): string {
+    return `${API_BASE_URL}/api/automation-runs/${runId}/events`;
+  },
 };

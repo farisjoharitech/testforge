@@ -5,6 +5,7 @@ import com.testforge.testforge_backend.automation.execution.AutomationRunStatus;
 import com.testforge.testforge_backend.automation.execution.AutomationRunType;
 import com.testforge.testforge_backend.automation.service.AutomationMultiRunService;
 import com.testforge.testforge_backend.automation.service.AutomationRunService;
+import com.testforge.testforge_backend.automation.service.AutomationRunEventStreamService;
 import com.testforge.testforge_backend.automation.service.AutomationScenarioRunService;
 import com.testforge.testforge_backend.automation.service.AutomationTestPlanRunService;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +30,7 @@ class AutomationRunControllerTest {
     private AutomationMultiRunService automationMultiRunService;
     private AutomationScenarioRunService automationScenarioRunService;
     private AutomationTestPlanRunService automationTestPlanRunService;
+    private AutomationRunEventStreamService automationRunEventStreamService;
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -37,6 +39,7 @@ class AutomationRunControllerTest {
         automationMultiRunService = mock(AutomationMultiRunService.class);
         automationScenarioRunService = mock(AutomationScenarioRunService.class);
         automationTestPlanRunService = mock(AutomationTestPlanRunService.class);
+        automationRunEventStreamService = mock(AutomationRunEventStreamService.class);
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(
@@ -44,7 +47,8 @@ class AutomationRunControllerTest {
                                 automationRunService,
                                 automationMultiRunService,
                                 automationScenarioRunService,
-                                automationTestPlanRunService
+                                automationTestPlanRunService,
+                                automationRunEventStreamService
                         )
                 )
                 .build();

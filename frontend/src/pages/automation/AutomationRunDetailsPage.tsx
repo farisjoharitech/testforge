@@ -48,6 +48,7 @@ import type {
   AutomationExecution,
   AutomationExecutionStatus,
   AutomationRun,
+  AutomationRunEvent,
   AutomationRunStatus,
 } from '../../types/automation';
 
@@ -172,6 +173,8 @@ export default function AutomationRunDetailsPage() {
   const [liveLog, setLiveLog] = useState('');
   const [liveLogExecutionId, setLiveLogExecutionId] = useState<number | null>(null);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
+  const [structuredEvents, setStructuredEvents] = useState<AutomationRunEvent[]>([]);
+  const [structuredStreamConnected, setStructuredStreamConnected] = useState(false);
   const [, setClockTick] = useState(0);
 
   const liveLogRef = useRef<HTMLPreElement | null>(null);
@@ -239,6 +242,61 @@ export default function AutomationRunDetailsPage() {
 
     return () => window.clearInterval(timerId);
   }, [run]);
+
+  useEffect(() => {
+    if (!Number.isInteger(numericRunId) || numericRunId <= 0) {
+      return undefined;
+    }
+
+    setStructuredEvents([]);
+    setStructuredStreamConnected(false);
+
+    const eventSource = new EventSource(
+      automationApi.getRunEventStreamUrl(numericRunId),
+    );
+
+    eventSource.onopen = () => {
+      setStructuredStreamConnected(true);
+    };
+
+    const handleRunEvent = (event: MessageEvent<string>) => {
+      try {
+        const parsed = JSON.parse(event.data) as AutomationRunEvent;
+
+        setStructuredEvents((current) => {
+          if (current.some((item) => item.sequence === parsed.sequence)) {
+            return current;
+          }
+
+          return [...current, parsed]
+            .sort((left, right) => left.sequence - right.sequence)
+            .slice(-500);
+        });
+
+        if (parsed.eventType === 'RUN_COMPLETED') {
+          void loadRun(false);
+          eventSource.close();
+          setStructuredStreamConnected(false);
+        }
+      } catch {
+        // Ignore malformed event payloads; normal polling remains the fallback.
+      }
+    };
+
+    eventSource.addEventListener(
+      'run-event',
+      handleRunEvent as EventListener,
+    );
+
+    eventSource.onerror = () => {
+      setStructuredStreamConnected(false);
+    };
+
+    return () => {
+      eventSource.close();
+      setStructuredStreamConnected(false);
+    };
+  }, [loadRun, numericRunId]);
 
   const activeExecution = useMemo(
     () => executions.find((execution) => execution.status === 'RUNNING') ?? null,
@@ -322,6 +380,36 @@ export default function AutomationRunDetailsPage() {
       run.totalExecutions - run.completedExecutions - (activeExecution ? 1 : 0),
     );
   }, [activeExecution, run]);
+
+  const activeStructuredStep = useMemo(() => {
+    if (!activeExecution) {
+      return null;
+    }
+
+    const executionEvents = structuredEvents.filter(
+      (event) => event.executionId === activeExecution.id,
+    );
+
+    for (let index = executionEvents.length - 1; index >= 0; index -= 1) {
+      const event = executionEvents[index];
+
+      if (event.eventType === 'STEP_STARTED') {
+        const laterCompletion = executionEvents
+          .slice(index + 1)
+          .some(
+            (later) =>
+              later.stepOrder === event.stepOrder
+              && (later.eventType === 'STEP_PASSED' || later.eventType === 'STEP_FAILED'),
+          );
+
+        if (!laterCompletion) {
+          return event;
+        }
+      }
+    }
+
+    return null;
+  }, [activeExecution, structuredEvents]);
 
   if (loading && !run) {
     return (
@@ -421,6 +509,13 @@ export default function AutomationRunDetailsPage() {
                   label={run.status}
                   color={getRunColor(run.status)}
                   variant={run.status === 'RUNNING' ? 'filled' : 'outlined'}
+                />
+
+                <Chip
+                  size="small"
+                  label={structuredStreamConnected ? 'Structured events live' : 'Structured events reconnecting'}
+                  color={structuredStreamConnected ? 'success' : 'default'}
+                  variant="outlined"
                 />
 
                 <Typography variant="caption" color="text.secondary">
@@ -529,6 +624,29 @@ export default function AutomationRunDetailsPage() {
                 <>
                   <Divider />
 
+                  <Box>
+                    <Typography variant="overline" color="text.secondary">
+                      Structured Step Progress
+                    </Typography>
+
+                    {activeStructuredStep ? (
+                      <Stack spacing={0.5}>
+                        <Typography fontWeight={750}>
+                          Step {activeStructuredStep.stepOrder} • {activeStructuredStep.actionType}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" fontFamily="monospace">
+                          {activeStructuredStep.automationStepId}
+                        </Typography>
+                      </Stack>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Waiting for the next structured step event…
+                      </Typography>
+                    )}
+                  </Box>
+
+                  <Divider />
+
                   <Stack direction="row" spacing={1} alignItems="center">
                     <Terminal fontSize="small" />
                     <Typography variant="subtitle2" fontWeight={700}>
@@ -569,6 +687,45 @@ export default function AutomationRunDetailsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card variant="outlined">
+        <CardContent>
+          <Stack spacing={1.5}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              justifyContent="space-between"
+              spacing={1}
+            >
+              <Box>
+                <Typography variant="h6" fontWeight={700}>
+                  Structured Live Events
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  First-class Test Case and Automation Step events from the Run SSE stream.
+                </Typography>
+              </Box>
+              <Chip
+                size="small"
+                label={`${structuredEvents.length} events`}
+                variant="outlined"
+                sx={{ alignSelf: 'flex-start' }}
+              />
+            </Stack>
+
+            {structuredEvents.length === 0 ? (
+              <Alert severity="info">
+                Waiting for structured Run events…
+              </Alert>
+            ) : (
+              <Stack spacing={1}>
+                {structuredEvents.slice(-12).reverse().map((event) => (
+                  <StructuredEventRow key={event.sequence} event={event} />
+                ))}
+              </Stack>
+            )}
+          </Stack>
+        </CardContent>
+      </Card>
 
       <Stack spacing={1.5}>
         <Stack
@@ -748,6 +905,54 @@ function ExecutionCard({
         </Stack>
       </CardContent>
     </Card>
+  );
+}
+
+function StructuredEventRow({ event }: { event: AutomationRunEvent }) {
+  const severity: 'primary' | 'success' | 'error' | 'default' =
+    event.eventType === 'STEP_FAILED'
+      ? 'error'
+      : event.eventType === 'STEP_PASSED' || event.eventType === 'RUN_COMPLETED'
+        ? 'success'
+        : event.eventType === 'STEP_STARTED'
+          ? 'primary'
+          : 'default';
+
+  return (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: '180px 1fr auto' },
+        gap: 1,
+        alignItems: 'center',
+        py: 1,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+      }}
+    >
+      <Chip
+        size="small"
+        label={event.eventType}
+        color={severity}
+        variant="outlined"
+        sx={{ justifySelf: 'start' }}
+      />
+
+      <Box>
+        <Typography variant="body2" fontWeight={650}>
+          {event.testCaseBusinessId || event.runBusinessId}
+          {event.stepOrder ? ` • Step ${event.stepOrder}` : ''}
+          {event.actionType ? ` • ${event.actionType}` : ''}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {event.automationStepId || event.message || 'Run event'}
+        </Typography>
+      </Box>
+
+      <Typography variant="caption" color="text.secondary">
+        {formatDate(event.occurredAt)}
+      </Typography>
+    </Box>
   );
 }
 
