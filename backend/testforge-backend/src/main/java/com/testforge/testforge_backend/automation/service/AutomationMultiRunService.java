@@ -86,6 +86,15 @@ public class AutomationMultiRunService {
         );
     }
 
+    public AutomationRunResponse executeTestSetTestCases(List<Long> testCaseIds) {
+        return executeTestCases(
+                testCaseIds,
+                AutomationRunType.TEST_SET,
+                1,
+                "Test Set has no Test Cases"
+        );
+    }
+
     private AutomationRunResponse executeTestCases(
             List<Long> testCaseIds,
             AutomationRunType runType,

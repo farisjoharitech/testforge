@@ -8,6 +8,7 @@ import {
   ArrowBack,
   Delete,
   Edit,
+  PlayArrow,
   Refresh,
 } from '@mui/icons-material';
 
@@ -29,6 +30,10 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-dom';
+
+import {
+  automationApi,
+} from '../../api/automationApi';
 
 import {
   testSetApi,
@@ -55,6 +60,7 @@ export default function TestSetDetailsPage() {
 
   const [testSet, setTestSet] = useState<TestSet | null>(null);
   const [loading, setLoading] = useState(true);
+  const [running, setRunning] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,6 +70,7 @@ export default function TestSetDetailsPage() {
       setLoading(false);
       return;
     }
+
     try {
       setLoading(true);
       setError(null);
@@ -78,6 +85,22 @@ export default function TestSetDetailsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const handleRun = async () => {
+    if (!testSet) return;
+
+    try {
+      setRunning(true);
+      setError(null);
+
+      const run = await automationApi.executeTestSet(testSet.id);
+
+      navigate(`/automation/runs/${run.id}`);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Unable to start Test Set run.'));
+      setRunning(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!testSet) return;
@@ -116,7 +139,11 @@ export default function TestSetDetailsPage() {
 
   return (
     <Box>
-      <Button startIcon={<ArrowBack />} onClick={() => navigate('/test-sets')} sx={{ mb: 1 }}>
+      <Button
+        startIcon={<ArrowBack />}
+        onClick={() => navigate('/test-sets')}
+        sx={{ mb: 1 }}
+      >
         Test Sets
       </Button>
 
@@ -134,13 +161,26 @@ export default function TestSetDetailsPage() {
           </Typography>
         </Box>
 
-        <Stack direction="row" spacing={1}>
-          <Button startIcon={<Refresh />} onClick={() => void load()}>
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          <Button
+            variant="contained"
+            startIcon={running ? <CircularProgress size={16} color="inherit" /> : <PlayArrow />}
+            disabled={running || deleting || testSet.memberCount === 0}
+            onClick={() => void handleRun()}
+          >
+            {running ? 'Starting...' : 'Run Test Set'}
+          </Button>
+          <Button
+            startIcon={<Refresh />}
+            disabled={running || deleting}
+            onClick={() => void load()}
+          >
             Refresh
           </Button>
           <Button
             variant="outlined"
             startIcon={<Edit />}
+            disabled={running || deleting}
             onClick={() => navigate(`/test-sets/${testSet.id}/edit`)}
           >
             Edit
@@ -148,7 +188,7 @@ export default function TestSetDetailsPage() {
           <Button
             color="error"
             startIcon={<Delete />}
-            disabled={deleting}
+            disabled={running || deleting}
             onClick={() => void handleDelete()}
           >
             Delete
@@ -156,8 +196,16 @@ export default function TestSetDetailsPage() {
         </Stack>
       </Stack>
 
-      {state?.message && <Alert severity="success" sx={{ mb: 2 }}>{state.message}</Alert>}
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {state?.message && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {state.message}
+        </Alert>
+      )}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
       <Stack spacing={2}>
         <Card variant="outlined">
@@ -165,14 +213,17 @@ export default function TestSetDetailsPage() {
             <Stack spacing={1.25}>
               <Typography variant="h6">Test Set Summary</Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                <Chip label={`${testSet.memberCount} Test Case${testSet.memberCount === 1 ? '' : 's'}`} />
+                <Chip
+                  label={`${testSet.memberCount} Test Case${testSet.memberCount === 1 ? '' : 's'}`}
+                />
                 <Chip variant="outlined" label={testSet.testPlanBusinessId} />
               </Stack>
               <Typography variant="body2" color="text.secondary">
                 {testSet.description?.trim() || 'No description.'}
               </Typography>
               <Alert severity="info">
-                Task 36.25L saves and manages this reusable selection. Execution is added in Task 36.25M.
+                Run Test Set executes these Test Cases sequentially in the saved order.
+                All members are validated before the Automation Run is created.
               </Alert>
             </Stack>
           </CardContent>
@@ -204,7 +255,11 @@ export default function TestSetDetailsPage() {
                   </Box>
                   <Stack direction="row" spacing={0.75}>
                     <Chip size="small" label={member.automationType} />
-                    <Chip size="small" variant="outlined" label={member.automationStatus} />
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      label={member.automationStatus}
+                    />
                   </Stack>
                 </Stack>
               ))}

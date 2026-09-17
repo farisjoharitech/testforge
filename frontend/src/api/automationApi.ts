@@ -197,6 +197,18 @@ export const automationApi = {
     );
   },
 
+  executeTestSet(
+    testSetId: number,
+  ): Promise<AutomationRun> {
+    return apiClient.post<
+      AutomationRun,
+      Record<string, never>
+    >(
+      `/api/automation-runs/test-set/${testSetId}`,
+      {},
+    );
+  },
+
   getRun(
     runId: number,
   ): Promise<AutomationRun> {
