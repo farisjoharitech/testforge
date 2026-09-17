@@ -18,6 +18,7 @@ public interface AutomationExecutionRepository
 
     @EntityGraph(
             attributePaths = {
+                    "automationRun",
                     "automationScript",
                     "testCase"
             }
@@ -29,6 +30,7 @@ public interface AutomationExecutionRepository
 
     @EntityGraph(
             attributePaths = {
+                    "automationRun",
                     "automationScript",
                     "testCase"
             }
@@ -40,6 +42,7 @@ public interface AutomationExecutionRepository
 
     @EntityGraph(
             attributePaths = {
+                    "automationRun",
                     "automationScript",
                     "testCase"
             }
@@ -51,6 +54,7 @@ public interface AutomationExecutionRepository
 
     @EntityGraph(
             attributePaths = {
+                    "automationRun",
                     "automationScript",
                     "testCase"
             }
@@ -62,6 +66,7 @@ public interface AutomationExecutionRepository
 
     @EntityGraph(
             attributePaths = {
+                    "automationRun",
                     "automationScript",
                     "testCase"
             }
@@ -72,6 +77,17 @@ public interface AutomationExecutionRepository
     boolean existsByAutomationScript_IdAndStatus(
             Long automationScriptId,
             AutomationExecutionStatus status
+    );
+
+    @EntityGraph(
+            attributePaths = {
+                    "automationRun",
+                    "automationScript",
+                    "testCase"
+            }
+    )
+    List<AutomationExecution> findByAutomationRun_IdOrderByStartedAtAsc(
+            Long automationRunId
     );
 
     /*
@@ -113,6 +129,7 @@ public interface AutomationExecutionRepository
 
     @EntityGraph(
             attributePaths = {
+                    "automationRun",
                     "automationScript",
                     "testCase"
             }

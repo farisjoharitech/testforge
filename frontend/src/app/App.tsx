@@ -49,6 +49,9 @@ import ScriptGenerationPage
 import AutomationExecutionPage
     from '../pages/automation/AutomationExecutionPage';
 
+import AutomationMultiRunPage
+    from '../pages/automation/AutomationMultiRunPage';
+
 import AutomationResultsPage
     from '../pages/results/AutomationResultsPage';
 
@@ -153,6 +156,13 @@ export default function App() {
                     path="/automation"
                     element={
                         <AutomationSelectionPage />
+                    }
+                />
+
+                <Route
+                    path="/automation/multi-run"
+                    element={
+                        <AutomationMultiRunPage />
                     }
                 />
 

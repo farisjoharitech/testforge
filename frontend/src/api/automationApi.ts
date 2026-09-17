@@ -8,6 +8,8 @@ import {
 
 import type {
   AutomationExecution,
+  AutomationRun,
+  CreateMultiTestCaseRunRequest,
   AutomationScript,
   AutomationStep,
   CreateAutomationScriptRequest,
@@ -156,6 +158,34 @@ export const automationApi = {
   ): Promise<AutomationExecution> {
     return apiClient.get<AutomationExecution>(
       `/api/automation-executions/${executionId}`,
+    );
+  },
+
+  executeMultipleTestCases(
+    request: CreateMultiTestCaseRunRequest,
+  ): Promise<AutomationRun> {
+    return apiClient.post<
+      AutomationRun,
+      CreateMultiTestCaseRunRequest
+    >(
+      '/api/automation-runs/multi-test-case',
+      request,
+    );
+  },
+
+  getRun(
+    runId: number,
+  ): Promise<AutomationRun> {
+    return apiClient.get<AutomationRun>(
+      `/api/automation-runs/${runId}`,
+    );
+  },
+
+  getRunExecutions(
+    runId: number,
+  ): Promise<AutomationExecution[]> {
+    return apiClient.get<AutomationExecution[]>(
+      `/api/automation-runs/${runId}/executions`,
     );
   },
 

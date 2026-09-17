@@ -89,6 +89,21 @@ export type UiElementRole =
     | 'STATUS'
     | 'PROGRESSBAR';
 
+export type AutomationRunType =
+    | 'SINGLE_TEST_CASE'
+    | 'MULTI_TEST_CASE'
+    | 'SCENARIO'
+    | 'TEST_PLAN'
+    | 'TEST_SET';
+
+export type AutomationRunStatus =
+    | 'RUNNING'
+    | 'PASSED'
+    | 'FAILED'
+    | 'PARTIAL'
+    | 'TIMED_OUT'
+    | 'ERROR';
+
 export type AutomationExecutionStatus =
     | 'RUNNING'
     | 'PASSED'
@@ -173,9 +188,25 @@ export interface GeneratedScript {
   stale: boolean;
 }
 
+export interface AutomationRun {
+  id: number;
+  runId: string;
+  runType: AutomationRunType;
+  status: AutomationRunStatus;
+  totalExecutions: number;
+  completedExecutions: number;
+  passedExecutions: number;
+  failedExecutions: number;
+  startedAt: string;
+  finishedAt?: string | null;
+  durationMs?: number | null;
+}
+
 export interface AutomationExecution {
   id: number;
   executionId: string;
+  automationRunId: number;
+  automationRunBusinessId: string;
   automationScriptId: number;
   automationScriptBusinessId: string;
   testCaseId: number;
@@ -189,4 +220,7 @@ export interface AutomationExecution {
   startedAt: string;
   finishedAt?: string | null;
   durationMs?: number | null;
+}
+export interface CreateMultiTestCaseRunRequest {
+  testCaseIds: number[];
 }

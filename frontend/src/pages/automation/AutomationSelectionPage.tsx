@@ -10,6 +10,7 @@ import {
   AutoAwesome,
   Code,
   OpenInNew,
+  PlaylistPlay,
   Refresh,
   Web,
 } from '@mui/icons-material';
@@ -440,24 +441,46 @@ export default function AutomationSelectionPage() {
           },
         ]}
         actions={
-          <Button
-            variant="outlined"
-            startIcon={
-              <Refresh />
-            }
-            disabled={
-              refreshing
-            }
-            onClick={() =>
-              void loadEligibleTestCases(
-                true,
-              )
-            }
+          <Stack
+            direction={{
+              xs: 'column',
+              sm: 'row',
+            }}
+            spacing={1}
           >
-            {refreshing
-              ? 'Refreshing...'
-              : 'Refresh'}
-          </Button>
+            <Button
+              variant="contained"
+              startIcon={
+                <PlaylistPlay />
+              }
+              onClick={() =>
+                navigate(
+                  '/automation/multi-run',
+                )
+              }
+            >
+              Run Multiple
+            </Button>
+
+            <Button
+              variant="outlined"
+              startIcon={
+                <Refresh />
+              }
+              disabled={
+                refreshing
+              }
+              onClick={() =>
+                void loadEligibleTestCases(
+                  true,
+                )
+              }
+            >
+              {refreshing
+                ? 'Refreshing...'
+                : 'Refresh'}
+            </Button>
+          </Stack>
         }
       />
 

@@ -1,16 +1,21 @@
 package com.testforge.testforge_backend.automation.service;
 
 import com.testforge.testforge_backend.automation.dto.AutomationExecutionResponse;
+import com.testforge.testforge_backend.automation.dto.AutomationRunResponse;
 import com.testforge.testforge_backend.automation.dto.GeneratedScriptResponse;
 import com.testforge.testforge_backend.automation.entity.AutomationExecution;
+import com.testforge.testforge_backend.automation.entity.AutomationRun;
 import com.testforge.testforge_backend.automation.entity.AutomationScript;
 import com.testforge.testforge_backend.automation.exception.AutomationConflictException;
 import com.testforge.testforge_backend.automation.exception.AutomationNotFoundException;
 import com.testforge.testforge_backend.automation.execution.AutomationExecutionRunner;
 import com.testforge.testforge_backend.automation.execution.AutomationExecutionStatus;
+import com.testforge.testforge_backend.automation.execution.AutomationRunStatus;
+import com.testforge.testforge_backend.automation.execution.AutomationRunType;
 import com.testforge.testforge_backend.domain.TestCase;
 import com.testforge.testforge_backend.domain.enums.AutomationStatus;
 import com.testforge.testforge_backend.repository.AutomationExecutionRepository;
+import com.testforge.testforge_backend.repository.AutomationRunRepository;
 import com.testforge.testforge_backend.repository.AutomationScriptRepository;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
@@ -24,35 +29,24 @@ import java.util.UUID;
 @Service
 public class AutomationExecutionPersistenceService {
 
-    private static final DateTimeFormatter
-            EXECUTION_TIME_FORMAT =
-            DateTimeFormatter.ofPattern(
-                    "yyyyMMddHHmmss"
-            );
+    private static final DateTimeFormatter ID_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
-    private final AutomationExecutionRepository
-            automationExecutionRepository;
-
-    private final AutomationScriptRepository
-            automationScriptRepository;
-
-    private final EntityManager
-            entityManager;
+    private final AutomationExecutionRepository automationExecutionRepository;
+    private final AutomationRunRepository automationRunRepository;
+    private final AutomationScriptRepository automationScriptRepository;
+    private final EntityManager entityManager;
 
     public AutomationExecutionPersistenceService(
             AutomationExecutionRepository automationExecutionRepository,
+            AutomationRunRepository automationRunRepository,
             AutomationScriptRepository automationScriptRepository,
             EntityManager entityManager
     ) {
-
-        this.automationExecutionRepository =
-                automationExecutionRepository;
-
-        this.automationScriptRepository =
-                automationScriptRepository;
-
-        this.entityManager =
-                entityManager;
+        this.automationExecutionRepository = automationExecutionRepository;
+        this.automationRunRepository = automationRunRepository;
+        this.automationScriptRepository = automationScriptRepository;
+        this.entityManager = entityManager;
     }
 
     @Transactional
@@ -60,133 +54,120 @@ public class AutomationExecutionPersistenceService {
             Long scriptId,
             GeneratedScriptResponse generatedScript
     ) {
+        assertScriptNotRunning(scriptId);
 
-        if (
-                automationExecutionRepository
-                        .existsByAutomationScript_IdAndStatus(
-                                scriptId,
-                                AutomationExecutionStatus.RUNNING
-                        )
-        ) {
+        AutomationScript script = findScript(scriptId);
+        TestCase testCase = script.getTestCase();
 
-            throw new AutomationConflictException(
-                    "Automation Script already has a RUNNING execution"
-            );
-        }
-
-        AutomationScript script =
-                automationScriptRepository
-                        .findById(
-                                scriptId
-                        )
-                        .orElseThrow(
-                                () ->
-                                        new AutomationNotFoundException(
-                                                "Automation Script not found: "
-                                                        + scriptId
-                                        )
-                        );
-
-        TestCase testCase =
-                script.getTestCase();
-
-        /*
-         * Validation passed.
-         * The script is now ready to run.
-         */
-        testCase.setAutomationStatus(
-                AutomationStatus.READY
-        );
-
-        /*
-         * Persist READY before switching to RUNNING.
-         *
-         * It also makes the transition explicit in the lifecycle.
-         */
+        testCase.setAutomationStatus(AutomationStatus.READY);
         entityManager.flush();
 
-        LocalDateTime startedAt =
-                LocalDateTime.now();
+        LocalDateTime startedAt = LocalDateTime.now();
 
-        AutomationExecution execution =
-                new AutomationExecution(
-                        createExecutionBusinessId(
-                                startedAt
-                        ),
-                        script,
-                        testCase,
-                        AutomationExecutionStatus.RUNNING,
-                        generatedScript.className(),
-                        generatedScript.generatedAt(),
-                        startedAt
-                );
+        AutomationRun run = new AutomationRun(
+                createRunBusinessId(startedAt),
+                AutomationRunType.SINGLE_TEST_CASE,
+                AutomationRunStatus.RUNNING,
+                1,
+                startedAt
+        );
+        automationRunRepository.save(run);
 
-        automationExecutionRepository.save(
-                execution
+        AutomationExecution execution = createExecution(
+                run,
+                script,
+                testCase,
+                generatedScript,
+                startedAt
         );
 
-        testCase.setAutomationStatus(
-                AutomationStatus.RUNNING
-        );
-
+        testCase.setAutomationStatus(AutomationStatus.RUNNING);
         entityManager.flush();
 
-        return toResponse(
-                execution
-        );
+        return toResponse(execution);
     }
 
+    @Transactional
+    public AutomationRunResponse startRun(
+            AutomationRunType runType,
+            int totalExecutions
+    ) {
+        if (runType == null) {
+            throw new IllegalArgumentException("Automation Run type must not be null");
+        }
+
+        if (totalExecutions < 1) {
+            throw new IllegalArgumentException("Automation Run must contain at least one execution");
+        }
+
+        LocalDateTime startedAt = LocalDateTime.now();
+
+        AutomationRun run = new AutomationRun(
+                createRunBusinessId(startedAt),
+                runType,
+                AutomationRunStatus.RUNNING,
+                totalExecutions,
+                startedAt
+        );
+
+        automationRunRepository.save(run);
+        return toRunResponse(run);
+    }
 
     @Transactional
-    public void appendLiveLog(
-            Long executionDatabaseId,
-            String chunk
+    public AutomationExecutionResponse startExecutionInRun(
+            Long runId,
+            Long scriptId,
+            GeneratedScriptResponse generatedScript
     ) {
+        AutomationRun run = automationRunRepository.findById(runId)
+                .orElseThrow(() -> new AutomationNotFoundException(
+                        "Automation Run not found: " + runId));
 
-        if (
-                chunk == null
-                        || chunk.isEmpty()
-        ) {
+        if (run.getStatus() != AutomationRunStatus.RUNNING) {
+            throw new AutomationConflictException(
+                    "Automation Run is not RUNNING: " + run.getRunId());
+        }
+
+        assertScriptNotRunning(scriptId);
+
+        AutomationScript script = findScript(scriptId);
+        TestCase testCase = script.getTestCase();
+        LocalDateTime startedAt = LocalDateTime.now();
+
+        AutomationExecution execution = createExecution(
+                run,
+                script,
+                testCase,
+                generatedScript,
+                startedAt
+        );
+
+        testCase.setAutomationStatus(AutomationStatus.RUNNING);
+        entityManager.flush();
+
+        return toResponse(execution);
+    }
+
+    @Transactional
+    public void appendLiveLog(Long executionDatabaseId, String chunk) {
+        if (chunk == null || chunk.isEmpty()) {
             return;
         }
 
-        AutomationExecution execution =
-                automationExecutionRepository
-                        .findById(
-                                executionDatabaseId
-                        )
-                        .orElseThrow(
-                                () ->
-                                        new AutomationNotFoundException(
-                                                "Automation Execution not found: "
-                                                        + executionDatabaseId
-                                        )
-                        );
+        AutomationExecution execution = automationExecutionRepository.findById(executionDatabaseId)
+                .orElseThrow(() -> new AutomationNotFoundException(
+                        "Automation Execution not found: " + executionDatabaseId));
 
-        String current =
-                execution.getLogOutput();
-
-        if (current == null) {
-            current = "";
-        }
-
-        String updated =
-                current + chunk;
-
-        int maxLength =
-                500_000;
+        String current = execution.getLogOutput() == null ? "" : execution.getLogOutput();
+        String updated = current + chunk;
+        int maxLength = 500_000;
 
         if (updated.length() > maxLength) {
-            updated =
-                    updated.substring(
-                            0,
-                            maxLength
-                    );
+            updated = updated.substring(0, maxLength);
         }
 
-        execution.setLogOutput(
-                updated
-        );
+        execution.setLogOutput(updated);
     }
 
     @Transactional
@@ -194,147 +175,135 @@ public class AutomationExecutionPersistenceService {
             Long executionDatabaseId,
             AutomationExecutionRunner.RunnerResult result
     ) {
+        AutomationExecution execution = automationExecutionRepository.findById(executionDatabaseId)
+                .orElseThrow(() -> new AutomationNotFoundException(
+                        "Automation Execution not found: " + executionDatabaseId));
 
-        AutomationExecution execution =
-                automationExecutionRepository
-                        .findById(
-                                executionDatabaseId
-                        )
-                        .orElseThrow(
-                                () ->
-                                        new AutomationNotFoundException(
-                                                "Automation Execution not found: "
-                                                        + executionDatabaseId
-                                        )
-                        );
+        execution.setStatus(result.status());
+        execution.setExitCode(result.exitCode());
+        execution.setLogOutput(result.logOutput());
+        execution.setErrorMessage(result.errorMessage());
+        execution.setFinishedAt(result.finishedAt());
+        execution.setDurationMs(result.durationMs());
 
-        execution.setStatus(
-                result.status()
+        TestCase testCase = execution.getTestCase();
+        boolean passed = result.status() == AutomationExecutionStatus.PASSED;
+        testCase.setAutomationStatus(
+                passed ? AutomationStatus.AUTOMATED : AutomationStatus.READY
         );
 
-        execution.setExitCode(
-                result.exitCode()
-        );
+        AutomationRun run = execution.getAutomationRun();
 
-        execution.setLogOutput(
-                result.logOutput()
-        );
-
-        execution.setErrorMessage(
-                result.errorMessage()
-        );
-
-        execution.setFinishedAt(
-                result.finishedAt()
-        );
-
-        execution.setDurationMs(
-                result.durationMs()
-        );
-
-        TestCase testCase =
-                execution.getTestCase();
-
-        if (
-                result.status()
-                        == AutomationExecutionStatus.PASSED
-        ) {
-
-            testCase.setAutomationStatus(
-                    AutomationStatus.AUTOMATED
+        if (run.getRunType() == AutomationRunType.SINGLE_TEST_CASE) {
+            run.finishSingleExecution(
+                    toRunStatus(result.status()),
+                    result.finishedAt(),
+                    result.durationMs(),
+                    passed
             );
-
         } else {
-
-            /*
-             * Generated script still exists and can be retried.
-             */
-            testCase.setAutomationStatus(
-                    AutomationStatus.READY
+            run.recordExecutionFinished(
+                    passed,
+                    result.finishedAt()
             );
         }
 
-        return toResponse(
-                execution
-        );
+        return toResponse(execution);
+    }
+
+    @Transactional
+    public void markRunInfrastructureError(Long runId) {
+        AutomationRun run = automationRunRepository.findById(runId)
+                .orElseThrow(() -> new AutomationNotFoundException(
+                        "Automation Run not found: " + runId));
+        run.markInfrastructureError(LocalDateTime.now());
     }
 
     @Transactional(readOnly = true)
-    public AutomationExecutionResponse getLatest(
-            Long scriptId
-    ) {
-
-        AutomationExecution execution =
-                automationExecutionRepository
-                        .findTopByAutomationScript_IdOrderByStartedAtDesc(
-                                scriptId
-                        )
-                        .orElseThrow(
-                                () ->
-                                        new AutomationNotFoundException(
-                                                "No Automation Execution found for Automation Script: "
-                                                        + scriptId
-                                        )
-                        );
-
-        return toResponse(
-                execution
-        );
+    public AutomationExecutionResponse getLatest(Long scriptId) {
+        AutomationExecution execution = automationExecutionRepository
+                .findTopByAutomationScript_IdOrderByStartedAtDesc(scriptId)
+                .orElseThrow(() -> new AutomationNotFoundException(
+                        "No Automation Execution found for Automation Script: " + scriptId));
+        return toResponse(execution);
     }
 
     @Transactional(readOnly = true)
-    public AutomationExecutionResponse getById(
-            Long executionId
+    public AutomationExecutionResponse getById(Long executionId) {
+        AutomationExecution execution = automationExecutionRepository.findById(executionId)
+                .orElseThrow(() -> new AutomationNotFoundException(
+                        "Automation Execution not found: " + executionId));
+        return toResponse(execution);
+    }
+
+    private AutomationExecution createExecution(
+            AutomationRun run,
+            AutomationScript script,
+            TestCase testCase,
+            GeneratedScriptResponse generatedScript,
+            LocalDateTime startedAt
     ) {
-
-        AutomationExecution execution =
-                automationExecutionRepository
-                        .findById(
-                                executionId
-                        )
-                        .orElseThrow(
-                                () ->
-                                        new AutomationNotFoundException(
-                                                "Automation Execution not found: "
-                                                        + executionId
-                                        )
-                        );
-
-        return toResponse(
-                execution
+        AutomationExecution execution = new AutomationExecution(
+                createExecutionBusinessId(startedAt),
+                run,
+                script,
+                testCase,
+                AutomationExecutionStatus.RUNNING,
+                generatedScript.className(),
+                generatedScript.generatedAt(),
+                startedAt
         );
+
+        return automationExecutionRepository.save(execution);
     }
 
-    private String createExecutionBusinessId(
-            LocalDateTime now
-    ) {
-
-        String randomPart =
-                UUID.randomUUID()
-                        .toString()
-                        .substring(
-                                0,
-                                8
-                        )
-                        .toUpperCase(
-                                Locale.ROOT
-                        );
-
-        return "EXEC-"
-                + EXECUTION_TIME_FORMAT.format(
-                now
-        )
-                + "-"
-                + randomPart;
+    private AutomationScript findScript(Long scriptId) {
+        return automationScriptRepository.findById(scriptId)
+                .orElseThrow(() -> new AutomationNotFoundException(
+                        "Automation Script not found: " + scriptId));
     }
 
-    private AutomationExecutionResponse toResponse(
-            AutomationExecution execution
-    ) {
+    private void assertScriptNotRunning(Long scriptId) {
+        if (automationExecutionRepository.existsByAutomationScript_IdAndStatus(
+                scriptId,
+                AutomationExecutionStatus.RUNNING
+        )) {
+            throw new AutomationConflictException(
+                    "Automation Script already has a RUNNING execution");
+        }
+    }
 
+    private AutomationRunStatus toRunStatus(AutomationExecutionStatus status) {
+        return switch (status) {
+            case RUNNING -> AutomationRunStatus.RUNNING;
+            case PASSED -> AutomationRunStatus.PASSED;
+            case FAILED -> AutomationRunStatus.FAILED;
+            case TIMED_OUT -> AutomationRunStatus.TIMED_OUT;
+            case ERROR -> AutomationRunStatus.ERROR;
+        };
+    }
+
+    private String createRunBusinessId(LocalDateTime now) {
+        return "RUN-" + ID_TIME_FORMAT.format(now) + "-" + randomPart();
+    }
+
+    private String createExecutionBusinessId(LocalDateTime now) {
+        return "EXEC-" + ID_TIME_FORMAT.format(now) + "-" + randomPart();
+    }
+
+    private String randomPart() {
+        return UUID.randomUUID()
+                .toString()
+                .substring(0, 8)
+                .toUpperCase(Locale.ROOT);
+    }
+
+    private AutomationExecutionResponse toResponse(AutomationExecution execution) {
         return new AutomationExecutionResponse(
                 execution.getId(),
                 execution.getExecutionId(),
+                execution.getAutomationRun().getId(),
+                execution.getAutomationRun().getRunId(),
                 execution.getAutomationScript().getId(),
                 execution.getAutomationScript().getAutomationScriptId(),
                 execution.getTestCase().getId(),
@@ -348,6 +317,22 @@ public class AutomationExecutionPersistenceService {
                 execution.getStartedAt(),
                 execution.getFinishedAt(),
                 execution.getDurationMs()
+        );
+    }
+
+    private AutomationRunResponse toRunResponse(AutomationRun run) {
+        return new AutomationRunResponse(
+                run.getId(),
+                run.getRunId(),
+                run.getRunType(),
+                run.getStatus(),
+                run.getTotalExecutions(),
+                run.getCompletedExecutions(),
+                run.getPassedExecutions(),
+                run.getFailedExecutions(),
+                run.getStartedAt(),
+                run.getFinishedAt(),
+                run.getDurationMs()
         );
     }
 }

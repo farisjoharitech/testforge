@@ -50,6 +50,19 @@ public class AutomationExecution {
             optional = false
     )
     @JoinColumn(
+            name = "automation_run_id",
+            nullable = false,
+            foreignKey = @ForeignKey(
+                    name = "fk_automation_execution_run"
+            )
+    )
+    private AutomationRun automationRun;
+
+    @ManyToOne(
+            fetch = FetchType.LAZY,
+            optional = false
+    )
+    @JoinColumn(
             name = "automation_script_id",
             nullable = false,
             foreignKey = @ForeignKey(
@@ -144,6 +157,7 @@ public class AutomationExecution {
 
     public AutomationExecution(
             String executionId,
+            AutomationRun automationRun,
             AutomationScript automationScript,
             TestCase testCase,
             AutomationExecutionStatus status,
@@ -154,6 +168,9 @@ public class AutomationExecution {
 
         this.executionId =
                 executionId;
+
+        this.automationRun =
+                automationRun;
 
         this.automationScript =
                 automationScript;
@@ -172,6 +189,32 @@ public class AutomationExecution {
 
         this.startedAt =
                 startedAt;
+    }
+
+    /**
+     * Backward-compatible constructor for existing unit-test fixtures and callers
+     * that do not persist the execution. New production executions must use the
+     * constructor that supplies an AutomationRun.
+     */
+    public AutomationExecution(
+            String executionId,
+            AutomationScript automationScript,
+            TestCase testCase,
+            AutomationExecutionStatus status,
+            String generatedClassName,
+            LocalDateTime generatedAt,
+            LocalDateTime startedAt
+    ) {
+        this(
+                executionId,
+                null,
+                automationScript,
+                testCase,
+                status,
+                generatedClassName,
+                generatedAt,
+                startedAt
+        );
     }
 
     @PrePersist
@@ -207,6 +250,17 @@ public class AutomationExecution {
     ) {
         this.executionId =
                 executionId;
+    }
+
+
+    public AutomationRun getAutomationRun() {
+        return automationRun;
+    }
+
+    public void setAutomationRun(
+            AutomationRun automationRun
+    ) {
+        this.automationRun = automationRun;
     }
 
     public AutomationScript getAutomationScript() {
