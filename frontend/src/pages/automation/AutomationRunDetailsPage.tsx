@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -9,6 +10,7 @@ import {
   ArrowBack,
   Assessment,
   Refresh,
+  Terminal,
 } from '@mui/icons-material';
 
 import {
@@ -19,6 +21,7 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Divider,
   LinearProgress,
   Stack,
   Typography,
@@ -113,6 +116,50 @@ function runTypeLabel(run: AutomationRun): string {
   }
 }
 
+function formatDate(value?: string | null): string {
+  if (!value) {
+    return '—';
+  }
+
+  return new Date(value).toLocaleString();
+}
+
+function formatDuration(durationMs?: number | null): string {
+  if (durationMs === null || durationMs === undefined) {
+    return '—';
+  }
+
+  if (durationMs < 1000) {
+    return `${durationMs} ms`;
+  }
+
+  if (durationMs < 60_000) {
+    return `${(durationMs / 1000).toFixed(2)} s`;
+  }
+
+  const totalSeconds = Math.floor(durationMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes}m ${seconds}s`;
+}
+
+function getExecutionDuration(execution: AutomationExecution): number | null {
+  if (execution.durationMs !== null && execution.durationMs !== undefined) {
+    return execution.durationMs;
+  }
+
+  if (execution.status === 'RUNNING' && execution.startedAt) {
+    const startedAt = new Date(execution.startedAt).getTime();
+
+    if (!Number.isNaN(startedAt)) {
+      return Math.max(0, Date.now() - startedAt);
+    }
+  }
+
+  return null;
+}
+
 export default function AutomationRunDetailsPage() {
   const navigate = useNavigate();
   const { runId } = useParams<{ runId: string }>();
@@ -122,7 +169,12 @@ export default function AutomationRunDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [liveLog, setLiveLog] = useState('');
+  const [liveLogExecutionId, setLiveLogExecutionId] = useState<number | null>(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
+  const [, setClockTick] = useState(0);
 
+  const liveLogRef = useRef<HTMLPreElement | null>(null);
   const numericRunId = Number(runId);
 
   const loadRun = useCallback(async (showRefresh = false) => {
@@ -135,8 +187,6 @@ export default function AutomationRunDetailsPage() {
     try {
       if (showRefresh) {
         setRefreshing(true);
-      } else if (!run) {
-        setLoading(true);
       }
 
       setError(null);
@@ -148,6 +198,8 @@ export default function AutomationRunDetailsPage() {
 
       setRun(updatedRun);
       setExecutions(updatedExecutions);
+      setLastUpdatedAt(new Date());
+
       return updatedRun;
     } catch (err) {
       setError(getErrorMessage(err));
@@ -156,11 +208,11 @@ export default function AutomationRunDetailsPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [numericRunId, run]);
+  }, [numericRunId]);
 
   useEffect(() => {
     void loadRun();
-    // loadRun intentionally changes as run changes; numericRunId is the stable load key.
+    // numericRunId is the page load key. Polling handles subsequent updates.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [numericRunId]);
 
@@ -176,6 +228,83 @@ export default function AutomationRunDetailsPage() {
     return () => window.clearInterval(intervalId);
   }, [loadRun, run]);
 
+  useEffect(() => {
+    if (!run || run.status !== 'RUNNING') {
+      return undefined;
+    }
+
+    const timerId = window.setInterval(() => {
+      setClockTick((current) => current + 1);
+    }, 1000);
+
+    return () => window.clearInterval(timerId);
+  }, [run]);
+
+  const activeExecution = useMemo(
+    () => executions.find((execution) => execution.status === 'RUNNING') ?? null,
+    [executions],
+  );
+
+  useEffect(() => {
+    if (!activeExecution) {
+      setLiveLogExecutionId(null);
+      setLiveLog('');
+      return undefined;
+    }
+
+    setLiveLogExecutionId(activeExecution.id);
+    setLiveLog(activeExecution.logOutput ?? '');
+
+    const eventSource = new EventSource(
+      automationApi.getExecutionLogStreamUrl(activeExecution.id),
+    );
+
+    const handleSnapshot = (event: MessageEvent<string>) => {
+      setLiveLog(event.data ?? '');
+    };
+
+    const handleLog = (event: MessageEvent<string>) => {
+      setLiveLog((current) => `${current}${event.data}\n`);
+    };
+
+    const handleComplete = () => {
+      eventSource.close();
+      void loadRun(false);
+    };
+
+    eventSource.addEventListener(
+      'snapshot',
+      handleSnapshot as EventListener,
+    );
+
+    eventSource.addEventListener(
+      'log',
+      handleLog as EventListener,
+    );
+
+    eventSource.addEventListener(
+      'complete',
+      handleComplete as EventListener,
+    );
+
+    eventSource.onerror = () => {
+      // Parent/child polling remains the fallback if SSE disconnects.
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [activeExecution?.id, activeExecution?.status, loadRun]);
+
+  useEffect(() => {
+    if (!liveLogRef.current) {
+      return;
+    }
+
+    liveLogRef.current.scrollTop = liveLogRef.current.scrollHeight;
+  }, [liveLog]);
+
   const progress = useMemo(
     () => run && run.totalExecutions > 0
       ? (run.completedExecutions / run.totalExecutions) * 100
@@ -183,9 +312,27 @@ export default function AutomationRunDetailsPage() {
     [run],
   );
 
+  const waitingCount = useMemo(() => {
+    if (!run) {
+      return 0;
+    }
+
+    return Math.max(
+      0,
+      run.totalExecutions - run.completedExecutions - (activeExecution ? 1 : 0),
+    );
+  }, [activeExecution, run]);
+
   if (loading && !run) {
     return (
-      <Box sx={{ minHeight: 320, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          minHeight: 320,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -194,10 +341,17 @@ export default function AutomationRunDetailsPage() {
   if (!run) {
     return (
       <Stack spacing={2}>
-        <Button startIcon={<ArrowBack />} onClick={() => navigate('/automation')} sx={{ alignSelf: 'flex-start' }}>
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => navigate('/automation')}
+          sx={{ alignSelf: 'flex-start' }}
+        >
           Back to Automation
         </Button>
-        <Alert severity="error">{error || 'Automation Run not found.'}</Alert>
+
+        <Alert severity="error">
+          {error || 'Automation Run not found.'}
+        </Alert>
       </Stack>
     );
   }
@@ -221,6 +375,7 @@ export default function AutomationRunDetailsPage() {
             >
               Refresh
             </Button>
+
             <Button
               variant="outlined"
               startIcon={<ArrowBack />}
@@ -232,40 +387,85 @@ export default function AutomationRunDetailsPage() {
         }
       />
 
-      {error && <Alert severity="error">{error}</Alert>}
+      {error && (
+        <Alert severity="error">
+          {error}
+        </Alert>
+      )}
 
       <Card variant="outlined">
         <CardContent>
-          <Stack spacing={2}>
+          <Stack spacing={2.5}>
             <Stack
-              direction={{ xs: 'column', sm: 'row' }}
+              direction={{ xs: 'column', md: 'row' }}
               justifyContent="space-between"
-              spacing={1.5}
+              spacing={2}
             >
               <Box>
                 <Typography variant="overline" color="text.secondary">
                   Automation Run
                 </Typography>
-                <Typography variant="h6" fontWeight={750}>
+
+                <Typography variant="h6" fontWeight={750} fontFamily="monospace">
                   {run.runId}
+                </Typography>
+
+                <Typography variant="body2" color="text.secondary">
+                  Started {formatDate(run.startedAt)}
+                  {run.finishedAt ? ` • Finished ${formatDate(run.finishedAt)}` : ''}
                 </Typography>
               </Box>
 
-              <Chip
-                label={run.status}
-                color={getRunColor(run.status)}
-                variant={run.status === 'RUNNING' ? 'filled' : 'outlined'}
-              />
+              <Stack spacing={0.75} alignItems={{ xs: 'flex-start', md: 'flex-end' }}>
+                <Chip
+                  label={run.status}
+                  color={getRunColor(run.status)}
+                  variant={run.status === 'RUNNING' ? 'filled' : 'outlined'}
+                />
+
+                <Typography variant="caption" color="text.secondary">
+                  {run.status === 'RUNNING'
+                    ? 'Live • refreshing every second'
+                    : 'Run complete'}
+                </Typography>
+
+                {lastUpdatedAt && (
+                  <Typography variant="caption" color="text.secondary">
+                    Last updated {lastUpdatedAt.toLocaleTimeString()}
+                  </Typography>
+                )}
+              </Stack>
             </Stack>
 
-            <LinearProgress variant="determinate" value={Math.min(100, progress)} />
+            <Box>
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+                sx={{ mb: 0.75 }}
+              >
+                <Typography variant="body2" fontWeight={700}>
+                  Overall progress
+                </Typography>
+
+                <Typography variant="body2" color="text.secondary">
+                  {run.completedExecutions} / {run.totalExecutions} completed • {Math.round(progress)}%
+                </Typography>
+              </Stack>
+
+              <LinearProgress
+                variant="determinate"
+                value={Math.min(100, progress)}
+                sx={{ height: 10, borderRadius: 5 }}
+              />
+            </Box>
 
             <Box
               sx={{
                 display: 'grid',
                 gridTemplateColumns: {
                   xs: 'repeat(2, minmax(0, 1fr))',
-                  md: 'repeat(4, minmax(0, 1fr))',
+                  md: 'repeat(5, minmax(0, 1fr))',
                 },
                 gap: 1.5,
               }}
@@ -274,61 +474,173 @@ export default function AutomationRunDetailsPage() {
               <Metric label="Completed" value={run.completedExecutions} />
               <Metric label="Passed" value={run.passedExecutions} />
               <Metric label="Failed" value={run.failedExecutions} />
+              <Metric label="Waiting" value={waitingCount} />
             </Box>
           </Stack>
         </CardContent>
       </Card>
 
+      {run.status === 'RUNNING' && (
+        <Card variant="outlined">
+          <CardContent>
+            <Stack spacing={2}>
+              <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                justifyContent="space-between"
+                spacing={1.5}
+              >
+                <Box>
+                  <Typography variant="overline" color="text.secondary">
+                    Currently Running
+                  </Typography>
+
+                  {activeExecution ? (
+                    <>
+                      <Typography variant="h6" fontWeight={750}>
+                        {activeExecution.testCaseBusinessId}
+                      </Typography>
+
+                      <Typography variant="caption" color="text.secondary" fontFamily="monospace">
+                        {activeExecution.executionId}
+                      </Typography>
+                    </>
+                  ) : (
+                    <Typography variant="h6" fontWeight={750}>
+                      Preparing next Test Case…
+                    </Typography>
+                  )}
+                </Box>
+
+                {activeExecution && (
+                  <Stack alignItems={{ xs: 'flex-start', md: 'flex-end' }} spacing={0.5}>
+                    <Chip
+                      size="small"
+                      label="RUNNING"
+                      color="primary"
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      Elapsed {formatDuration(getExecutionDuration(activeExecution))}
+                    </Typography>
+                  </Stack>
+                )}
+              </Stack>
+
+              {activeExecution && (
+                <>
+                  <Divider />
+
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Terminal fontSize="small" />
+                    <Typography variant="subtitle2" fontWeight={700}>
+                      Live execution log
+                    </Typography>
+                  </Stack>
+
+                  <Box
+                    ref={liveLogRef}
+                    component="pre"
+                    sx={{
+                      m: 0,
+                      p: 2,
+                      minHeight: 160,
+                      maxHeight: 320,
+                      overflow: 'auto',
+                      borderRadius: 1,
+                      bgcolor: 'grey.950',
+                      color: 'grey.100',
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      lineHeight: 1.6,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {liveLogExecutionId === activeExecution.id && liveLog
+                      ? liveLog
+                      : 'Waiting for execution output…'}
+                  </Box>
+
+                  <Typography variant="caption" color="text.secondary">
+                    Logs use the existing execution SSE stream. Parent Run and child statuses continue polling as a fallback.
+                  </Typography>
+                </>
+              )}
+            </Stack>
+          </CardContent>
+        </Card>
+      )}
+
       <Stack spacing={1.5}>
-        <Typography variant="h6" fontWeight={700}>
-          Test Case Executions
-        </Typography>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          spacing={1}
+        >
+          <Box>
+            <Typography variant="h6" fontWeight={700}>
+              Test Case Executions
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Child executions appear in execution order. Sequential runs create the next child when it starts.
+            </Typography>
+          </Box>
+
+          <Chip
+            size="small"
+            label={`${executions.length} created`}
+            variant="outlined"
+            sx={{ alignSelf: 'flex-start' }}
+          />
+        </Stack>
 
         {executions.length === 0 ? (
           <Alert severity="info">
             The Run has started. The first child execution will appear when its Test Case begins.
           </Alert>
         ) : (
-          executions.map((execution) => (
-            <Card key={execution.id} variant="outlined">
-              <CardContent>
-                <Stack
-                  direction={{ xs: 'column', md: 'row' }}
-                  spacing={1.5}
-                  justifyContent="space-between"
-                  alignItems={{ xs: 'flex-start', md: 'center' }}
-                >
-                  <Box>
-                    <Typography fontWeight={750}>
-                      {execution.testCaseBusinessId}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {execution.executionId}
-                    </Typography>
-                  </Box>
-
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Chip
-                      size="small"
-                      label={execution.status}
-                      color={getExecutionColor(execution.status)}
-                      variant="outlined"
-                    />
-
-                    <Button
-                      size="small"
-                      startIcon={<Assessment />}
-                      onClick={() => navigate(`/results/${execution.id}`)}
-                    >
-                      Result
-                    </Button>
-                  </Stack>
-                </Stack>
-              </CardContent>
-            </Card>
+          executions.map((execution, index) => (
+            <ExecutionCard
+              key={execution.id}
+              execution={execution}
+              sequence={index + 1}
+              onOpenResult={() =>
+                navigate(
+                  `/results/${encodeURIComponent(execution.executionId)}`,
+                )
+              }
+            />
           ))
         )}
+
+        {waitingCount > 0 && run.status === 'RUNNING' && (
+          <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
+            <CardContent>
+              <Typography fontWeight={700}>
+                {waitingCount} Test {waitingCount === 1 ? 'Case is' : 'Cases are'} waiting to start
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                TestForge is executing this Run sequentially. Pending child records are created as their Test Cases begin.
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
       </Stack>
+
+      {run.status !== 'RUNNING' && (
+        <Alert
+          severity={
+            run.status === 'PASSED'
+              ? 'success'
+              : run.status === 'PARTIAL'
+                ? 'warning'
+                : 'error'
+          }
+        >
+          Run finished with status <strong>{run.status}</strong>.{' '}
+          {run.passedExecutions} passed and {run.failedExecutions} failed out of{' '}
+          {run.totalExecutions} Test Case executions.
+        </Alert>
+      )}
     </Stack>
   );
 }
@@ -340,6 +652,112 @@ function Metric({ label, value }: { label: string; value: number }) {
         {label}
       </Typography>
       <Typography variant="h5" fontWeight={750}>
+        {value}
+      </Typography>
+    </Box>
+  );
+}
+
+function ExecutionCard({
+  execution,
+  sequence,
+  onOpenResult,
+}: {
+  execution: AutomationExecution;
+  sequence: number;
+  onOpenResult: () => void;
+}) {
+  const isFinished = execution.status !== 'RUNNING';
+
+  return (
+    <Card variant="outlined">
+      <CardContent>
+        <Stack spacing={1.5}>
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={1.5}
+            justifyContent="space-between"
+            alignItems={{ xs: 'flex-start', md: 'center' }}
+          >
+            <Stack direction="row" spacing={1.5} alignItems="flex-start">
+              <Box
+                sx={{
+                  minWidth: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: 'action.hover',
+                  fontWeight: 750,
+                }}
+              >
+                {sequence}
+              </Box>
+
+              <Box>
+                <Typography fontWeight={750}>
+                  {execution.testCaseBusinessId}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" fontFamily="monospace">
+                  {execution.executionId}
+                </Typography>
+              </Box>
+            </Stack>
+
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Chip
+                size="small"
+                label={execution.status}
+                color={getExecutionColor(execution.status)}
+                variant={execution.status === 'RUNNING' ? 'filled' : 'outlined'}
+              />
+
+              {isFinished && (
+                <Button
+                  size="small"
+                  startIcon={<Assessment />}
+                  onClick={onOpenResult}
+                >
+                  Result
+                </Button>
+              )}
+            </Stack>
+          </Stack>
+
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(3, minmax(0, 1fr))',
+              },
+              gap: 1.5,
+            }}
+          >
+            <Detail label="Started" value={formatDate(execution.startedAt)} />
+            <Detail label="Finished" value={formatDate(execution.finishedAt)} />
+            <Detail label="Duration" value={formatDuration(getExecutionDuration(execution))} />
+          </Box>
+
+          {execution.errorMessage && (
+            <Alert severity="error">
+              {execution.errorMessage}
+            </Alert>
+          )}
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <Box>
+      <Typography variant="caption" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="body2" fontWeight={600}>
         {value}
       </Typography>
     </Box>
