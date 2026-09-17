@@ -1,5 +1,8 @@
 package com.testforge.testforge_backend.exception;
 
+import com.testforge.testforge_backend.testset.exception.InvalidTestSetException;
+import com.testforge.testforge_backend.testset.exception.TestSetNotFoundException;
+
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -122,6 +125,38 @@ public class GlobalExceptionHandler {
 
         return buildError(
                 HttpStatus.NOT_FOUND,
+                exception.getMessage(),
+                request,
+                null
+        );
+    }
+
+    @ExceptionHandler(
+            TestSetNotFoundException.class
+    )
+    public ResponseEntity<ApiError>
+    handleTestSetNotFound(
+            TestSetNotFoundException exception,
+            HttpServletRequest request) {
+
+        return buildError(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage(),
+                request,
+                null
+        );
+    }
+
+    @ExceptionHandler(
+            InvalidTestSetException.class
+    )
+    public ResponseEntity<ApiError>
+    handleInvalidTestSet(
+            InvalidTestSetException exception,
+            HttpServletRequest request) {
+
+        return buildError(
+                HttpStatus.BAD_REQUEST,
                 exception.getMessage(),
                 request,
                 null

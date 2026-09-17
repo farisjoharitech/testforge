@@ -56,6 +56,13 @@ public class BusinessIdGeneratorService {
         );
     }
 
+    public String generateTestSetId() {
+        return generate(
+                "test_set_business_id_seq",
+                "TS"
+        );
+    }
+
     private String generate(
             String sequenceName,
             String prefix

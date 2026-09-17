@@ -7,6 +7,7 @@ import {
   Dashboard,
   Description,
   Folder,
+  PlaylistAddCheck,
   Science,
 } from '@mui/icons-material';
 
@@ -74,6 +75,17 @@ const navigationSections:
 
         icon:
             <Description />,
+      },
+
+      {
+        label:
+            'Test Sets',
+
+        path:
+            '/test-sets',
+
+        icon:
+            <PlaylistAddCheck />,
       },
 
     ],
@@ -184,6 +196,22 @@ function isNavigationItemActive(
 
         || pathname.startsWith(
             '/test-cases/',
+        )
+    );
+  }
+
+  /*
+   * Test Set hierarchy.
+   */
+  if (
+      path === '/test-sets'
+  ) {
+
+    return (
+        pathname === '/test-sets'
+
+        || pathname.startsWith(
+            '/test-sets/',
         )
     );
   }

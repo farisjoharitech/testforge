@@ -68,6 +68,15 @@ import DashboardPage
 import MonitoringDrilldownPage
     from '../pages/monitoring/MonitoringDrilldownPage';
 
+import TestSetListPage
+    from '../pages/test-sets/TestSetListPage';
+
+import TestSetFormPage
+    from '../pages/test-sets/TestSetFormPage';
+
+import TestSetDetailsPage
+    from '../pages/test-sets/TestSetDetailsPage';
+
 export default function App() {
     return (
         <Routes>
@@ -153,6 +162,35 @@ export default function App() {
                     path="/test-cases/:testCaseId"
                     element={
                         <TestCaseDetailsPage />
+                    }
+                />
+
+
+                <Route
+                    path="/test-sets"
+                    element={
+                        <TestSetListPage />
+                    }
+                />
+
+                <Route
+                    path="/test-sets/new"
+                    element={
+                        <TestSetFormPage />
+                    }
+                />
+
+                <Route
+                    path="/test-sets/:testSetId"
+                    element={
+                        <TestSetDetailsPage />
+                    }
+                />
+
+                <Route
+                    path="/test-sets/:testSetId/edit"
+                    element={
+                        <TestSetFormPage />
                     }
                 />
 
