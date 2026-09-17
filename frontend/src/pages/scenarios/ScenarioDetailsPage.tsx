@@ -1,5 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { Add, ArrowForward, Delete, Edit, Refresh } from '@mui/icons-material';
+import { Add, ArrowForward, Delete, Edit, PlayArrow, Refresh } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ApiError } from '../../api/apiClient';
+import { automationApi } from '../../api/automationApi';
 import { testCaseApi } from '../../api/testCaseApi';
 import { testScenarioApi } from '../../api/testScenarioApi';
 import DeleteConfirmationDialog from '../../components/common/DeleteConfirmationDialog';
@@ -58,6 +59,7 @@ export default function ScenarioDetailsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [startingScenarioRun, setStartingScenarioRun] = useState(false);
 
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
@@ -108,6 +110,23 @@ export default function ScenarioDetailsPage() {
     return filteredCases.slice(start, start + pageSize);
   }, [filteredCases, page, pageSize]);
 
+  const handleRunScenario = async () => {
+    if (!scenario) return;
+
+    try {
+      setStartingScenarioRun(true);
+      setError(null);
+
+      const run = await automationApi.executeScenario(scenario.id);
+
+      navigate(`/automation/runs/${run.id}`);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to start Scenario automation run.');
+    } finally {
+      setStartingScenarioRun(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!scenario) return;
     try {
@@ -141,6 +160,15 @@ export default function ScenarioDetailsPage() {
             <Chip size="small" label={label(scenario.testType)} variant="outlined" />
             <Chip size="small" label={scenario.priority} color={priorityColor(scenario.priority)} variant="outlined" />
             <Chip size="small" label={scenario.status} color={statusColor(scenario.status)} variant="outlined" />
+            <Button
+              size="small"
+              variant="contained"
+              startIcon={startingScenarioRun ? <CircularProgress size={16} color="inherit" /> : <PlayArrow />}
+              disabled={startingScenarioRun}
+              onClick={() => void handleRunScenario()}
+            >
+              {startingScenarioRun ? 'Starting...' : 'Run Scenario'}
+            </Button>
             <Button size="small" startIcon={<Refresh />} disabled={refreshing} onClick={() => void loadPage(true)}>Refresh</Button>
             <Button size="small" startIcon={<Edit />} onClick={() => setEditDialogOpen(true)}>Edit</Button>
             <Button size="small" color="error" startIcon={<Delete />} onClick={() => setDeleteDialogOpen(true)}>Delete</Button>

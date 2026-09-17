@@ -173,6 +173,18 @@ export const automationApi = {
     );
   },
 
+  executeScenario(
+    scenarioId: number,
+  ): Promise<AutomationRun> {
+    return apiClient.post<
+      AutomationRun,
+      Record<string, never>
+    >(
+      `/api/automation-runs/scenario/${scenarioId}`,
+      {},
+    );
+  },
+
   getRun(
     runId: number,
   ): Promise<AutomationRun> {

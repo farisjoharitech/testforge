@@ -5,6 +5,7 @@ import com.testforge.testforge_backend.automation.dto.AutomationRunResponse;
 import com.testforge.testforge_backend.automation.dto.CreateMultiTestCaseRunRequest;
 import com.testforge.testforge_backend.automation.service.AutomationMultiRunService;
 import com.testforge.testforge_backend.automation.service.AutomationRunService;
+import com.testforge.testforge_backend.automation.service.AutomationScenarioRunService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,13 +23,16 @@ public class AutomationRunController {
 
     private final AutomationRunService automationRunService;
     private final AutomationMultiRunService automationMultiRunService;
+    private final AutomationScenarioRunService automationScenarioRunService;
 
     public AutomationRunController(
             AutomationRunService automationRunService,
-            AutomationMultiRunService automationMultiRunService
+            AutomationMultiRunService automationMultiRunService,
+            AutomationScenarioRunService automationScenarioRunService
     ) {
         this.automationRunService = automationRunService;
         this.automationMultiRunService = automationMultiRunService;
+        this.automationScenarioRunService = automationScenarioRunService;
     }
 
     @PostMapping("/multi-test-case")
@@ -37,6 +41,15 @@ public class AutomationRunController {
     ) {
         return ResponseEntity.accepted().body(
                 automationMultiRunService.executeTestCases(request.testCaseIds())
+        );
+    }
+
+    @PostMapping("/scenario/{scenarioId}")
+    public ResponseEntity<AutomationRunResponse> executeScenario(
+            @PathVariable Long scenarioId
+    ) {
+        return ResponseEntity.accepted().body(
+                automationScenarioRunService.executeScenario(scenarioId)
         );
     }
 

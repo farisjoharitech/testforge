@@ -50,10 +50,37 @@ public class AutomationMultiRunService {
     }
 
     public AutomationRunResponse executeTestCases(List<Long> testCaseIds) {
-        List<ExecutionJob> jobs = validateAndBuildJobs(testCaseIds);
+        return executeTestCases(
+                testCaseIds,
+                AutomationRunType.MULTI_TEST_CASE,
+                2,
+                "Select at least two Test Cases for a multi-test run"
+        );
+    }
+
+    public AutomationRunResponse executeScenarioTestCases(List<Long> testCaseIds) {
+        return executeTestCases(
+                testCaseIds,
+                AutomationRunType.SCENARIO,
+                1,
+                "Scenario has no automatable Test Cases"
+        );
+    }
+
+    private AutomationRunResponse executeTestCases(
+            List<Long> testCaseIds,
+            AutomationRunType runType,
+            int minimumCount,
+            String minimumCountMessage
+    ) {
+        List<ExecutionJob> jobs = validateAndBuildJobs(
+                testCaseIds,
+                minimumCount,
+                minimumCountMessage
+        );
 
         AutomationRunResponse run = persistenceService.startRun(
-                AutomationRunType.MULTI_TEST_CASE,
+                runType,
                 jobs.size()
         );
 
@@ -64,10 +91,13 @@ public class AutomationMultiRunService {
         return run;
     }
 
-    private List<ExecutionJob> validateAndBuildJobs(List<Long> testCaseIds) {
-        if (testCaseIds == null || testCaseIds.size() < 2) {
-            throw new IllegalArgumentException(
-                    "Select at least two Test Cases for a multi-test run");
+    private List<ExecutionJob> validateAndBuildJobs(
+            List<Long> testCaseIds,
+            int minimumCount,
+            String minimumCountMessage
+    ) {
+        if (testCaseIds == null || testCaseIds.size() < minimumCount) {
+            throw new IllegalArgumentException(minimumCountMessage);
         }
 
         Set<Long> uniqueIds = new LinkedHashSet<>(testCaseIds);

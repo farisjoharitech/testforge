@@ -52,6 +52,10 @@ import AutomationExecutionPage
 import AutomationMultiRunPage
     from '../pages/automation/AutomationMultiRunPage';
 
+import AutomationRunDetailsPage
+    from '../pages/automation/AutomationRunDetailsPage';
+
+
 import AutomationResultsPage
     from '../pages/results/AutomationResultsPage';
 
@@ -163,6 +167,13 @@ export default function App() {
                     path="/automation/multi-run"
                     element={
                         <AutomationMultiRunPage />
+                    }
+                />
+
+                <Route
+                    path="/automation/runs/:runId"
+                    element={
+                        <AutomationRunDetailsPage />
                     }
                 />
 

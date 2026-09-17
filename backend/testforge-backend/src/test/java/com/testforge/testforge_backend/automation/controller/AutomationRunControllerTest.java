@@ -5,6 +5,7 @@ import com.testforge.testforge_backend.automation.execution.AutomationRunStatus;
 import com.testforge.testforge_backend.automation.execution.AutomationRunType;
 import com.testforge.testforge_backend.automation.service.AutomationMultiRunService;
 import com.testforge.testforge_backend.automation.service.AutomationRunService;
+import com.testforge.testforge_backend.automation.service.AutomationScenarioRunService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -25,18 +26,21 @@ class AutomationRunControllerTest {
 
     private AutomationRunService automationRunService;
     private AutomationMultiRunService automationMultiRunService;
+    private AutomationScenarioRunService automationScenarioRunService;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         automationRunService = mock(AutomationRunService.class);
         automationMultiRunService = mock(AutomationMultiRunService.class);
+        automationScenarioRunService = mock(AutomationScenarioRunService.class);
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(
                         new AutomationRunController(
                                 automationRunService,
-                                automationMultiRunService
+                                automationMultiRunService,
+                                automationScenarioRunService
                         )
                 )
                 .build();
@@ -102,6 +106,33 @@ class AutomationRunControllerTest {
                 .andExpect(jsonPath("$.runType").value("MULTI_TEST_CASE"))
                 .andExpect(jsonPath("$.status").value("RUNNING"))
                 .andExpect(jsonPath("$.totalExecutions").value(3));
+    }
+
+    @Test
+    void shouldStartScenarioRun() throws Exception {
+        LocalDateTime startedAt = LocalDateTime.now();
+
+        when(automationScenarioRunService.executeScenario(7L))
+                .thenReturn(new AutomationRunResponse(
+                        15L,
+                        "RUN-SCENARIO-001",
+                        AutomationRunType.SCENARIO,
+                        AutomationRunStatus.RUNNING,
+                        2,
+                        0,
+                        0,
+                        0,
+                        startedAt,
+                        null,
+                        null
+                ));
+
+        mockMvc.perform(post("/api/automation-runs/scenario/7"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.id").value(15))
+                .andExpect(jsonPath("$.runType").value("SCENARIO"))
+                .andExpect(jsonPath("$.status").value("RUNNING"))
+                .andExpect(jsonPath("$.totalExecutions").value(2));
     }
 
     @Test
