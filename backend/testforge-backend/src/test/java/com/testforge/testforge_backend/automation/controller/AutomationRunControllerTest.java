@@ -6,6 +6,7 @@ import com.testforge.testforge_backend.automation.execution.AutomationRunType;
 import com.testforge.testforge_backend.automation.service.AutomationMultiRunService;
 import com.testforge.testforge_backend.automation.service.AutomationRunService;
 import com.testforge.testforge_backend.automation.service.AutomationScenarioRunService;
+import com.testforge.testforge_backend.automation.service.AutomationTestPlanRunService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -27,6 +28,7 @@ class AutomationRunControllerTest {
     private AutomationRunService automationRunService;
     private AutomationMultiRunService automationMultiRunService;
     private AutomationScenarioRunService automationScenarioRunService;
+    private AutomationTestPlanRunService automationTestPlanRunService;
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -34,13 +36,15 @@ class AutomationRunControllerTest {
         automationRunService = mock(AutomationRunService.class);
         automationMultiRunService = mock(AutomationMultiRunService.class);
         automationScenarioRunService = mock(AutomationScenarioRunService.class);
+        automationTestPlanRunService = mock(AutomationTestPlanRunService.class);
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(
                         new AutomationRunController(
                                 automationRunService,
                                 automationMultiRunService,
-                                automationScenarioRunService
+                                automationScenarioRunService,
+                                automationTestPlanRunService
                         )
                 )
                 .build();
@@ -133,6 +137,33 @@ class AutomationRunControllerTest {
                 .andExpect(jsonPath("$.runType").value("SCENARIO"))
                 .andExpect(jsonPath("$.status").value("RUNNING"))
                 .andExpect(jsonPath("$.totalExecutions").value(2));
+    }
+
+    @Test
+    void shouldStartTestPlanRun() throws Exception {
+        LocalDateTime startedAt = LocalDateTime.now();
+
+        when(automationTestPlanRunService.executeTestPlan(9L))
+                .thenReturn(new AutomationRunResponse(
+                        18L,
+                        "RUN-TEST-PLAN-001",
+                        AutomationRunType.TEST_PLAN,
+                        AutomationRunStatus.RUNNING,
+                        4,
+                        0,
+                        0,
+                        0,
+                        startedAt,
+                        null,
+                        null
+                ));
+
+        mockMvc.perform(post("/api/automation-runs/test-plan/9"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.id").value(18))
+                .andExpect(jsonPath("$.runType").value("TEST_PLAN"))
+                .andExpect(jsonPath("$.status").value("RUNNING"))
+                .andExpect(jsonPath("$.totalExecutions").value(4));
     }
 
     @Test

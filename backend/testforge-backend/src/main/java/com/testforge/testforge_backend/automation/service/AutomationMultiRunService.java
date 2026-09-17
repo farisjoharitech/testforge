@@ -67,6 +67,15 @@ public class AutomationMultiRunService {
         );
     }
 
+    public AutomationRunResponse executeTestPlanTestCases(List<Long> testCaseIds) {
+        return executeTestCases(
+                testCaseIds,
+                AutomationRunType.TEST_PLAN,
+                1,
+                "Test Plan has no automatable Test Cases"
+        );
+    }
+
     private AutomationRunResponse executeTestCases(
             List<Long> testCaseIds,
             AutomationRunType runType,

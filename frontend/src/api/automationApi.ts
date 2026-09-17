@@ -185,6 +185,18 @@ export const automationApi = {
     );
   },
 
+  executeTestPlan(
+    testPlanId: number,
+  ): Promise<AutomationRun> {
+    return apiClient.post<
+      AutomationRun,
+      Record<string, never>
+    >(
+      `/api/automation-runs/test-plan/${testPlanId}`,
+      {},
+    );
+  },
+
   getRun(
     runId: number,
   ): Promise<AutomationRun> {

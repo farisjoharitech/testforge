@@ -6,6 +6,7 @@ import com.testforge.testforge_backend.automation.dto.CreateMultiTestCaseRunRequ
 import com.testforge.testforge_backend.automation.service.AutomationMultiRunService;
 import com.testforge.testforge_backend.automation.service.AutomationRunService;
 import com.testforge.testforge_backend.automation.service.AutomationScenarioRunService;
+import com.testforge.testforge_backend.automation.service.AutomationTestPlanRunService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,15 +25,18 @@ public class AutomationRunController {
     private final AutomationRunService automationRunService;
     private final AutomationMultiRunService automationMultiRunService;
     private final AutomationScenarioRunService automationScenarioRunService;
+    private final AutomationTestPlanRunService automationTestPlanRunService;
 
     public AutomationRunController(
             AutomationRunService automationRunService,
             AutomationMultiRunService automationMultiRunService,
-            AutomationScenarioRunService automationScenarioRunService
+            AutomationScenarioRunService automationScenarioRunService,
+            AutomationTestPlanRunService automationTestPlanRunService
     ) {
         this.automationRunService = automationRunService;
         this.automationMultiRunService = automationMultiRunService;
         this.automationScenarioRunService = automationScenarioRunService;
+        this.automationTestPlanRunService = automationTestPlanRunService;
     }
 
     @PostMapping("/multi-test-case")
@@ -50,6 +54,15 @@ public class AutomationRunController {
     ) {
         return ResponseEntity.accepted().body(
                 automationScenarioRunService.executeScenario(scenarioId)
+        );
+    }
+
+    @PostMapping("/test-plan/{testPlanId}")
+    public ResponseEntity<AutomationRunResponse> executeTestPlan(
+            @PathVariable Long testPlanId
+    ) {
+        return ResponseEntity.accepted().body(
+                automationTestPlanRunService.executeTestPlan(testPlanId)
         );
     }
 

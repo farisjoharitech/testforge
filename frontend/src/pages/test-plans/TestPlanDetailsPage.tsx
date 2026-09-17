@@ -1,5 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { AccountTree, Add, ArrowForward, Delete, Edit, Refresh } from '@mui/icons-material';
+import { AccountTree, Add, ArrowForward, Delete, Edit, PlayArrow, Refresh } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -16,6 +16,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { ApiError } from '../../api/apiClient';
 import { hierarchyMonitoringApi } from '../../api/hierarchyMonitoringApi';
+import { automationApi } from '../../api/automationApi';
 import { requirementApi } from '../../api/requirementApi';
 import { testPlanApi } from '../../api/testPlanApi';
 import DeleteConfirmationDialog from '../../components/common/DeleteConfirmationDialog';
@@ -51,6 +52,7 @@ export default function TestPlanDetailsPage() {
   const [monitoring, setMonitoring] = useState<TestPlanMonitoring | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [runningPlan, setRunningPlan] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -109,6 +111,26 @@ export default function TestPlanDetailsPage() {
     return filteredRequirements.slice(start, start + pageSize);
   }, [filteredRequirements, page, pageSize]);
 
+  const handleRunTestPlan = async () => {
+    if (!testPlan || runningPlan) return;
+
+    try {
+      setRunningPlan(true);
+      setError(null);
+
+      const run = await automationApi.executeTestPlan(testPlan.id);
+      navigate(`/automation/runs/${run.id}`);
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : 'Unable to start Test Plan automation run.',
+      );
+    } finally {
+      setRunningPlan(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!testPlan) return;
     try {
@@ -154,6 +176,15 @@ export default function TestPlanDetailsPage() {
           >
             Design Workspace
           </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={runningPlan ? <CircularProgress size={16} /> : <PlayArrow />}
+              disabled={runningPlan}
+              onClick={() => void handleRunTestPlan()}
+            >
+              {runningPlan ? 'Starting Run...' : 'Run Test Plan'}
+            </Button>
           <Button size="small" startIcon={<Refresh />} disabled={refreshing} onClick={() => void loadPage(true)}>Refresh</Button>
             <Button size="small" startIcon={<Edit />} onClick={() => setEditDialogOpen(true)}>Edit</Button>
             <Button size="small" color="error" startIcon={<Delete />} onClick={() => setDeleteDialogOpen(true)}>Delete</Button>
