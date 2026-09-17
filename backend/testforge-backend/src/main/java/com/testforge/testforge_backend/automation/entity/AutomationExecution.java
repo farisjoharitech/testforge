@@ -60,11 +60,11 @@ public class AutomationExecution {
 
     @ManyToOne(
             fetch = FetchType.LAZY,
-            optional = false
+            optional = true
     )
     @JoinColumn(
             name = "automation_script_id",
-            nullable = false,
+            nullable = true,
             foreignKey = @ForeignKey(
                     name = "fk_automation_execution_script"
             )
@@ -73,16 +73,26 @@ public class AutomationExecution {
 
     @ManyToOne(
             fetch = FetchType.LAZY,
-            optional = false
+            optional = true
     )
     @JoinColumn(
             name = "test_case_id",
-            nullable = false,
+            nullable = true,
             foreignKey = @ForeignKey(
                     name = "fk_automation_execution_test_case"
             )
     )
     private TestCase testCase;
+
+
+    @Column(name = "automation_script_business_id_snapshot", length = 50)
+    private String automationScriptBusinessIdSnapshot;
+
+    @Column(name = "test_case_business_id_snapshot", length = 50)
+    private String testCaseBusinessIdSnapshot;
+
+    @Column(name = "test_case_name_snapshot", length = 255)
+    private String testCaseNameSnapshot;
 
     @Enumerated(
             EnumType.STRING
@@ -258,6 +268,14 @@ public class AutomationExecution {
 
         LocalDateTime now =
                 LocalDateTime.now();
+
+        if (automationScriptBusinessIdSnapshot == null && automationScript != null) {
+            automationScriptBusinessIdSnapshot = automationScript.getAutomationScriptId();
+        }
+        if (testCaseBusinessIdSnapshot == null && testCase != null) {
+            testCaseBusinessIdSnapshot = testCase.getTestCaseId();
+            testCaseNameSnapshot = testCase.getName();
+        }
 
         createdAt =
                 now;
@@ -488,4 +506,8 @@ public class AutomationExecution {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+    public String getAutomationScriptBusinessIdSnapshot() { return automationScriptBusinessIdSnapshot; }
+    public String getTestCaseBusinessIdSnapshot() { return testCaseBusinessIdSnapshot; }
+    public String getTestCaseNameSnapshot() { return testCaseNameSnapshot; }
 }

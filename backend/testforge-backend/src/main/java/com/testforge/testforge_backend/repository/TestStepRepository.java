@@ -4,6 +4,8 @@ import com.testforge.testforge_backend.domain.TestCase;
 import com.testforge.testforge_backend.domain.TestStep;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +21,22 @@ public interface TestStepRepository
     boolean existsByTestStepId(
             String testStepId
     );
+
+    long countByTestCase_Id(Long testCaseId);
+
+    @Query("""
+            select count(ts)
+            from TestStep ts
+            where ts.testCase.testScenario.id = :scenarioId
+            """)
+    long countByScenarioId(@Param("scenarioId") Long scenarioId);
+
+    @Query("""
+            select count(ts)
+            from TestStep ts
+            where ts.testCase.testScenario.requirement.id = :requirementId
+            """)
+    long countByRequirementId(@Param("requirementId") Long requirementId);
 
     boolean existsByTestCaseAndStepOrder(
             TestCase testCase,

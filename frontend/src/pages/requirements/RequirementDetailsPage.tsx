@@ -15,9 +15,12 @@ import {
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ApiError } from '../../api/apiClient';
+import { deleteImpactApi } from '../../api/deleteImpactApi';
 import { hierarchyMonitoringApi } from '../../api/hierarchyMonitoringApi';
 import { requirementApi } from '../../api/requirementApi';
 import { testScenarioApi } from '../../api/testScenarioApi';
+import type { AuthoringDeleteImpact } from '../../types/deleteImpact';
+import { buildDeleteImpactDescription } from '../../utils/deleteImpactText';
 import DeleteConfirmationDialog from '../../components/common/DeleteConfirmationDialog';
 import { PageHeader } from '../../components/common/PageHeader';
 import { QualityStrip } from '../../components/common/QualityStrip';
@@ -62,6 +65,7 @@ export default function RequirementDetailsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteImpact, setDeleteImpact] = useState<AuthoringDeleteImpact | null>(null);
 
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
@@ -113,6 +117,18 @@ export default function RequirementDetailsPage() {
     return filteredScenarios.slice(start, start + pageSize);
   }, [filteredScenarios, page, pageSize]);
 
+  const openDeleteDialog = async () => {
+    if (!requirement) return;
+    setDeleteError(null);
+    setDeleteImpact(null);
+    setDeleteDialogOpen(true);
+    try {
+      setDeleteImpact(await deleteImpactApi.getRequirementImpact(requirement.id));
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : 'Unable to load deletion impact. You may still cancel and retry.');
+    }
+  };
+
   const handleDelete = async () => {
     if (!requirement) return;
     try {
@@ -147,7 +163,7 @@ export default function RequirementDetailsPage() {
             <Chip size="small" label={requirement.status} color={statusColor(requirement.status)} variant="outlined" />
             <Button size="small" startIcon={<Refresh />} disabled={refreshing} onClick={() => void loadPage(true)}>Refresh</Button>
             <Button size="small" startIcon={<Edit />} onClick={() => setEditDialogOpen(true)}>Edit</Button>
-            <Button size="small" color="error" startIcon={<Delete />} onClick={() => setDeleteDialogOpen(true)}>Delete</Button>
+            <Button size="small" color="error" startIcon={<Delete />} onClick={() => void openDeleteDialog()}>Delete</Button>
           </Stack>
         }
       />
@@ -243,10 +259,10 @@ export default function RequirementDetailsPage() {
         open={deleteDialogOpen}
         title="Delete Requirement?"
         entityName={requirement.description}
-        description="A Requirement cannot be deleted while Test Scenarios still reference it."
+        description={buildDeleteImpactDescription(deleteImpact, 'A Requirement cannot be deleted while Test Scenarios still reference it.')}
         deleting={deleting}
         error={deleteError}
-        onClose={() => { if (!deleting) { setDeleteDialogOpen(false); setDeleteError(null); } }}
+        onClose={() => { if (!deleting) { setDeleteDialogOpen(false); setDeleteError(null); setDeleteImpact(null); } }}
         onConfirm={() => void handleDelete()}
       />
     </Stack>

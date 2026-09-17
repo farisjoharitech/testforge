@@ -191,25 +191,15 @@ public class AutomationResultService {
 
                 execution.getExecutionId(),
 
-                execution
-                        .getAutomationScript()
-                        .getId(),
+                execution.getAutomationScript() == null ? null : execution.getAutomationScript().getId(),
 
-                execution
-                        .getAutomationScript()
-                        .getAutomationScriptId(),
+                execution.getAutomationScript() == null ? execution.getAutomationScriptBusinessIdSnapshot() : execution.getAutomationScript().getAutomationScriptId(),
 
-                execution
-                        .getTestCase()
-                        .getId(),
+                execution.getTestCase() == null ? null : execution.getTestCase().getId(),
 
-                execution
-                        .getTestCase()
-                        .getTestCaseId(),
+                execution.getTestCase() == null ? execution.getTestCaseBusinessIdSnapshot() : execution.getTestCase().getTestCaseId(),
 
-                execution
-                        .getTestCase()
-                        .getName(),
+                execution.getTestCase() == null ? execution.getTestCaseNameSnapshot() : execution.getTestCase().getName(),
 
                 execution.getStatus(),
 
@@ -238,25 +228,15 @@ public class AutomationResultService {
 
                 execution.getExecutionId(),
 
-                execution
-                        .getAutomationScript()
-                        .getId(),
+                execution.getAutomationScript() == null ? null : execution.getAutomationScript().getId(),
 
-                execution
-                        .getAutomationScript()
-                        .getAutomationScriptId(),
+                execution.getAutomationScript() == null ? execution.getAutomationScriptBusinessIdSnapshot() : execution.getAutomationScript().getAutomationScriptId(),
 
-                execution
-                        .getTestCase()
-                        .getId(),
+                execution.getTestCase() == null ? null : execution.getTestCase().getId(),
 
-                execution
-                        .getTestCase()
-                        .getTestCaseId(),
+                execution.getTestCase() == null ? execution.getTestCaseBusinessIdSnapshot() : execution.getTestCase().getTestCaseId(),
 
-                execution
-                        .getTestCase()
-                        .getName(),
+                execution.getTestCase() == null ? execution.getTestCaseNameSnapshot() : execution.getTestCase().getName(),
 
                 execution.getStatus(),
 

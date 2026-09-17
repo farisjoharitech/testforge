@@ -20,6 +20,8 @@ public interface TestScenarioRepository
             String scenarioId
     );
 
+    long countByRequirement_Id(Long requirementId);
+
     @EntityGraph(attributePaths = "requirement")
     List<TestScenario> findByRequirementOrderByIdAsc(
             Requirement requirement

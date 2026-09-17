@@ -79,6 +79,22 @@ public interface AutomationExecutionRepository
             AutomationExecutionStatus status
     );
 
+    long countByTestCase_Id(Long testCaseId);
+
+    @Query("""
+            select count(execution)
+            from AutomationExecution execution
+            where execution.testCase.testScenario.id = :scenarioId
+            """)
+    long countByScenarioId(@Param("scenarioId") Long scenarioId);
+
+    @Query("""
+            select count(execution)
+            from AutomationExecution execution
+            where execution.testCase.testScenario.requirement.id = :requirementId
+            """)
+    long countByRequirementId(@Param("requirementId") Long requirementId);
+
     @EntityGraph(
             attributePaths = {
                     "automationRun",

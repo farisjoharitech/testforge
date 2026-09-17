@@ -1,5 +1,6 @@
 package com.testforge.testforge_backend.service;
 
+import com.testforge.testforge_backend.cleanup.service.AuthoringCascadeDeleteService;
 import com.testforge.testforge_backend.domain.Requirement;
 import com.testforge.testforge_backend.domain.TestPlan;
 import com.testforge.testforge_backend.dto.CreateRequirementRequest;
@@ -22,11 +23,13 @@ public class RequirementService {
     private final RequirementRepository requirementRepository;
     private final TestPlanRepository testPlanRepository;
     private final BusinessIdGeneratorService businessIdGeneratorService;
+    private final AuthoringCascadeDeleteService authoringCascadeDeleteService;
 
     public RequirementService(
             RequirementRepository requirementRepository,
             TestPlanRepository testPlanRepository,
-            BusinessIdGeneratorService businessIdGeneratorService) {
+            BusinessIdGeneratorService businessIdGeneratorService,
+            AuthoringCascadeDeleteService authoringCascadeDeleteService) {
 
         this.requirementRepository =
                 requirementRepository;
@@ -36,6 +39,8 @@ public class RequirementService {
 
         this.businessIdGeneratorService =
                 businessIdGeneratorService;
+
+        this.authoringCascadeDeleteService = authoringCascadeDeleteService;
     }
 
     public Requirement create(
@@ -220,8 +225,7 @@ public class RequirementService {
             );
         }
 
-        requirementRepository
-                .deleteById(id);
+        authoringCascadeDeleteService.deleteRequirement(id);
     }
 
     private String resolveRequirementId(

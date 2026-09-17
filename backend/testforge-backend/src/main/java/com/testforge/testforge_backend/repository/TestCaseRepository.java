@@ -26,6 +26,15 @@ public interface TestCaseRepository
             String testCaseId
     );
 
+    long countByTestScenario_Id(Long scenarioId);
+
+    @Query("""
+            select count(tc)
+            from TestCase tc
+            where tc.testScenario.requirement.id = :requirementId
+            """)
+    long countByRequirementId(@Param("requirementId") Long requirementId);
+
     @EntityGraph(
             attributePaths = "testScenario"
     )

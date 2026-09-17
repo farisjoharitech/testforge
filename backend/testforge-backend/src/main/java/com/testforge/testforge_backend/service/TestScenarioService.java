@@ -1,5 +1,6 @@
 package com.testforge.testforge_backend.service;
 
+import com.testforge.testforge_backend.cleanup.service.AuthoringCascadeDeleteService;
 import com.testforge.testforge_backend.domain.Requirement;
 import com.testforge.testforge_backend.domain.TestScenario;
 import com.testforge.testforge_backend.dto.CreateTestScenarioRequest;
@@ -28,10 +29,14 @@ public class TestScenarioService {
     private final BusinessIdGeneratorService
             businessIdGeneratorService;
 
+    private final AuthoringCascadeDeleteService
+            authoringCascadeDeleteService;
+
     public TestScenarioService(
             TestScenarioRepository testScenarioRepository,
             RequirementRepository requirementRepository,
-            BusinessIdGeneratorService businessIdGeneratorService) {
+            BusinessIdGeneratorService businessIdGeneratorService,
+            AuthoringCascadeDeleteService authoringCascadeDeleteService) {
 
         this.testScenarioRepository =
                 testScenarioRepository;
@@ -41,6 +46,8 @@ public class TestScenarioService {
 
         this.businessIdGeneratorService =
                 businessIdGeneratorService;
+
+        this.authoringCascadeDeleteService = authoringCascadeDeleteService;
     }
 
     public TestScenario create(
@@ -224,8 +231,7 @@ public class TestScenarioService {
             );
         }
 
-        testScenarioRepository
-                .deleteById(id);
+        authoringCascadeDeleteService.deleteScenario(id);
     }
 
     private String resolveScenarioId(

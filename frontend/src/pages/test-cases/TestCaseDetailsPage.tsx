@@ -22,9 +22,12 @@ import {
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ApiError } from '../../api/apiClient';
+import { deleteImpactApi } from '../../api/deleteImpactApi';
 import { automationApi } from '../../api/automationApi';
 import { testCaseApi } from '../../api/testCaseApi';
 import { testStepApi } from '../../api/testStepApi';
+import type { AuthoringDeleteImpact } from '../../types/deleteImpact';
+import { buildDeleteImpactDescription } from '../../utils/deleteImpactText';
 import DeleteConfirmationDialog from '../../components/common/DeleteConfirmationDialog';
 import { PageHeader } from '../../components/common/PageHeader';
 import { WorkspaceCollection } from '../../components/common/WorkspaceCollection';
@@ -80,6 +83,7 @@ export default function TestCaseDetailsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteImpact, setDeleteImpact] = useState<AuthoringDeleteImpact | null>(null);
   const [editingTestStep, setEditingTestStep] = useState<TestStep | null>(null);
   const [deletingTestStep, setDeletingTestStep] = useState<TestStep | null>(null);
   const [deletingStep, setDeletingStep] = useState(false);
@@ -168,6 +172,18 @@ export default function TestCaseDetailsPage() {
     return 'Continue the automation workflow.';
   }, [automationScript, testCase, testSteps.length]);
 
+  const openDeleteDialog = async () => {
+    if (!testCase) return;
+    setDeleteError(null);
+    setDeleteImpact(null);
+    setDeleteDialogOpen(true);
+    try {
+      setDeleteImpact(await deleteImpactApi.getTestCaseImpact(testCase.id));
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : 'Unable to load deletion impact. You may still cancel and retry.');
+    }
+  };
+
   const handleDeleteTestCase = async () => {
     if (!testCase) return;
     try {
@@ -243,7 +259,7 @@ export default function TestCaseDetailsPage() {
             <Chip size="small" label={automationLabel} color={testCase.automatable ? 'success' : 'default'} variant="outlined" />
             <Button size="small" startIcon={<Refresh />} disabled={refreshing} onClick={() => void loadPage(true)}>Refresh</Button>
             <Button size="small" startIcon={<Edit />} onClick={() => setEditDialogOpen(true)}>Edit</Button>
-            <Button size="small" color="error" startIcon={<Delete />} onClick={() => setDeleteDialogOpen(true)}>Delete</Button>
+            <Button size="small" color="error" startIcon={<Delete />} onClick={() => void openDeleteDialog()}>Delete</Button>
           </Stack>
         }
       />
@@ -362,10 +378,10 @@ export default function TestCaseDetailsPage() {
         open={deleteDialogOpen}
         title="Delete Test Case?"
         entityName={testCase.name}
-        description="A Test Case cannot be deleted while Test Steps or automation records still reference it."
+        description={buildDeleteImpactDescription(deleteImpact, 'A Test Case cannot be deleted while Test Steps or automation records still reference it.')}
         deleting={deleting}
         error={deleteError}
-        onClose={() => { if (!deleting) { setDeleteDialogOpen(false); setDeleteError(null); } }}
+        onClose={() => { if (!deleting) { setDeleteDialogOpen(false); setDeleteError(null); setDeleteImpact(null); } }}
         onConfirm={() => void handleDeleteTestCase()}
       />
       {editingTestStep && (

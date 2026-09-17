@@ -543,39 +543,29 @@ export default function TestDesignWorkspacePage() {
   };
 
   const deleteRequirement = (requirement: WorkspaceRequirement) => {
-    if (!window.confirm('Delete this Requirement and all child Scenarios, Test Cases and Test Steps?')) return;
-    const scenarioIds: number[] = [];
-    const testCaseIds: number[] = [];
-    const stepIds: number[] = [];
-    for (const scenario of requirement.scenarios) {
-      if (scenario.id) scenarioIds.push(scenario.id);
-      for (const testCase of scenario.testCases) {
-        if (testCase.id) testCaseIds.push(testCase.id);
-        for (const step of testCase.steps) if (step.id) stepIds.push(step.id);
-      }
-    }
+    if (!window.confirm(
+      'Delete this Requirement and all child Scenarios, Test Cases, Test Steps, current Automation Scripts/Steps and Test Set memberships? Historical execution history will be preserved. The cleanup occurs when you Save All.',
+    )) return;
+
     setDeleted((current) => ({
       requirements: unique([...current.requirements, ...(requirement.id ? [requirement.id] : [])]),
-      scenarios: unique([...current.scenarios, ...scenarioIds]),
-      testCases: unique([...current.testCases, ...testCaseIds]),
-      testSteps: unique([...current.testSteps, ...stepIds]),
+      scenarios: current.scenarios.filter((id) => !requirement.scenarios.some((scenario) => scenario.id === id)),
+      testCases: current.testCases.filter((id) => !requirement.scenarios.some((scenario) => scenario.testCases.some((testCase) => testCase.id === id))),
+      testSteps: current.testSteps.filter((id) => !requirement.scenarios.some((scenario) => scenario.testCases.some((testCase) => testCase.steps.some((step) => step.id === id)))),
     }));
     setRequirements((current) => current.filter((item) => item.key !== requirement.key));
   };
 
   const deleteScenario = (requirementKey: string, scenario: WorkspaceScenario) => {
-    if (!window.confirm('Delete this Scenario and all child Test Cases and Test Steps?')) return;
-    const testCaseIds: number[] = [];
-    const stepIds: number[] = [];
-    for (const testCase of scenario.testCases) {
-      if (testCase.id) testCaseIds.push(testCase.id);
-      for (const step of testCase.steps) if (step.id) stepIds.push(step.id);
-    }
+    if (!window.confirm(
+      'Delete this Scenario and all child Test Cases, Test Steps, current Automation Scripts/Steps and Test Set memberships? Historical execution history will be preserved. The cleanup occurs when you Save All.',
+    )) return;
+
     setDeleted((current) => ({
       ...current,
       scenarios: unique([...current.scenarios, ...(scenario.id ? [scenario.id] : [])]),
-      testCases: unique([...current.testCases, ...testCaseIds]),
-      testSteps: unique([...current.testSteps, ...stepIds]),
+      testCases: current.testCases.filter((id) => !scenario.testCases.some((testCase) => testCase.id === id)),
+      testSteps: current.testSteps.filter((id) => !scenario.testCases.some((testCase) => testCase.steps.some((step) => step.id === id))),
     }));
     setRequirements((current) => current.map((requirement) => requirement.key === requirementKey
       ? { ...requirement, scenarios: requirement.scenarios.filter((item) => item.key !== scenario.key) }
@@ -649,10 +639,10 @@ export default function TestDesignWorkspacePage() {
       setError(null);
       setMessage(null);
 
-      for (const id of deleted.testSteps) await testStepApi.deleteTestStep(id);
-      for (const id of deleted.testCases) await testCaseApi.deleteTestCase(id);
-      for (const id of deleted.scenarios) await testScenarioApi.deleteTestScenario(id);
       for (const id of deleted.requirements) await requirementApi.deleteRequirement(id);
+      for (const id of deleted.scenarios) await testScenarioApi.deleteTestScenario(id);
+      for (const id of deleted.testCases) await testCaseApi.deleteTestCase(id);
+      for (const id of deleted.testSteps) await testStepApi.deleteTestStep(id);
 
       for (const requirement of requirements) {
         let requirementBusinessId = requirement.businessId;

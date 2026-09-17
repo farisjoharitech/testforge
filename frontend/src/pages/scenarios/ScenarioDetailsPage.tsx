@@ -15,9 +15,12 @@ import {
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ApiError } from '../../api/apiClient';
+import { deleteImpactApi } from '../../api/deleteImpactApi';
 import { automationApi } from '../../api/automationApi';
 import { testCaseApi } from '../../api/testCaseApi';
 import { testScenarioApi } from '../../api/testScenarioApi';
+import type { AuthoringDeleteImpact } from '../../types/deleteImpact';
+import { buildDeleteImpactDescription } from '../../utils/deleteImpactText';
 import DeleteConfirmationDialog from '../../components/common/DeleteConfirmationDialog';
 import { PageHeader } from '../../components/common/PageHeader';
 import { WorkspaceCollection } from '../../components/common/WorkspaceCollection';
@@ -59,6 +62,7 @@ export default function ScenarioDetailsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteImpact, setDeleteImpact] = useState<AuthoringDeleteImpact | null>(null);
   const [startingScenarioRun, setStartingScenarioRun] = useState(false);
 
   const [search, setSearch] = useState('');
@@ -127,6 +131,18 @@ export default function ScenarioDetailsPage() {
     }
   };
 
+  const openDeleteDialog = async () => {
+    if (!scenario) return;
+    setDeleteError(null);
+    setDeleteImpact(null);
+    setDeleteDialogOpen(true);
+    try {
+      setDeleteImpact(await deleteImpactApi.getScenarioImpact(scenario.id));
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : 'Unable to load deletion impact. You may still cancel and retry.');
+    }
+  };
+
   const handleDelete = async () => {
     if (!scenario) return;
     try {
@@ -171,7 +187,7 @@ export default function ScenarioDetailsPage() {
             </Button>
             <Button size="small" startIcon={<Refresh />} disabled={refreshing} onClick={() => void loadPage(true)}>Refresh</Button>
             <Button size="small" startIcon={<Edit />} onClick={() => setEditDialogOpen(true)}>Edit</Button>
-            <Button size="small" color="error" startIcon={<Delete />} onClick={() => setDeleteDialogOpen(true)}>Delete</Button>
+            <Button size="small" color="error" startIcon={<Delete />} onClick={() => void openDeleteDialog()}>Delete</Button>
           </Stack>
         }
       />
@@ -254,10 +270,10 @@ export default function ScenarioDetailsPage() {
         open={deleteDialogOpen}
         title="Delete Test Scenario?"
         entityName={scenario.description}
-        description="A Test Scenario cannot be deleted while Test Cases still reference it."
+        description={buildDeleteImpactDescription(deleteImpact, 'A Test Scenario cannot be deleted while Test Cases still reference it.')}
         deleting={deleting}
         error={deleteError}
-        onClose={() => { if (!deleting) { setDeleteDialogOpen(false); setDeleteError(null); } }}
+        onClose={() => { if (!deleting) { setDeleteDialogOpen(false); setDeleteError(null); setDeleteImpact(null); } }}
         onConfirm={() => void handleDelete()}
       />
     </Stack>
