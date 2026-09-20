@@ -54,7 +54,7 @@ public interface TestCaseRepository
             attributePaths = "testScenario"
     )
     List<TestCase>
-    findByAutomatableTrueOrderByIdAsc();
+    findByTestScenarioAutomatableTrueOrderByIdAsc();
 
     /*
      * =========================================================
@@ -67,7 +67,8 @@ public interface TestCaseRepository
             from TestCase tc
             join fetch tc.testScenario ts
             join fetch ts.requirement r
-            join fetch r.testPlan tp
+            join fetch r.module m
+            join fetch m.testPlan tp
             join fetch tp.project p
             where p.id = :projectId
             order by tc.id asc
@@ -83,15 +84,24 @@ public interface TestCaseRepository
      * =========================================================
      */
 
-    long countByAutomatableTrue();
+    @Query("select count(tc) from TestCase tc where tc.testScenario.automatable = true")
+    long countByScenarioAutomatableTrue();
 
-    long countByAutomatableTrueAndAutomationStatus(
-            AutomationStatus automationStatus
-    );
+    @Query("""
+            select count(tc) from TestCase tc
+            where tc.testScenario.automatable = true
+              and tc.automationStatus = :automationStatus
+            """)
+    long countByScenarioAutomatableTrueAndAutomationStatus(
+            @Param("automationStatus") AutomationStatus automationStatus);
 
-    long countByAutomatableTrueAndAutomationType(
-            AutomationType automationType
-    );
+    @Query("""
+            select count(tc) from TestCase tc
+            where tc.testScenario.automatable = true
+              and tc.automationType = :automationType
+            """)
+    long countByScenarioAutomatableTrueAndAutomationType(
+            @Param("automationType") AutomationType automationType);
 
     /*
      * =========================================================
@@ -104,7 +114,8 @@ public interface TestCaseRepository
             from TestCase tc
             join fetch tc.testScenario ts
             join fetch ts.requirement r
-            join fetch r.testPlan tp
+            join fetch r.module m
+            join fetch m.testPlan tp
             where tp.id = :testPlanId
             order by tc.id asc
             """)

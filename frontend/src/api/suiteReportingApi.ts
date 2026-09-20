@@ -1,0 +1,3 @@
+import { apiClient } from './apiClient'; import type { SuiteReportSummary,SuiteRunDetail,SuiteRunHistory } from '../types/suiteReporting';
+const root=(projectId:string)=>`/api/projects/${encodeURIComponent(projectId)}/reporting`;
+export const suiteReportingApi={summaries:(projectId:string):Promise<SuiteReportSummary[]>=>apiClient.get(`${root(projectId)}/test-suites`),history:(projectId:string,suiteId:number):Promise<SuiteRunHistory[]>=>apiClient.get(`${root(projectId)}/test-suites/${suiteId}/runs`),detail:(projectId:string,runId:number):Promise<SuiteRunDetail>=>apiClient.get(`${root(projectId)}/suite-runs/${runId}`)};

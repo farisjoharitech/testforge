@@ -82,6 +82,11 @@ public class AutomationService {
                 automationActionValidator;
     }
 
+    @Transactional(readOnly = true)
+    public List<com.testforge.testforge_backend.automation.dto.AutomationOverviewItem> overview(String projectId) {
+        return automationStepRepository.overview(projectId);
+    }
+
     public AutomationScriptResponse createScript(
             Long testCaseId,
             CreateAutomationScriptRequest request
@@ -108,6 +113,8 @@ public class AutomationService {
                                                         + testCaseId
                                         )
                         );
+
+        validateScenarioAllowsAutomation(testCase);
 
         if (automationScriptRepository
                 .existsByTestCaseId(testCaseId)) {
@@ -205,6 +212,10 @@ public class AutomationService {
                 findScript(
                         automationScriptId
                 );
+
+        validateScenarioAllowsAutomation(
+                automationScript.getTestCase()
+        );
 
         if (automationStepRepository
                 .existsByAutomationStepId(
@@ -448,9 +459,16 @@ public class AutomationService {
                         automationStepId
                 );
 
-        automationStepRepository.delete(
-                automationStep
-        );
+        automationStepRepository.delete(automationStep);
+        // Keep the reusable draft container and its historical execution links.
+        // Invalidate generated code immediately; removed actions must never execute.
+        AutomationScript script = automationStep.getAutomationScript();
+        script.setGeneratedSource(null);
+        script.setGeneratedClassName(null);
+        script.setGeneratedAt(null);
+        script.setGeneratedStepCount(null);
+        script.getTestCase().setAutomationStatus(
+                com.testforge.testforge_backend.domain.enums.AutomationStatus.NOT_AUTOMATED);
     }
 
     private AutomationScript findScript(
@@ -520,6 +538,16 @@ public class AutomationService {
                                                 + testStepId
                                 )
                 );
+    }
+
+    private void validateScenarioAllowsAutomation(
+            TestCase testCase
+    ) {
+        if (!testCase.isAutomatable()) {
+            throw new AutomationValidationException(
+                    "Automation configuration cannot be created for a manual Scenario"
+            );
+        }
     }
 
     private void validateTestStepBelongsToScriptTestCase(
@@ -747,6 +775,21 @@ public class AutomationService {
             );
         }
 
+        validateStringMap(root.path("headers"), "Headers");
+        validateStringMap(root.path("queryParams"), "Query parameters");
+        String bodyType = root.path("bodyType").asText("NONE");
+        if (!Set.of("NONE", "JSON", "TEXT", "FORM").contains(bodyType)) {
+            throw new AutomationValidationException("Unsupported request body type.");
+        }
+        if (bodyType.equals("JSON") || bodyType.equals("FORM")) {
+            try {
+                JsonNode body = OBJECT_MAPPER.readTree(root.path("body").asText(""));
+                if (body == null) throw new IllegalArgumentException();
+                if (bodyType.equals("FORM")) validateStringMap(body, "Form fields");
+            } catch (Exception failure) {
+                throw new AutomationValidationException("Request body must contain valid " + (bodyType.equals("FORM") ? "form fields." : "JSON."));
+            }
+        }
         JsonNode auth = root.path("auth");
         if (auth.isMissingNode() || auth.isNull()) {
             return;
@@ -797,6 +840,20 @@ public class AutomationService {
                     "Unsupported API authentication type: " + type
             );
         }
+    }
+
+    private void validateStringMap(JsonNode node, String label) {
+        if (node.isMissingNode()) return;
+        if (!node.isObject()) throw new AutomationValidationException(label + " must contain name and value pairs.");
+        node.fields().forEachRemaining(entry -> {
+            if (entry.getKey().isBlank() || !entry.getValue().isTextual()) {
+                throw new AutomationValidationException(label + " require nonempty names and text values.");
+            }
+            if (label.equals("Headers") && Set.of("authorization", "proxy-authorization", "x-api-key").contains(entry.getKey().toLowerCase(java.util.Locale.ROOT))
+                    && !entry.getValue().asText().matches("(?:(?:Bearer|Basic) )?\\$\\{[A-Za-z_][A-Za-z0-9_.-]*}")) {
+                throw new AutomationValidationException("Configure authentication using a secret reference in the Authentication fields, not a saved credential header.");
+            }
+        });
     }
 
     private void requireAuthText(

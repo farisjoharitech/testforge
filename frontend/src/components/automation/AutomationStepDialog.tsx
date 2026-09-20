@@ -1,5 +1,8 @@
+import RequestParametersEditor from './RequestParametersEditor';
 import {
   useEffect,
+  useImperativeHandle,
+  type Ref,
   useMemo,
   useState,
 } from 'react';
@@ -73,7 +76,11 @@ export interface AutomationStepFormValues {
   apiConfig: string | null;
 }
 
+export interface AutomationStepEditorHandle { submit: () => void; }
+
 interface AutomationStepDialogProps {
+  embedded?: boolean;
+  submitRef?: Ref<AutomationStepEditorHandle>;
   open: boolean;
 
   mode:
@@ -92,6 +99,8 @@ interface AutomationStepDialogProps {
       | null;
 
   suggestedOrder: number;
+
+  fixedSourceTestStepId?: number;
 
   saving?: boolean;
 
@@ -560,6 +569,8 @@ function buildAutomationStepId(
 }
 
 export default function AutomationStepDialog({
+                                               embedded = false,
+                                               submitRef,
                                                open,
                                                mode,
                                                testCaseId,
@@ -567,6 +578,7 @@ export default function AutomationStepDialog({
                                                testSteps,
                                                automationStep,
                                                suggestedOrder,
+                                               fixedSourceTestStepId,
                                                saving = false,
                                                error,
                                                onClose,
@@ -647,8 +659,8 @@ export default function AutomationStepDialog({
     setExpectedValue,
   ] = useState('');
 
-  const [apiHeaders, setApiHeaders] = useState('{}');
-  const [apiQueryParams, setApiQueryParams] = useState('{}');
+  const [apiHeaders, setApiHeaders] = useState<[string, string][]>([]);
+  const [apiQueryParams, setApiQueryParams] = useState<[string, string][]>([]);
   const [apiBodyType, setApiBodyType] = useState<'NONE' | 'JSON' | 'TEXT' | 'FORM'>('NONE');
   const [apiBody, setApiBody] = useState('');
   const [apiAuthType, setApiAuthType] = useState<ApiAuthenticationType>('NONE');
@@ -667,24 +679,8 @@ export default function AutomationStepDialog({
           null,
       );
 
-  const availableActionTypes =
-      useMemo(
-          () => {
-            if (automationType === 'API') {
-              return API_ACTION_TYPES;
-            }
-
-            if (automationType === 'UI_API') {
-              return [
-                ...UI_ACTION_TYPES,
-                ...API_ACTION_TYPES,
-              ];
-            }
-
-            return UI_ACTION_TYPES;
-          },
-          [automationType],
-      );
+  const [category, setCategory] = useState<'UI' | 'API'>(automationStep?.actionType.includes('API_') || automationType === 'API' ? 'API' : 'UI');
+  const availableActionTypes = category === 'API' ? API_ACTION_TYPES : UI_ACTION_TYPES;
 
   const availableActionGroups =
       useMemo(
@@ -787,8 +783,8 @@ export default function AutomationStepDialog({
             const config = automationStep.apiConfig
                 ? JSON.parse(automationStep.apiConfig)
                 : {};
-            setApiHeaders(JSON.stringify(config.headers ?? {}, null, 2));
-            setApiQueryParams(JSON.stringify(config.queryParams ?? {}, null, 2));
+            setApiHeaders(Object.entries(config.headers ?? {}));
+            setApiQueryParams(Object.entries(config.queryParams ?? {}));
             setApiBodyType(config.bodyType ?? 'NONE');
             setApiBody(config.body ?? '');
             setApiAuthType(config.auth?.type ?? 'NONE');
@@ -799,8 +795,8 @@ export default function AutomationStepDialog({
             setApiKeyValueSecretRef(config.auth?.valueSecretRef ?? '');
             setApiKeyLocation(config.auth?.location ?? 'HEADER');
           } catch {
-            setApiHeaders('{}');
-            setApiQueryParams('{}');
+            setApiHeaders([]);
+            setApiQueryParams([]);
             setApiBodyType('NONE');
             setApiBody('');
             setApiAuthType('NONE');
@@ -823,7 +819,7 @@ export default function AutomationStepDialog({
         );
 
         setSourceTestStepId(
-            '',
+            fixedSourceTestStepId ?? '',
         );
 
         setStepOrder(
@@ -865,8 +861,8 @@ export default function AutomationStepDialog({
         setExpectedValue(
             '',
         );
-        setApiHeaders('{}');
-        setApiQueryParams('{}');
+        setApiHeaders([]);
+        setApiQueryParams([]);
         setApiBodyType('NONE');
         setApiBody('');
         setApiAuthType('NONE');
@@ -883,6 +879,7 @@ export default function AutomationStepDialog({
         automationStep,
         testCaseId,
         suggestedOrder,
+        fixedSourceTestStepId,
       ],
   );
 
@@ -1358,8 +1355,14 @@ export default function AutomationStepDialog({
     let apiConfig: string | null = null;
     if (API_REQUEST_ACTIONS.includes(actionType)) {
       try {
-        const headers = JSON.parse(apiHeaders || '{}');
-        const queryParams = JSON.parse(apiQueryParams || '{}');
+        const toValues = (rows: [string, string][], label: string) => {
+          const names = rows.map(([name]) => name.trim());
+          if (names.some(name => !name) || new Set(names).size !== names.length) throw new Error(label + ' require unique, nonempty names.');
+          return Object.fromEntries(rows.map(([, value], i) => [names[i], value]));
+        };
+        const headers = toValues(apiHeaders, 'Headers');
+        const queryParams = toValues(apiQueryParams, 'Query parameters');
+        if (Object.entries(headers).some(([name, value]) => ['authorization', 'proxy-authorization', 'x-api-key'].includes(name.toLowerCase()) && !/^(?:(?:Bearer|Basic) )?\$\{[A-Za-z_][A-Za-z0-9_.-]*}$/.test(value))) throw new Error('Use Authentication with a secret reference instead of saving credential headers.');
         if (headers === null || Array.isArray(headers) || typeof headers !== 'object') {
           throw new Error('Headers must be a JSON object.');
         }
@@ -1372,8 +1375,8 @@ export default function AutomationStepDialog({
             throw new Error('FORM body must be a JSON object.');
           }
         }
-        if (apiBodyType === 'JSON' && apiBody.trim()) {
-          JSON.parse(apiBody);
+        if (apiBodyType === 'JSON') {
+          try { JSON.parse(apiBody); } catch { throw new Error('Request body must contain valid JSON.'); }
         }
         const secretRefPattern = /^\$\{[A-Z][A-Z0-9_]*}$/;
         let auth: Record<string, string> = { type: apiAuthType };
@@ -1459,24 +1462,9 @@ export default function AutomationStepDialog({
     });
   };
 
-  return (
-      <Dialog
-          open={open}
-          onClose={
-            saving
-                ? undefined
-                : onClose
-          }
-          fullWidth
-          maxWidth="md"
-      >
-        <DialogTitle>
-          {mode === 'create'
-              ? 'Create Automation Step'
-              : 'Edit Automation Step'}
-        </DialogTitle>
+  useImperativeHandle(submitRef, () => ({ submit: handleSubmit }));
 
-        <DialogContent>
+  const content = (
           <Stack
               spacing={2.5}
               sx={{
@@ -1493,6 +1481,13 @@ export default function AutomationStepDialog({
                 </Alert>
             )}
 
+            <TextField select label="Automation Type" value={category} onChange={e => { setCategory(e.target.value as 'UI' | 'API'); handleActionChange('' as AutomationActionType); }}>
+              <MenuItem value="UI">UI</MenuItem><MenuItem value="API">API</MenuItem>
+            </TextField>
+            {category === 'API' && <Alert severity="info">Assertions use the most recent API response in this Test Case, in automation order. Add a separate Test Step for each request or assertion.</Alert>}
+            {embedded && <TextField label="Automation Order" type="number" required value={stepOrder}
+              onChange={event => setStepOrder(Number(event.target.value))} inputProps={{ min: 1 }} />}
+            {!embedded && <>
             <Stack
                 direction={{
                   xs:
@@ -1511,7 +1506,8 @@ export default function AutomationStepDialog({
                     automationStepId
                   }
                   disabled={
-                      mode === 'edit'
+                      mode === 'edit' ||
+                      fixedSourceTestStepId !== undefined
                   }
                   onChange={(
                       event,
@@ -1609,7 +1605,9 @@ export default function AutomationStepDialog({
               </Select>
             </FormControl>
 
-            {selectedSourceStep && (
+            </>}
+
+            {!embedded && selectedSourceStep && (
                 <Alert
                     severity="info"
                     variant="outlined"
@@ -1676,17 +1674,14 @@ export default function AutomationStepDialog({
               </InputLabel>
 
               <Select
-                  label="Action"
-                  value={
-                    actionType
-                  }
+                  label="Automation Action"
+                  inputProps={{ "aria-label": "Automation Action" }}
+                  value={API_REQUEST_ACTIONS.includes(actionType) ? 'HTTP_REQUEST' : actionType}
                   onChange={(
                       event,
                   ) =>
                       handleActionChange(
-                          event
-                              .target
-                              .value as AutomationActionType,
+                          (event.target.value === 'HTTP_REQUEST' ? 'API_GET' : event.target.value) as AutomationActionType,
                       )
                   }
               >
@@ -1698,12 +1693,12 @@ export default function AutomationStepDialog({
                       >
                         {group.label}
                       </ListSubheader>,
-                      ...group.actions.map((value) => (
+                      ...group.actions.filter(value => !API_REQUEST_ACTIONS.includes(value) || value === 'API_GET').map((value) => (
                           <MenuItem
                               key={value}
-                              value={value}
+                              value={value === 'API_GET' ? 'HTTP_REQUEST' : value}
                           >
-                            {actionLabel(value)}
+                            {value === 'API_GET' ? 'HTTP Request' : actionLabel(value)}
                           </MenuItem>
                       )),
                     ],
@@ -1725,6 +1720,9 @@ export default function AutomationStepDialog({
                 </Alert>
             )}
 
+            {API_REQUEST_ACTIONS.includes(actionType) && <TextField select label="HTTP Method" value={actionType} onChange={e => handleActionChange(e.target.value as AutomationActionType)}>
+              {API_REQUEST_ACTIONS.map(method => <MenuItem key={method} value={method}>{method.slice(4)}</MenuItem>)}
+            </TextField>}
             {showTargetField && (
               <TextField
                 fullWidth
@@ -1766,7 +1764,7 @@ export default function AutomationStepDialog({
                           ? 'Dot-separated JSON path, for example data.order.id.'
                           : actionType === 'ASSERT_API_HEADER'
                               ? 'Response header name, for example Content-Type.'
-                              : 'Full API endpoint URL.'
+                              : 'Use a full API URL. Test data references such as ${host} are supported; no Project API base URL is configured.'
                 }
               />
             )}
@@ -1783,6 +1781,7 @@ export default function AutomationStepDialog({
 
                     <Select
                         label="Selector Strategy"
+                        inputProps={{ "aria-label": "Selector Strategy" }}
                         value={
                           selectorStrategy
                         }
@@ -2005,6 +2004,7 @@ export default function AutomationStepDialog({
                     <Select
                         value={apiAuthType}
                         label="Authentication"
+                        inputProps={{ "aria-label": "Authentication" }}
                         onChange={(event) => setApiAuthType(event.target.value as ApiAuthenticationType)}
                     >
                       <MenuItem value="NONE">None</MenuItem>
@@ -2081,21 +2081,10 @@ export default function AutomationStepDialog({
                       </>
                   )}
 
-                  <TextField
-                      fullWidth multiline minRows={3}
-                      label="Request Headers (JSON, Optional)"
-                      value={apiHeaders}
-                      onChange={(event) => setApiHeaders(event.target.value)}
-                      helperText='Example: {"Accept":"application/json","X-Tenant":"qa"}'
-                  />
+                  <Typography variant="body2">Use Authentication for credentials. Headers and query values support Test Data references such as {"${username}"}.</Typography>
+                  <RequestParametersEditor label="Headers" rows={apiHeaders} onChange={setApiHeaders} />
 
-                  <TextField
-                      fullWidth multiline minRows={3}
-                      label="Query Parameters (JSON, Optional)"
-                      value={apiQueryParams}
-                      onChange={(event) => setApiQueryParams(event.target.value)}
-                      helperText='Example: {"page":"1","status":"ACTIVE"}'
-                  />
+                  <RequestParametersEditor label="Query Parameters" rows={apiQueryParams} onChange={setApiQueryParams} />
 
                   {showApiBody && (
                       <>
@@ -2104,6 +2093,7 @@ export default function AutomationStepDialog({
                           <Select
                               value={apiBodyType}
                               label="Request Body Type"
+                              inputProps={{ "aria-label": "Request Body Type" }}
                               onChange={(event) => setApiBodyType(event.target.value as 'NONE' | 'JSON' | 'TEXT' | 'FORM')}
                           >
                             <MenuItem value="NONE">None</MenuItem>
@@ -2178,6 +2168,28 @@ export default function AutomationStepDialog({
                     </Alert>
                 )}
           </Stack>
+  );
+  if (embedded) return <fieldset disabled={saving} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>{content}</fieldset>;
+
+  return (
+      <Dialog
+          open={open}
+          onClose={
+            saving
+                ? undefined
+                : onClose
+          }
+          fullWidth
+          maxWidth="md"
+      >
+        <DialogTitle>
+          {mode === 'create'
+              ? 'Create Automation Step'
+              : 'Edit Automation Step'}
+        </DialogTitle>
+
+        <DialogContent>
+          {content}
         </DialogContent>
 
         <DialogActions

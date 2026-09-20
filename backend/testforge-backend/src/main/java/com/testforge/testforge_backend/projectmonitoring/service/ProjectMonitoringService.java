@@ -347,6 +347,7 @@ public class ProjectMonitoringService {
         return testCase
                 .getTestScenario()
                 .getRequirement()
+                .getModule()
                 .getTestPlan();
     }
 

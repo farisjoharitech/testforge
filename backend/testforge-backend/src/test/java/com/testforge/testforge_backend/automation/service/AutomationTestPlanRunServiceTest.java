@@ -5,6 +5,7 @@ import com.testforge.testforge_backend.automation.execution.AutomationRunStatus;
 import com.testforge.testforge_backend.automation.execution.AutomationRunType;
 import com.testforge.testforge_backend.domain.TestCase;
 import com.testforge.testforge_backend.domain.TestPlan;
+import com.testforge.testforge_backend.domain.TestScenario;
 import com.testforge.testforge_backend.domain.enums.AutomationType;
 import com.testforge.testforge_backend.repository.TestCaseRepository;
 import com.testforge.testforge_backend.repository.TestPlanRepository;
@@ -149,8 +150,10 @@ class AutomationTestPlanRunServiceTest {
             AutomationType automationType
     ) {
         TestCase testCase = new TestCase();
+        TestScenario scenario = new TestScenario();
+        scenario.setAutomatable(automatable);
         testCase.setId(id);
-        testCase.setAutomatable(automatable);
+        testCase.setTestScenario(scenario);
         testCase.setAutomationType(automationType);
         return testCase;
     }

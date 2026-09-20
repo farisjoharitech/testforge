@@ -32,15 +32,9 @@ public class Requirement {
     )
     private String requirementId;
 
-    @ManyToOne(
-            fetch = FetchType.LAZY,
-            optional = false
-    )
-    @JoinColumn(
-            name = "test_plan_id",
-            nullable = false
-    )
-    private TestPlan testPlan;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "module_id", nullable = false)
+    private Module module;
 
     @Column(
             name = "description",
@@ -99,13 +93,9 @@ public class Requirement {
         this.requirementId = requirementId;
     }
 
-    public TestPlan getTestPlan() {
-        return testPlan;
-    }
+    public Module getModule() { return module; }
 
-    public void setTestPlan(TestPlan testPlan) {
-        this.testPlan = testPlan;
-    }
+    public void setModule(Module module) { this.module = module; }
 
     public String getDescription() {
         return description;

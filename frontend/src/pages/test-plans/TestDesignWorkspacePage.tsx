@@ -75,7 +75,6 @@ type WorkspaceTestCase = EntityBase & {
   expectedResult: string;
   priority: TestCasePriority;
   testType: TestCaseTestType;
-  automatable: boolean;
   automationType: AutomationType;
   status: TestCaseStatus;
   steps: WorkspaceStep[];
@@ -84,6 +83,7 @@ type WorkspaceTestCase = EntityBase & {
 type WorkspaceScenario = EntityBase & {
   description: string;
   testType: ScenarioTestType;
+  automatable: boolean;
   priority: TestScenarioPriority;
   status: TestScenarioStatus;
   testCases: WorkspaceTestCase[];
@@ -173,7 +173,6 @@ function mapTestCase(testCase: TestCase, steps: TestStep[]): WorkspaceTestCase {
     expectedResult: testCase.expectedResult,
     priority: testCase.priority,
     testType: testCase.testType,
-    automatable: testCase.automatable,
     automationType: testCase.automationType,
     status: testCase.status,
     steps: [...steps].sort((a, b) => a.stepOrder - b.stepOrder).map(mapStep),
@@ -199,13 +198,14 @@ function newScenario(): WorkspaceScenario {
     dirty: true,
     description: '',
     testType: 'FUNCTIONAL',
+    automatable: false,
     priority: 'MEDIUM',
     status: 'DRAFT',
     testCases: [],
   };
 }
 
-function newTestCase(): WorkspaceTestCase {
+function newTestCase(scenarioAutomatable: boolean): WorkspaceTestCase {
   return {
     key: makeKey('test-case'),
     isNew: true,
@@ -216,8 +216,7 @@ function newTestCase(): WorkspaceTestCase {
     expectedResult: '',
     priority: 'MEDIUM',
     testType: 'FUNCTIONAL',
-    automatable: false,
-    automationType: 'MANUAL',
+    automationType: scenarioAutomatable ? 'UI' : 'MANUAL',
     status: 'DRAFT',
     steps: [],
   };
@@ -310,10 +309,10 @@ function validate(requirements: WorkspaceRequirement[]): string | null {
       for (const testCase of scenario.testCases) {
         if (!testCase.name.trim()) return 'Every Test Case must have a name.';
         if (!testCase.expectedResult.trim()) return 'Every Test Case must have an expected result.';
-        if (!testCase.automatable && testCase.automationType !== 'MANUAL') {
+        if (!scenario.automatable && testCase.automationType !== 'MANUAL') {
           return 'A non-automatable Test Case must use MANUAL automation type.';
         }
-        if (testCase.automatable && testCase.automationType === 'MANUAL') {
+        if (scenario.automatable && testCase.automationType === 'MANUAL') {
           return 'An automatable Test Case must use UI, API, or UI_API automation type.';
         }
         for (const step of testCase.steps) {
@@ -389,6 +388,7 @@ export default function TestDesignWorkspacePage() {
             dirty: false,
             description: scenario.description,
             testType: scenario.testType,
+            automatable: scenario.automatable,
             priority: scenario.priority,
             status: scenario.status,
             testCases: testCaseNodes,
@@ -475,7 +475,7 @@ export default function TestDesignWorkspacePage() {
     setRequirements((current) => current.map((requirement) => requirement.key !== requirementKey ? requirement : {
       ...requirement,
       scenarios: requirement.scenarios.map((scenario) => scenario.key === scenarioKey
-        ? { ...scenario, testCases: [...scenario.testCases, newTestCase()] }
+        ? { ...scenario, testCases: [...scenario.testCases, newTestCase(scenario.automatable)] }
         : scenario),
     }));
   };
@@ -544,7 +544,7 @@ export default function TestDesignWorkspacePage() {
 
   const deleteRequirement = (requirement: WorkspaceRequirement) => {
     if (!window.confirm(
-      'Delete this Requirement and all child Scenarios, Test Cases, Test Steps, current Automation Scripts/Steps and Test Set memberships? Historical execution history will be preserved. The cleanup occurs when you Save All.',
+      'Delete this Requirement and all child Scenarios, Test Cases, Test Steps and current Automation Scripts/Steps? Historical execution history will be preserved. The cleanup occurs when you Save All.',
     )) return;
 
     setDeleted((current) => ({
@@ -558,7 +558,7 @@ export default function TestDesignWorkspacePage() {
 
   const deleteScenario = (requirementKey: string, scenario: WorkspaceScenario) => {
     if (!window.confirm(
-      'Delete this Scenario and all child Test Cases, Test Steps, current Automation Scripts/Steps and Test Set memberships? Historical execution history will be preserved. The cleanup occurs when you Save All.',
+      'Delete this Scenario and all child Test Cases, Test Steps and current Automation Scripts/Steps? Historical execution history will be preserved. The cleanup occurs when you Save All.',
     )) return;
 
     setDeleted((current) => ({
@@ -573,12 +573,13 @@ export default function TestDesignWorkspacePage() {
   };
 
   const deleteTestCase = (requirementKey: string, scenarioKey: string, testCase: WorkspaceTestCase) => {
-    if (!window.confirm('Delete this Test Case and all of its Test Steps?')) return;
-    const stepIds = testCase.steps.flatMap((step) => step.id ? [step.id] : []);
+    if (!window.confirm(
+      `Delete this Test Case and its ${testCase.steps.length} Test Step${testCase.steps.length === 1 ? '' : 's'} when you Save All? Active Automation Scripts and Actions owned by the Test Case will also be deleted. Completed execution history and Reporting snapshots will be preserved.`,
+    )) return;
     setDeleted((current) => ({
       ...current,
       testCases: unique([...current.testCases, ...(testCase.id ? [testCase.id] : [])]),
-      testSteps: unique([...current.testSteps, ...stepIds]),
+      testSteps: current.testSteps.filter((id) => !testCase.steps.some((step) => step.id === id)),
     }));
     setRequirements((current) => current.map((requirement) => requirement.key !== requirementKey ? requirement : {
       ...requirement,
@@ -668,6 +669,7 @@ export default function TestDesignWorkspacePage() {
             const created = await testScenarioApi.createTestScenario(requirementBusinessId, {
               description: scenario.description.trim(),
               testType: scenario.testType,
+              automatable: scenario.automatable,
               priority: scenario.priority,
               status: scenario.status,
             });
@@ -676,6 +678,7 @@ export default function TestDesignWorkspacePage() {
             await testScenarioApi.updateTestScenario(scenario.id, {
               description: scenario.description.trim(),
               testType: scenario.testType,
+              automatable: scenario.automatable,
               priority: scenario.priority,
               status: scenario.status,
             });
@@ -691,7 +694,6 @@ export default function TestDesignWorkspacePage() {
               expectedResult: testCase.expectedResult.trim(),
               priority: testCase.priority,
               testType: testCase.testType,
-              automatable: testCase.automatable,
               automationType: testCase.automationType,
               status: testCase.status,
             };
@@ -829,6 +831,22 @@ export default function TestDesignWorkspacePage() {
                         <TextField select label="Test Type" value={scenario.testType} sx={{ minWidth: 180 }} onChange={(e) => updateScenario(requirement.key, scenario.key, { testType: e.target.value as ScenarioTestType })}>{TEST_TYPES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
                         <TextField select label="Scenario Priority" value={scenario.priority} sx={{ minWidth: 160 }} onChange={(e) => updateScenario(requirement.key, scenario.key, { priority: e.target.value as TestScenarioPriority })}>{SCENARIO_PRIORITIES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
                         <TextField select label="Scenario Status" value={scenario.status} sx={{ minWidth: 160 }} onChange={(e) => updateScenario(requirement.key, scenario.key, { status: e.target.value as TestScenarioStatus })}>{SCENARIO_STATUSES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
+                        <FormControlLabel
+                          control={<Switch checked={scenario.automatable} onChange={(e) => {
+                            const automatable = e.target.checked;
+                            updateScenario(requirement.key, scenario.key, {
+                              automatable,
+                              testCases: scenario.testCases.map((testCase) => ({
+                                ...testCase,
+                                automationType: automatable
+                                  ? (testCase.automationType === 'MANUAL' ? 'UI' : testCase.automationType)
+                                  : 'MANUAL',
+                                dirty: true,
+                              })),
+                            });
+                          }} />}
+                          label="Automation Eligible"
+                        />
                       </Stack>
                       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                         <Button size="small" startIcon={<Add />} onClick={() => addTestCase(requirement.key, scenario.key)}>Test Case</Button>
@@ -855,18 +873,8 @@ export default function TestDesignWorkspacePage() {
                                 <TextField select label="Test Case Status" value={testCase.status} sx={{ minWidth: 150 }} onChange={(e) => updateTestCase(requirement.key, scenario.key, testCase.key, { status: e.target.value as TestCaseStatus })}>{TEST_CASE_STATUSES.map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}</TextField>
                               </Stack>
                               <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'stretch', md: 'center' }}>
-                                <FormControlLabel
-                                  control={<Switch checked={testCase.automatable} onChange={(e) => {
-                                    const checked = e.target.checked;
-                                    updateTestCase(requirement.key, scenario.key, testCase.key, {
-                                      automatable: checked,
-                                      automationType: checked ? (testCase.automationType === 'MANUAL' ? 'UI' : testCase.automationType) : 'MANUAL',
-                                    });
-                                  }} />}
-                                  label="Automation Eligible"
-                                />
-                                <TextField select label="Automation Scope" value={testCase.automationType} disabled={!testCase.automatable} sx={{ minWidth: 180 }} onChange={(e) => updateTestCase(requirement.key, scenario.key, testCase.key, { automationType: e.target.value as AutomationType })}>
-                                  {AUTOMATION_TYPES.filter((value) => testCase.automatable ? value !== 'MANUAL' : value === 'MANUAL').map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}
+                                <TextField select label="Automation Scope" value={testCase.automationType} disabled={!scenario.automatable} sx={{ minWidth: 180 }} onChange={(e) => updateTestCase(requirement.key, scenario.key, testCase.key, { automationType: e.target.value as AutomationType })}>
+                                  {AUTOMATION_TYPES.filter((value) => scenario.automatable ? value !== 'MANUAL' : value === 'MANUAL').map((value) => <MenuItem key={value} value={value}>{value}</MenuItem>)}
                                 </TextField>
                               </Stack>
                               <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">

@@ -16,20 +16,18 @@ import CreateProjectPage
 import ProjectDetailsPage
     from '../pages/projects/ProjectDetailsPage';
 
-import TestPlanListPage
-    from '../pages/test-plans/TestPlanListPage';
-
 import CreateTestPlanPage
     from '../pages/test-plans/CreateTestPlanPage';
 
 import TestPlanDetailsPage
     from '../pages/test-plans/TestPlanDetailsPage';
 
-import TestDesignWorkspacePage
-    from '../pages/test-plans/TestDesignWorkspacePage';
-
 import RequirementDetailsPage
     from '../pages/requirements/RequirementDetailsPage';
+import ModuleDetailsPage
+    from '../pages/modules/ModuleDetailsPage';
+import AutomationWorkspace, { AutomationRedirect, LegacyProjectAutomationRedirect } from '../pages/automation/AutomationWorkspace';
+import ProjectReportingPage from '../pages/reporting/ProjectReportingPage';
 
 import ScenarioDetailsPage
     from '../pages/scenarios/ScenarioDetailsPage';
@@ -37,45 +35,11 @@ import ScenarioDetailsPage
 import TestCaseDetailsPage
     from '../pages/test-cases/TestCaseDetailsPage';
 
-import AutomationSelectionPage
-    from '../pages/automation/AutomationSelectionPage';
-
-import AutomationBuilderPage
-    from '../pages/automation/AutomationBuilderPage';
-
-import ScriptGenerationPage
-    from '../pages/automation/ScriptGenerationPage';
-
-import AutomationExecutionPage
-    from '../pages/automation/AutomationExecutionPage';
-
-import AutomationMultiRunPage
-    from '../pages/automation/AutomationMultiRunPage';
-
-import AutomationRunDetailsPage
-    from '../pages/automation/AutomationRunDetailsPage';
-
-
-import AutomationResultsPage
-    from '../pages/results/AutomationResultsPage';
-
-import AutomationResultDetailsPage
-    from '../pages/results/AutomationResultDetailsPage';
-
 import DashboardPage
     from '../pages/dashboard/DashboardPage';
 
 import MonitoringDrilldownPage
     from '../pages/monitoring/MonitoringDrilldownPage';
-
-import TestSetListPage
-    from '../pages/test-sets/TestSetListPage';
-
-import TestSetFormPage
-    from '../pages/test-sets/TestSetFormPage';
-
-import TestSetDetailsPage
-    from '../pages/test-sets/TestSetDetailsPage';
 
 export default function App() {
     return (
@@ -117,13 +81,6 @@ export default function App() {
                 />
 
                 <Route
-                    path="/test-plans"
-                    element={
-                        <TestPlanListPage />
-                    }
-                />
-
-                <Route
                     path="/test-plans/new"
                     element={
                         <CreateTestPlanPage />
@@ -138,17 +95,22 @@ export default function App() {
                 />
 
                 <Route
-                    path="/test-plans/:testPlanId/design"
-                    element={
-                        <TestDesignWorkspacePage />
-                    }
-                />
-
-                <Route
                     path="/requirements/:requirementId"
                     element={
                         <RequirementDetailsPage />
                     }
+                />
+                <Route path="/automation" element={<AutomationRedirect />} />
+                <Route path="/automation/management" element={<AutomationWorkspace section="management" />} />
+                <Route path="/automation/api" element={<AutomationWorkspace section="api" />} />
+                <Route path="/automation/ui" element={<AutomationWorkspace section="ui" />} />
+                <Route path="/automation/configuration" element={<AutomationWorkspace section="configuration" />} />
+                <Route path="/automation/git" element={<AutomationWorkspace section="git" />} />
+                <Route path="/projects/:projectId/automation" element={<LegacyProjectAutomationRedirect />} />
+                <Route path="/projects/:projectId/reporting" element={<ProjectReportingPage />} />
+                <Route
+                    path="/modules/:moduleId"
+                    element={<ModuleDetailsPage />}
                 />
 
                 <Route
@@ -165,90 +127,6 @@ export default function App() {
                     }
                 />
 
-
-                <Route
-                    path="/test-sets"
-                    element={
-                        <TestSetListPage />
-                    }
-                />
-
-                <Route
-                    path="/test-sets/new"
-                    element={
-                        <TestSetFormPage />
-                    }
-                />
-
-                <Route
-                    path="/test-sets/:testSetId"
-                    element={
-                        <TestSetDetailsPage />
-                    }
-                />
-
-                <Route
-                    path="/test-sets/:testSetId/edit"
-                    element={
-                        <TestSetFormPage />
-                    }
-                />
-
-                <Route
-                    path="/automation"
-                    element={
-                        <AutomationSelectionPage />
-                    }
-                />
-
-                <Route
-                    path="/automation/multi-run"
-                    element={
-                        <AutomationMultiRunPage />
-                    }
-                />
-
-                <Route
-                    path="/automation/runs/:runId"
-                    element={
-                        <AutomationRunDetailsPage />
-                    }
-                />
-
-                <Route
-                    path="/automation/:testCaseId"
-                    element={
-                        <AutomationBuilderPage />
-                    }
-                />
-
-                <Route
-                    path="/automation/:testCaseId/script"
-                    element={
-                        <ScriptGenerationPage />
-                    }
-                />
-
-                <Route
-                    path="/automation/:testCaseId/execute"
-                    element={
-                        <AutomationExecutionPage />
-                    }
-                />
-
-                <Route
-                    path="/results"
-                    element={
-                        <AutomationResultsPage />
-                    }
-                />
-
-                <Route
-                    path="/results/:executionId"
-                    element={
-                        <AutomationResultDetailsPage />
-                    }
-                />
 
                 <Route
                     path="/monitoring/:scopeType/:scopeId/test-cases"

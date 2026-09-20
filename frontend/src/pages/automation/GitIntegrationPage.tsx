@@ -1,0 +1,40 @@
+import { useEffect, useState } from 'react';
+import { Alert, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Stack, TextField, Typography } from '@mui/material';
+import { apiErrorMessage } from '../../api/apiClient';
+import { gitIntegrationApi } from '../../api/gitIntegrationApi';
+import type { Project } from '../../types/project';
+import type { GitChanges, GitConfiguration } from '../../types/gitIntegration';
+
+const emptyChanges:GitChanges={added:[],modified:[],deleted:[],hasChanges:false};
+export default function GitIntegrationPage({project}:{project:Project}){
+ const [config,setConfig]=useState<GitConfiguration|null>(null); const [repositoryUrl,setRepositoryUrl]=useState(''); const [branch,setBranch]=useState('main'); const [projectPath,setProjectPath]=useState('testforge-automation'); const [template,setTemplate]=useState('TestForge: Update automation'); const [username,setUsername]=useState(''); const [token,setToken]=useState('');
+ const [busy,setBusy]=useState<string|null>('load'); const [error,setError]=useState<string|null>(null); const [success,setSuccess]=useState<string|null>(null); const [changes,setChanges]=useState<GitChanges|null>(null); const [review,setReview]=useState(false); const [commitMessage,setCommitMessage]=useState('');
+ const load=()=>{setBusy('load');setError(null);gitIntegrationApi.get(project.projectId).then(value=>{setConfig(value);setRepositoryUrl(value.repositoryUrl);setBranch(value.branch);setProjectPath(value.automationProjectPath);setTemplate(value.commitMessageTemplate);setCommitMessage(value.commitMessageTemplate);}).catch(e=>setError(apiErrorMessage(e,'Unable to load Git configuration.'))).finally(()=>setBusy(null));};
+ useEffect(load,[project.projectId]);
+ const save=async()=>{try{setBusy('save');setError(null);const value=await gitIntegrationApi.save(project.projectId,{repositoryUrl,branch,automationProjectPath:projectPath,commitMessageTemplate:template,credentialUsername:username||undefined,credentialToken:token||undefined});setConfig(value);setToken('');setSuccess('Git configuration saved.');}catch(e){setError(apiErrorMessage(e,'Unable to save Git configuration.'));}finally{setBusy(null);}};
+ const test=async()=>{try{setBusy('test');setError(null);const result=await gitIntegrationApi.testConnection(project.projectId);setSuccess(result.message);}catch(e){setError(apiErrorMessage(e,'Repository could not be accessed.'));}finally{setBusy(null);}};
+ const view=async(openReview=false)=>{try{setBusy('changes');setError(null);const value=await gitIntegrationApi.changes(project.projectId);setChanges(value);setReview(openReview);}catch(e){setError(apiErrorMessage(e,'Unable to compare generated automation.'));}finally{setBusy(null);}};
+ const sync=async()=>{try{setBusy('sync');setError(null);const result=await gitIntegrationApi.sync(project.projectId,commitMessage);setSuccess(result.message);setReview(false);await Promise.resolve(load());}catch(e){setError(apiErrorMessage(e,'Git synchronization failed.'));setReview(false);}finally{setBusy(null);}};
+ const status=config?.status??'NOT_SYNCED';
+ return <Stack spacing={2.5}>
+  <Alert severity="info">Manual synchronization only. Saving TestForge automation marks generated content as pending; it never commits or pushes automatically.</Alert>
+  <Card variant="outlined"><CardContent><Stack spacing={2}>
+   <Typography variant="h6">Repository</Typography>
+   <TextField label="Repository URL" value={repositoryUrl} onChange={e=>setRepositoryUrl(e.target.value)} helperText="HTTPS repository URL. Credentials must not be included in the URL." />
+   <Stack direction={{xs:'column',md:'row'}} spacing={2}><TextField fullWidth label="Branch" value={branch} onChange={e=>setBranch(e.target.value)}/><TextField fullWidth label="Automation Project Path" value={projectPath} onChange={e=>setProjectPath(e.target.value)} helperText="TestForge owns only this repository directory."/></Stack>
+   <TextField label="Default Commit Message" value={template} onChange={e=>{setTemplate(e.target.value);setCommitMessage(e.target.value)}}/>
+   <Divider/><Typography fontWeight={600}>Repository credential</Typography><Alert severity="warning">The credential is held only in server memory and must be entered again after a TestForge restart. It is never returned, logged, generated, or committed.</Alert>
+   <Stack direction={{xs:'column',md:'row'}} spacing={2}><TextField fullWidth label="Username" value={username} onChange={e=>setUsername(e.target.value)} autoComplete="off"/><TextField fullWidth label="Access Token" type="password" value={token} onChange={e=>setToken(e.target.value)} autoComplete="new-password" placeholder={config?.credentialConfigured?'Credential configured':'Enter access token'}/></Stack>
+   <Stack direction="row" spacing={1}><Button variant="contained" disabled={busy!==null} onClick={()=>void save()}>{busy==='save'?'Saving...':'Save Configuration'}</Button><Button disabled={busy!==null||!config?.configured} onClick={()=>void test()}>{busy==='test'?'Testing...':'Test Connection'}</Button></Stack>
+  </Stack></CardContent></Card>
+  {error&&<Alert severity="error" onClose={()=>setError(null)}>{error}</Alert>}{success&&<Alert severity="success" onClose={()=>setSuccess(null)}>{success}</Alert>}
+  {config?.configured&&<Card variant="outlined"><CardContent><Stack spacing={2}>
+   <Stack direction="row" justifyContent="space-between" alignItems="center"><Typography variant="h6">Synchronization</Typography><Chip label={status.replaceAll('_',' ')} color={status==='SYNCED'?'success':status==='SYNC_FAILED'?'error':'warning'}/></Stack>
+   <Typography variant="body2">Last Sync: {config.lastSyncAt?new Date(config.lastSyncAt).toLocaleString():'Never'}</Typography><Typography variant="body2">Last Commit: {config.lastCommitSha?.slice(0,12)??'None'}</Typography>{config.lastErrorSummary&&<Alert severity="error">{config.lastErrorSummary}</Alert>}
+   <Stack direction="row" spacing={1}><Button disabled={busy!==null} onClick={()=>void view(false)}>View Changes</Button><Button variant="contained" disabled={busy!==null} onClick={()=>void view(true)}>Sync to Git</Button></Stack>
+   {changes&&!review&&<ChangeList changes={changes}/>}<Divider/><Typography fontWeight={600}>Recent Syncs</Typography>{config.recentSyncs.length===0?<Typography color="text.secondary">No synchronization history yet.</Typography>:config.recentSyncs.map((item,index)=><Stack key={`${item.createdAt}-${index}`} direction="row" spacing={1}><Chip size="small" label={item.status}/><Typography variant="body2">{new Date(item.createdAt).toLocaleString()} {item.commitSha?.slice(0,12)??''} {item.summary}</Typography></Stack>)}
+  </Stack></CardContent></Card>}
+  <Dialog open={review} fullWidth maxWidth="sm" onClose={()=>setReview(false)}><DialogTitle>Sync Automation to Git</DialogTitle><DialogContent><Stack spacing={2} sx={{pt:1}}><Typography>Repository: {repositoryUrl}</Typography><Typography>Branch: {branch}</Typography><ChangeList changes={changes??emptyChanges}/><Alert severity="warning">Generated tests can contain Test Data configured in TestForge. Confirm that repository-safe values are used before pushing.</Alert><TextField label="Commit Message" value={commitMessage} onChange={e=>setCommitMessage(e.target.value)} /></Stack></DialogContent><DialogActions><Button onClick={()=>setReview(false)}>Cancel</Button><Button variant="contained" disabled={busy==='sync'||!changes?.hasChanges||!commitMessage.trim()} onClick={()=>void sync()}>{busy==='sync'?'Committing and pushing...':'Commit & Push'}</Button></DialogActions></Dialog>
+ </Stack>;
+}
+function ChangeList({changes}:{changes:GitChanges}){return <Stack spacing={.5}><Typography fontWeight={600}>Git Changes</Typography>{!changes.hasChanges&&<Typography color="text.secondary">No generated changes. Repository is already synchronized.</Typography>}{changes.added.map(v=><Typography key={`a-${v}`}>+ {v}</Typography>)}{changes.modified.map(v=><Typography key={`m-${v}`}>~ {v}</Typography>)}{changes.deleted.map(v=><Typography key={`d-${v}`}>− {v}</Typography>)}</Stack>}

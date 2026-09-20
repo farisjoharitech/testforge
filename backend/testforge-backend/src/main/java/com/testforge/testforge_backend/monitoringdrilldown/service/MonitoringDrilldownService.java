@@ -156,7 +156,7 @@ public class MonitoringDrilldownService {
     ) {
         TestScenario scenario = testCase.getTestScenario();
         Requirement requirement = scenario.getRequirement();
-        TestPlan testPlan = requirement.getTestPlan();
+        TestPlan testPlan = requirement.getModule().getTestPlan();
 
         MonitoringDrilldownStatus currentResult =
                 resolveCurrentResult(testCase, latestExecution);

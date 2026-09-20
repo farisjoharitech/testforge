@@ -19,12 +19,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 class TestStepServiceTest {
 
     private TestStepRepository testStepRepository;
     private AutomationStepRepository automationStepRepository;
     private TestStepService testStepService;
+    private com.testforge.testforge_backend.cleanup.service.AuthoringDeletionService deletionService;
 
     @BeforeEach
     void setUp() {
@@ -32,17 +34,19 @@ class TestStepServiceTest {
         TestCaseRepository testCaseRepository = mock(TestCaseRepository.class);
         BusinessIdGeneratorService businessIdGeneratorService = mock(BusinessIdGeneratorService.class);
         automationStepRepository = mock(AutomationStepRepository.class);
+        deletionService = mock(com.testforge.testforge_backend.cleanup.service.AuthoringDeletionService.class);
 
         testStepService = new TestStepService(
                 testStepRepository,
                 testCaseRepository,
                 businessIdGeneratorService,
-                automationStepRepository
+                automationStepRepository,
+                mock(TestStepAutomationService.class), deletionService
         );
     }
 
     @Test
-    void shouldDeleteMappedAutomationStepsBeforeDeletingTestStep() {
+    void shouldDeleteUnmappedTestStep() {
         TestStep testStep = new TestStep();
         testStep.setId(21L);
         testStep.setTestStepId("STEP-000021");
@@ -52,9 +56,14 @@ class TestStepServiceTest {
 
         testStepService.delete(21L);
 
-        var ordered = inOrder(automationStepRepository, testStepRepository);
-        ordered.verify(automationStepRepository).deleteByTestStepId(21L);
-        ordered.verify(testStepRepository).delete(testStep);
+        verify(deletionService).deleteTestStep(21L);
+    }
+
+    @Test
+    void shouldDelegateOwnedAutomationCleanup() {
+        testStepService.delete(21L);
+        verify(deletionService).deleteTestStep(21L);
+        org.mockito.Mockito.verifyNoMoreInteractions(automationStepRepository);
     }
 
     @Test

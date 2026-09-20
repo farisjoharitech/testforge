@@ -63,6 +63,11 @@ public class AutomationController {
                 logStreamService;
     }
 
+    @GetMapping("/projects/{projectId}/automation-overview")
+    public List<com.testforge.testforge_backend.automation.dto.AutomationOverviewItem> overview(@PathVariable String projectId) {
+        return automationService.overview(projectId);
+    }
+
     @PostMapping(
             "/test-cases/{testCaseId}/automation-script"
     )

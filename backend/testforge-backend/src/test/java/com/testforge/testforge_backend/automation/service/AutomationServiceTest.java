@@ -1,10 +1,12 @@
 package com.testforge.testforge_backend.automation.service;
 
 import com.testforge.testforge_backend.automation.dto.AutomationStepResponse;
+import com.testforge.testforge_backend.automation.dto.CreateAutomationScriptRequest;
 import com.testforge.testforge_backend.automation.dto.CreateAutomationStepRequest;
 import com.testforge.testforge_backend.automation.entity.AutomationScript;
 import com.testforge.testforge_backend.automation.entity.AutomationStep;
 import com.testforge.testforge_backend.automation.exception.AutomationConflictException;
+import com.testforge.testforge_backend.automation.validation.AutomationValidationException;
 import com.testforge.testforge_backend.automation.model.AutomationActionType;
 import com.testforge.testforge_backend.automation.model.SelectorStrategy;
 import com.testforge.testforge_backend.automation.validation.AutomationActionValidator;
@@ -83,6 +85,37 @@ class AutomationServiceTest {
     }
 
     @Test
+    void shouldRejectAutomationScriptForManualScenario() {
+        TestCase testCase = mock(TestCase.class);
+        when(testCase.isAutomatable()).thenReturn(false);
+        when(testCaseRepository.findById(10L)).thenReturn(Optional.of(testCase));
+
+        assertThrows(
+                AutomationValidationException.class,
+                () -> automationService.createScript(
+                        10L,
+                        new CreateAutomationScriptRequest("AUTO-001", "Login")
+                )
+        );
+    }
+
+    @Test
+    void shouldAllowAutomationScriptForAutomatableScenario() {
+        TestCase testCase = mock(TestCase.class);
+        when(testCase.isAutomatable()).thenReturn(true);
+        when(testCaseRepository.findById(10L)).thenReturn(Optional.of(testCase));
+        when(automationScriptRepository.save(any(AutomationScript.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        automationService.createScript(
+                10L,
+                new CreateAutomationScriptRequest("AUTO-001", "Login")
+        );
+
+        verify(automationScriptRepository).save(any(AutomationScript.class));
+    }
+
+    @Test
     void shouldCreateValidFillAutomationStep() {
 
         TestCase testCase =
@@ -95,6 +128,8 @@ class AutomationServiceTest {
         ).thenReturn(
                 10L
         );
+
+        when(testCase.isAutomatable()).thenReturn(true);
 
         TestStep testStep =
                 mock(
@@ -258,6 +293,8 @@ class AutomationServiceTest {
                 10L
         );
 
+        when(testCase.isAutomatable()).thenReturn(true);
+
         TestStep testStep =
                 mock(
                         TestStep.class
@@ -393,6 +430,8 @@ class AutomationServiceTest {
                 10L
         );
 
+        when(scriptTestCase.isAutomatable()).thenReturn(true);
+
         TestCase otherTestCase =
                 mock(
                         TestCase.class
@@ -475,10 +514,15 @@ class AutomationServiceTest {
     @Test
     void shouldRejectDuplicateStepOrder() {
 
+        TestCase testCase = mock(TestCase.class);
+        when(testCase.isAutomatable()).thenReturn(true);
+
         AutomationScript automationScript =
                 mock(
                         AutomationScript.class
                 );
+
+        when(automationScript.getTestCase()).thenReturn(testCase);
 
         when(
                 automationScriptRepository.findById(

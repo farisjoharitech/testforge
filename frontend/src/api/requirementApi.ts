@@ -9,6 +9,13 @@ import type {
 } from '../types/requirement';
 
 export const requirementApi = {
+  getRequirementsByModule(moduleId: string): Promise<Requirement[]> {
+    return apiClient.get(`/api/modules/${encodeURIComponent(moduleId)}/requirements`);
+  },
+
+  createRequirementForModule(moduleId: string, request: CreateRequirementRequest): Promise<Requirement> {
+    return apiClient.post(`/api/modules/${encodeURIComponent(moduleId)}/requirements`, request);
+  },
   getRequirementsByTestPlan(
     testPlanId: string,
   ): Promise<Requirement[]> {

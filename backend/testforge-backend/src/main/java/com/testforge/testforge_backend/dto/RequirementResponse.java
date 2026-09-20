@@ -15,6 +15,14 @@ public class RequirementResponse {
 
     private String testPlanBusinessId;
 
+    private Long moduleId;
+
+    private String moduleBusinessId;
+
+    private String moduleName;
+
+    private String projectBusinessId;
+
     private String description;
 
     private RequirementPriority priority;
@@ -62,6 +70,15 @@ public class RequirementResponse {
     ) {
         this.testPlanBusinessId = testPlanBusinessId;
     }
+
+    public Long getModuleId() { return moduleId; }
+    public void setModuleId(Long moduleId) { this.moduleId = moduleId; }
+    public String getModuleBusinessId() { return moduleBusinessId; }
+    public void setModuleBusinessId(String moduleBusinessId) { this.moduleBusinessId = moduleBusinessId; }
+    public String getModuleName() { return moduleName; }
+    public void setModuleName(String moduleName) { this.moduleName = moduleName; }
+    public String getProjectBusinessId() { return projectBusinessId; }
+    public void setProjectBusinessId(String projectBusinessId) { this.projectBusinessId = projectBusinessId; }
 
     public String getDescription() {
         return description;

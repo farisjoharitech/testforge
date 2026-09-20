@@ -4,6 +4,7 @@ import com.testforge.testforge_backend.automation.entity.AutomationExecution;
 import com.testforge.testforge_backend.automation.entity.AutomationScript;
 import com.testforge.testforge_backend.automation.execution.AutomationExecutionStatus;
 import com.testforge.testforge_backend.domain.Requirement;
+import com.testforge.testforge_backend.domain.Module;
 import com.testforge.testforge_backend.domain.TestCase;
 import com.testforge.testforge_backend.domain.TestPlan;
 import com.testforge.testforge_backend.domain.TestScenario;
@@ -161,13 +162,16 @@ class MonitoringDrilldownServiceTest {
         requirement.setId(20L);
         requirement.setRequirementId("REQ-000001");
         requirement.setDescription("Authentication");
-        requirement.setTestPlan(plan);
+        Module module = new Module();
+        module.setTestPlan(plan);
+        requirement.setModule(module);
 
         TestScenario scenario = new TestScenario();
         scenario.setId(30L);
         scenario.setScenarioId("SCN-000001");
         scenario.setDescription("Login");
         scenario.setRequirement(requirement);
+        scenario.setAutomatable(true);
         return scenario;
     }
 
@@ -184,7 +188,6 @@ class MonitoringDrilldownServiceTest {
         testCase.setTestCaseId(businessId);
         testCase.setName(businessId);
         testCase.setTestScenario(scenario);
-        testCase.setAutomatable(automatable);
         testCase.setAutomationType(automationType);
         testCase.setAutomationStatus(automationStatus);
         return testCase;

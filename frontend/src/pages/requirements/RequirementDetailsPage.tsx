@@ -14,13 +14,10 @@ import {
   Typography,
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ApiError } from '../../api/apiClient';
-import { deleteImpactApi } from '../../api/deleteImpactApi';
+import { ApiError, apiErrorMessage } from '../../api/apiClient';
 import { hierarchyMonitoringApi } from '../../api/hierarchyMonitoringApi';
 import { requirementApi } from '../../api/requirementApi';
 import { testScenarioApi } from '../../api/testScenarioApi';
-import type { AuthoringDeleteImpact } from '../../types/deleteImpact';
-import { buildDeleteImpactDescription } from '../../utils/deleteImpactText';
 import DeleteConfirmationDialog from '../../components/common/DeleteConfirmationDialog';
 import { PageHeader } from '../../components/common/PageHeader';
 import { QualityStrip } from '../../components/common/QualityStrip';
@@ -65,7 +62,6 @@ export default function RequirementDetailsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [deleteImpact, setDeleteImpact] = useState<AuthoringDeleteImpact | null>(null);
 
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
@@ -117,17 +113,7 @@ export default function RequirementDetailsPage() {
     return filteredScenarios.slice(start, start + pageSize);
   }, [filteredScenarios, page, pageSize]);
 
-  const openDeleteDialog = async () => {
-    if (!requirement) return;
-    setDeleteError(null);
-    setDeleteImpact(null);
-    setDeleteDialogOpen(true);
-    try {
-      setDeleteImpact(await deleteImpactApi.getRequirementImpact(requirement.id));
-    } catch (err) {
-      setDeleteError(err instanceof ApiError ? err.message : 'Unable to load deletion impact. You may still cancel and retry.');
-    }
-  };
+  const openDeleteDialog = () => { setDeleteError(null); setDeleteDialogOpen(true); };
 
   const handleDelete = async () => {
     if (!requirement) return;
@@ -135,9 +121,9 @@ export default function RequirementDetailsPage() {
       setDeleting(true);
       setDeleteError(null);
       await requirementApi.deleteRequirement(requirement.id);
-      navigate(`/test-plans/${encodeURIComponent(requirement.testPlanBusinessId)}`);
+      navigate(`/modules/${encodeURIComponent(requirement.moduleBusinessId)}`);
     } catch (err) {
-      setDeleteError(err instanceof ApiError ? err.message : 'Unable to delete Requirement. Delete its Test Scenarios first.');
+      setDeleteError(apiErrorMessage(err, 'Unable to delete Requirement. Delete its Test Scenarios first.'));
     } finally {
       setDeleting(false);
     }
@@ -153,8 +139,8 @@ export default function RequirementDetailsPage() {
       <PageHeader
         title={requirement.description}
         breadcrumbs={[
-          { label: 'Test Plans', to: '/test-plans' },
-          { label: 'Test Plan', to: `/test-plans/${encodeURIComponent(requirement.testPlanBusinessId)}` },
+          { label: 'Projects', to: '/projects' },
+          { label: 'Module', to: `/modules/${encodeURIComponent(requirement.moduleBusinessId)}` },
           { label: 'Requirement' },
         ]}
         actions={
@@ -259,10 +245,11 @@ export default function RequirementDetailsPage() {
         open={deleteDialogOpen}
         title="Delete Requirement?"
         entityName={requirement.description}
-        description={buildDeleteImpactDescription(deleteImpact, 'A Requirement cannot be deleted while Test Scenarios still reference it.')}
+        resourceType="REQUIREMENT" resourceId={requirement.id}
+        blockerActionPath={`/automation/management?project=${encodeURIComponent(requirement.projectBusinessId)}`}
         deleting={deleting}
         error={deleteError}
-        onClose={() => { if (!deleting) { setDeleteDialogOpen(false); setDeleteError(null); setDeleteImpact(null); } }}
+        onClose={() => { if (!deleting) { setDeleteDialogOpen(false); setDeleteError(null); } }}
         onConfirm={() => void handleDelete()}
       />
     </Stack>

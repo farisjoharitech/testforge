@@ -1,17 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
 
 import App from './app/App';
+
+const router = createBrowserRouter([{ path: "*", element: <><CssBaseline /><App /></> }]);
 
 ReactDOM.createRoot(
   document.getElementById('root')!,
 ).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <CssBaseline />
-      <App />
-    </BrowserRouter>
+    <RouterProvider router={router} />
   </React.StrictMode>,
 );

@@ -95,14 +95,14 @@ class DashboardServiceTest {
 
         when(
                 testCaseRepository
-                        .countByAutomatableTrue()
+                .countByScenarioAutomatableTrue()
         ).thenReturn(
                 6L
         );
 
         when(
                 testCaseRepository
-                        .countByAutomatableTrueAndAutomationStatus(
+                .countByScenarioAutomatableTrueAndAutomationStatus(
                                 AutomationStatus.AUTOMATED
                         )
         ).thenReturn(
@@ -168,14 +168,14 @@ class DashboardServiceTest {
 
         when(
                 testCaseRepository
-                        .countByAutomatableTrue()
+                .countByScenarioAutomatableTrue()
         ).thenReturn(
                 0L
         );
 
         when(
                 testCaseRepository
-                        .countByAutomatableTrueAndAutomationStatus(
+                .countByScenarioAutomatableTrueAndAutomationStatus(
                                 AutomationStatus.AUTOMATED
                         )
         ).thenReturn(
@@ -337,7 +337,7 @@ class DashboardServiceTest {
 
         when(
                 testCaseRepository
-                        .countByAutomatableTrueAndAutomationType(
+                .countByScenarioAutomatableTrueAndAutomationType(
                                 AutomationType.UI
                         )
         ).thenReturn(
@@ -346,7 +346,7 @@ class DashboardServiceTest {
 
         when(
                 testCaseRepository
-                        .countByAutomatableTrueAndAutomationType(
+                .countByScenarioAutomatableTrueAndAutomationType(
                                 AutomationType.API
                         )
         ).thenReturn(
@@ -355,7 +355,7 @@ class DashboardServiceTest {
 
         when(
                 testCaseRepository
-                        .countByAutomatableTrueAndAutomationType(
+                .countByScenarioAutomatableTrueAndAutomationType(
                                 AutomationType.UI_API
                         )
         ).thenReturn(

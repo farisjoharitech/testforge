@@ -1,5 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { Add, ArrowBack, ArrowForward, Delete, Edit, Refresh } from '@mui/icons-material';
+import { Add, ArrowBack, ArrowForward, Delete, Download, Edit, Refresh } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -14,13 +14,14 @@ import {
   Typography,
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ApiError } from '../../api/apiClient';
+import { ApiError, apiErrorMessage } from '../../api/apiClient';
 import { projectApi } from '../../api/projectApi';
 import DeleteConfirmationDialog from '../../components/common/DeleteConfirmationDialog';
 import { PageHeader } from '../../components/common/PageHeader';
 import { QualityStrip } from '../../components/common/QualityStrip';
 import { WorkspaceCollection } from '../../components/common/WorkspaceCollection';
 import EditProjectDialog from '../../components/projects/EditProjectDialog';
+import ExportTestDesignDialog from '../../components/test-design/ExportTestDesignDialog';
 import type { Project } from '../../types/project';
 import type { ProjectMonitoring } from '../../types/projectMonitoring';
 import type { TestPlan } from '../../types/testPlan';
@@ -46,6 +47,7 @@ export default function ProjectDetailsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
@@ -104,7 +106,7 @@ export default function ProjectDetailsPage() {
       await projectApi.deleteProject(project.id);
       navigate('/projects');
     } catch (err) {
-      setDeleteError(err instanceof ApiError ? err.message : 'Unable to delete Project.');
+      setDeleteError(apiErrorMessage(err, 'Unable to delete Project.'));
     } finally {
       setDeleting(false);
     }
@@ -126,6 +128,8 @@ export default function ProjectDetailsPage() {
         breadcrumbs={[{ label: 'Projects', to: '/projects' }, { label: project.name }]}
         actions={
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+            <Button size="small" variant="outlined" onClick={() => navigate(`/projects/${encodeURIComponent(project.projectId)}/reporting`)}>Reporting</Button>
+            <Button size="small" startIcon={<Download />} onClick={() => setExportOpen(true)}>Export Excel</Button>
             <Chip size="small" label={project.status} color={statusColor(project.status)} variant="outlined" />
             <Button size="small" startIcon={<Refresh />} disabled={refreshing} onClick={() => void loadPage(true)}>Refresh</Button>
             <Button size="small" startIcon={<Edit />} onClick={() => setEditOpen(true)}>Edit</Button>
@@ -210,11 +214,12 @@ export default function ProjectDetailsPage() {
           setSuccessMessage(`Project "${updated.name}" updated successfully.`);
         }}
       />
+      <ExportTestDesignDialog open={exportOpen} project={project} onClose={() => setExportOpen(false)} />
       <DeleteConfirmationDialog
         open={deleteOpen}
         title="Delete Project?"
         entityName={project.name}
-        description="A Project cannot be deleted while Test Plans still reference it."
+        resourceType="PROJECT" resourceId={project.id} requireNameConfirmation
         deleting={deleting}
         error={deleteError}
         onClose={() => { if (!deleting) { setDeleteOpen(false); setDeleteError(null); } }}

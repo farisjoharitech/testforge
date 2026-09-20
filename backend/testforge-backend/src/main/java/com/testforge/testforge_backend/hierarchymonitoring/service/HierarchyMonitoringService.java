@@ -59,7 +59,7 @@ public class HierarchyMonitoringService {
         TestPlan testPlan = testPlanService.getByTestPlanId(testPlanId);
 
         List<Requirement> requirements =
-                requirementRepository.findByTestPlanOrderByIdAsc(testPlan);
+                requirementRepository.findByModuleTestPlanOrderByIdAsc(testPlan);
 
         List<TestCase> testCases =
                 testCaseRepository.findByTestPlanIdOrderByIdAsc(testPlan.getId());
@@ -205,7 +205,7 @@ public class HierarchyMonitoringService {
                         )
                         .toList();
 
-        TestPlan testPlan = requirement.getTestPlan();
+        TestPlan testPlan = requirement.getModule().getTestPlan();
 
         return new RequirementMonitoringResponse(
                 requirement.getId(),

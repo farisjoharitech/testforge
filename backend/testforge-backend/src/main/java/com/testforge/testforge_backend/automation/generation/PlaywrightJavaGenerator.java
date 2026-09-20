@@ -146,7 +146,13 @@ public class PlaywrightJavaGenerator {
         if (needsUi) {
 
             source.append(
-                    "            Browser browser = playwright.chromium().launch(\n"
+                    "            String browserName = configuration(\"testforge.browser\", \"TESTFORGE_BROWSER\", \"chromium\").toLowerCase();\n"
+                            + "            BrowserType browserType = switch (browserName) {\n"
+                            + "                case \"firefox\" -> playwright.firefox();\n"
+                            + "                case \"webkit\" -> playwright.webkit();\n"
+                            + "                default -> playwright.chromium();\n"
+                            + "            };\n"
+                            + "            Browser browser = browserType.launch(\n"
             );
 
             source.append(
@@ -154,7 +160,7 @@ public class PlaywrightJavaGenerator {
             );
 
             source.append(
-                    "                            .setHeadless(true)\n"
+                    "                            .setHeadless(Boolean.parseBoolean(configuration(\"testforge.headless\", \"TESTFORGE_HEADLESS\", \"true\")))\n"
             );
 
             source.append(
@@ -322,6 +328,19 @@ public class PlaywrightJavaGenerator {
         );
 
         source.append(
+                "\n    private static String configuration(String property, String environment, String fallback) {\n"
+                        + "        String value = System.getProperty(property);\n"
+                        + "        if (value == null || value.isBlank()) value = System.getenv(environment);\n"
+                        + "        return value == null || value.isBlank() ? fallback : value;\n"
+                        + "    }\n"
+                        + "\n    private static String resolveNavigationUrl(String configured) {\n"
+                        + "        String baseUrl = configuration(\"testforge.baseUrl\", \"TESTFORGE_BASE_URL\", \"\");\n"
+                        + "        if (baseUrl.isBlank() || configured.matches(\"^[A-Za-z][A-Za-z0-9+.-]*://.*\")) return configured;\n"
+                        + "        return baseUrl.replaceAll(\"/+$\", \"\") + \"/\" + configured.replaceFirst(\"^/+\", \"\");\n"
+                        + "    }\n"
+        );
+
+        source.append(
                 "\n    private static String resolveRuntimeValue(String value, Map<String, String> runtimeData) {\n"
                         + "        if (value == null) return null;\n"
                         + "        String resolved = value;\n"
@@ -460,13 +479,13 @@ public class PlaywrightJavaGenerator {
 
             case NAVIGATE ->
                     line(
-                            "page.navigate("
+                            "page.navigate(resolveNavigationUrl("
                                     + runtimeValue(
                                     requireInput(
                                             step
                                     )
                             )
-                                    + ");"
+                                    + "));"
                     );
 
             case GO_BACK ->

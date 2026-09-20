@@ -12,6 +12,7 @@ import com.testforge.testforge_backend.exception.TestCaseNotFoundException;
 import com.testforge.testforge_backend.exception.TestScenarioNotFoundException;
 import com.testforge.testforge_backend.repository.TestCaseRepository;
 import com.testforge.testforge_backend.repository.TestScenarioRepository;
+import com.testforge.testforge_backend.cleanup.service.TestCaseDeletionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,11 +32,11 @@ public class TestCaseService {
     private final BusinessIdGeneratorService
             businessIdGeneratorService;
 
-    public TestCaseService(
-            TestCaseRepository testCaseRepository,
-            TestScenarioRepository testScenarioRepository,
-            BusinessIdGeneratorService businessIdGeneratorService
-    ) {
+    private final TestCaseDeletionService deletion;
+
+    public TestCaseService(TestCaseRepository testCaseRepository, TestScenarioRepository testScenarioRepository,
+                           BusinessIdGeneratorService businessIdGeneratorService, TestCaseDeletionService deletion) {
+        this.deletion = deletion;
         this.testCaseRepository =
                 testCaseRepository;
 
@@ -80,7 +81,7 @@ public class TestCaseService {
         }
 
         validateAutomationType(
-                request.getAutomatable(),
+                testScenario.isAutomatable(),
                 request.getAutomationType()
         );
 
@@ -119,9 +120,6 @@ public class TestCaseService {
                 request.getTestType()
         );
 
-        testCase.setAutomatable(
-                request.getAutomatable()
-        );
 
         testCase.setAutomationType(
                 request.getAutomationType()
@@ -135,7 +133,7 @@ public class TestCaseService {
          */
         testCase.setAutomationStatus(
                 initialAutomationStatus(
-                        request.getAutomatable()
+                        testScenario.isAutomatable()
                 )
         );
 
@@ -227,7 +225,7 @@ public class TestCaseService {
     )
     public List<TestCase> getAutomationEligible() {
         return testCaseRepository
-                .findByAutomatableTrueOrderByIdAsc();
+                .findByTestScenarioAutomatableTrueOrderByIdAsc();
     }
 
     public TestCase update(
@@ -248,7 +246,7 @@ public class TestCaseService {
                         );
 
         validateAutomationType(
-                request.getAutomatable(),
+                testCase.getTestScenario().isAutomatable(),
                 request.getAutomationType()
         );
 
@@ -256,9 +254,7 @@ public class TestCaseService {
                 testCase.isAutomatable();
 
         boolean willBeAutomatable =
-                Boolean.TRUE.equals(
-                        request.getAutomatable()
-                );
+                testCase.getTestScenario().isAutomatable();
 
         AutomationType previousAutomationType =
                 testCase.getAutomationType();
@@ -322,9 +318,6 @@ public class TestCaseService {
                 request.getTestType()
         );
 
-        testCase.setAutomatable(
-                request.getAutomatable()
-        );
 
         testCase.setAutomationType(
                 request.getAutomationType()
@@ -407,27 +400,9 @@ public class TestCaseService {
         return testCase;
     }
 
-    public void delete(
-            Long id
-    ) {
-        if (
-                !testCaseRepository
-                        .existsById(
-                                id
-                        )
-        ) {
-            throw new TestCaseNotFoundException(
-                    "Test Case not found with id: "
-                            + id
-            );
-        }
-
-        testCaseRepository
-                .deleteById(
-                        id
-                );
+    public void delete(Long id) {
+        deletion.delete(id);
     }
-
 
     private String resolveTestCaseId(
             String requestedTestCaseId
@@ -449,15 +424,9 @@ public class TestCaseService {
     }
 
     private void validateAutomationType(
-            Boolean automatable,
+            boolean automatable,
             AutomationType automationType
     ) {
-        if (automatable == null) {
-            throw new InvalidTestCaseAutomationException(
-                    "Automatable is required"
-            );
-        }
-
         if (automationType == null) {
             throw new InvalidTestCaseAutomationException(
                     "Automation Type is required"
@@ -489,12 +458,10 @@ public class TestCaseService {
     }
 
     private AutomationStatus initialAutomationStatus(
-            Boolean automatable
+            boolean automatable
     ) {
         if (
-                Boolean.TRUE.equals(
-                        automatable
-                )
+                automatable
         ) {
             return AutomationStatus.NOT_AUTOMATED;
         }

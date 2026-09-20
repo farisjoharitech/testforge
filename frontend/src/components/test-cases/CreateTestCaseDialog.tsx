@@ -11,14 +11,12 @@ import {
 import {
   Alert,
   Button,
-  Checkbox,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
-  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
@@ -47,6 +45,8 @@ interface CreateTestCaseDialogProps {
 
   scenarioId: string;
 
+  scenarioAutomatable: boolean;
+
   onClose: () => void;
 
   onCreated: (
@@ -57,6 +57,7 @@ interface CreateTestCaseDialogProps {
 export default function CreateTestCaseDialog({
                                                open,
                                                scenarioId,
+                                               scenarioAutomatable,
                                                onClose,
                                                onCreated,
                                              }: CreateTestCaseDialogProps) {
@@ -95,11 +96,6 @@ export default function CreateTestCaseDialog({
       useState<TestType>(
           'FUNCTIONAL',
       );
-
-  const [
-    automatable,
-    setAutomatable,
-  ] = useState(false);
 
   const [
     automationType,
@@ -144,12 +140,8 @@ export default function CreateTestCaseDialog({
             'FUNCTIONAL',
         );
 
-        setAutomatable(
-            false,
-        );
-
         setAutomationType(
-            'MANUAL',
+            scenarioAutomatable ? 'UI' : 'MANUAL',
         );
 
         setStatus(
@@ -165,29 +157,8 @@ export default function CreateTestCaseDialog({
           resetForm();
         }
       },
-      [open],
+      [open, scenarioAutomatable],
   );
-
-  const handleAutomatableChange =
-      (
-          checked: boolean,
-      ) => {
-        setAutomatable(
-            checked,
-        );
-
-        if (checked) {
-          setAutomationType(
-              'UI',
-          );
-
-          return;
-        }
-
-        setAutomationType(
-            'MANUAL',
-        );
-      };
 
   const optionalValue =
       (
@@ -293,7 +264,7 @@ export default function CreateTestCaseDialog({
         }
 
         if (
-            !automatable
+            !scenarioAutomatable
             && automationType
             !== 'MANUAL'
         ) {
@@ -305,7 +276,7 @@ export default function CreateTestCaseDialog({
         }
 
         if (
-            automatable
+            scenarioAutomatable
             && automationType
             === 'MANUAL'
         ) {
@@ -345,8 +316,6 @@ export default function CreateTestCaseDialog({
                         priority,
 
                         testType,
-
-                        automatable,
 
                         automationType,
 
@@ -637,26 +606,6 @@ export default function CreateTestCaseDialog({
                 </Select>
               </FormControl>
 
-              <FormControlLabel
-                  control={
-                    <Checkbox
-                        checked={
-                          automatable
-                        }
-                        disabled={
-                          submitting
-                        }
-                        onChange={event =>
-                            handleAutomatableChange(
-                                event.target
-                                    .checked,
-                            )
-                        }
-                    />
-                  }
-                  label="Automation Eligible"
-              />
-
               <FormControl
                   fullWidth
               >
@@ -671,7 +620,7 @@ export default function CreateTestCaseDialog({
                     }
                     disabled={
                         submitting
-                        || !automatable
+                        || !scenarioAutomatable
                     }
                     onChange={event =>
                         setAutomationType(
@@ -681,7 +630,7 @@ export default function CreateTestCaseDialog({
                         )
                     }
                 >
-                  {!automatable && (
+                  {!scenarioAutomatable && (
                       <MenuItem
                           value="MANUAL"
                       >
@@ -689,7 +638,7 @@ export default function CreateTestCaseDialog({
                       </MenuItem>
                   )}
 
-                  {automatable && (
+                  {scenarioAutomatable && (
                       <MenuItem
                           value="UI"
                       >
@@ -697,7 +646,7 @@ export default function CreateTestCaseDialog({
                       </MenuItem>
                   )}
 
-                  {automatable && (
+                  {scenarioAutomatable && (
                       <MenuItem
                           value="API"
                       >
@@ -705,7 +654,7 @@ export default function CreateTestCaseDialog({
                       </MenuItem>
                   )}
 
-                  {automatable && (
+                  {scenarioAutomatable && (
                       <MenuItem
                           value="UI_API"
                       >
@@ -720,7 +669,7 @@ export default function CreateTestCaseDialog({
                   variant="outlined"
               >
                 Automation Status is read-only and managed automatically by TestForge. New
-                automatable Test Cases
+                Test Cases in automation-eligible Scenarios
                 start as{' '}
                 <strong>
                   NOT_AUTOMATED

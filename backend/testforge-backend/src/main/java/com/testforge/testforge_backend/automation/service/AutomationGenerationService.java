@@ -70,6 +70,10 @@ public class AutomationGenerationService {
         TestCase testCase =
                 script.getTestCase();
 
+        if (automationStepRepository.countUnmappedTestSteps(testCase.getId()) > 0) {
+            throw new AutomationValidationException("Every Test Step must have automation configured before generation. Configure the missing Step actions first.");
+        }
+
         validateTestCase(
                 testCase,
                 steps
@@ -141,7 +145,7 @@ public class AutomationGenerationService {
                         scriptId
                 );
 
-        boolean stale =
+        boolean stale = automationStepRepository.countUnmappedTestSteps(script.getTestCase().getId()) > 0 ||
                 isStale(
                         script,
                         steps
@@ -251,20 +255,7 @@ public class AutomationGenerationService {
             AutomationActionType actionType
     ) {
 
-        return switch (actionType) {
-
-            case API_GET,
-                 API_POST,
-                 API_PUT,
-                 API_PATCH,
-                 API_DELETE,
-                 ASSERT_API_STATUS,
-                 ASSERT_API_BODY_CONTAINS ->
-                    false;
-
-            default ->
-                    true;
-        };
+        return !actionType.name().contains("API_");
     }
 
     private boolean isApiAction(

@@ -79,6 +79,20 @@ public interface AutomationExecutionRepository
             AutomationExecutionStatus status
     );
 
+    boolean existsByTestCase_IdAndStatus(Long testCaseId, AutomationExecutionStatus status);
+
+    @Query("""
+            select count(e) from AutomationExecution e left join e.automationScript s
+            where (e.testCase.id = :id or s.testCase.id = :id) and e.status = 'RUNNING'
+            """)
+    long countRunningForTestCase(@Param("id") Long id);
+
+    @Query("""
+            select count(e) from AutomationExecution e left join e.automationScript s
+            where (e.testCase.id = :id or s.testCase.id = :id) and e.status <> 'RUNNING'
+            """)
+    long countCompletedForTestCase(@Param("id") Long id);
+
     long countByTestCase_Id(Long testCaseId);
 
     @Query("""
@@ -119,7 +133,8 @@ public interface AutomationExecutionRepository
             join fetch execution.testCase testCase
             join fetch testCase.testScenario testScenario
             join fetch testScenario.requirement requirement
-            join fetch requirement.testPlan testPlan
+            join fetch requirement.module module
+            join fetch module.testPlan testPlan
             join fetch testPlan.project project
             where project.id = :projectId
               and execution.status <> :excludedStatus
@@ -168,7 +183,8 @@ public interface AutomationExecutionRepository
             join fetch execution.testCase testCase
             join fetch testCase.testScenario testScenario
             join fetch testScenario.requirement requirement
-            join fetch requirement.testPlan testPlan
+            join fetch requirement.module module
+            join fetch module.testPlan testPlan
             where testPlan.id = :testPlanId
               and execution.status <> :excludedStatus
             order by execution.startedAt desc, execution.id desc

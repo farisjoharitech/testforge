@@ -19,6 +19,10 @@ export class ApiError extends Error {
   }
 }
 
+export function apiErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof ApiError && error.message.trim() ? error.message : fallback;
+}
+
 interface ApiRequestOptions
   extends RequestInit {
   body?: BodyInit | null;
@@ -164,5 +168,19 @@ export const apiClient = {
         method: 'DELETE',
       },
     );
+  },
+
+  async download(path: string, options?: { accept?: string; fallbackFileName?: string }): Promise<{ blob: Blob; fileName: string }> {
+    const response = await fetch(`${API_BASE_URL}${path}`, { headers: { Accept: options?.accept ?? 'application/zip, application/json' } });
+    if (!response.ok) {
+      let details: unknown;
+      try { details = await response.json(); } catch { details = undefined; }
+      const message = details && typeof details === 'object' && 'message' in details && typeof details.message === 'string'
+        ? details.message : `Request failed with status ${response.status}`;
+      throw new ApiError(message, response.status, details);
+    }
+    const disposition = response.headers.get('Content-Disposition') ?? '';
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    return { blob: await response.blob(), fileName: match?.[1] ?? options?.fallbackFileName ?? 'testforge-suite.zip' };
   },
 };

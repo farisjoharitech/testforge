@@ -8,6 +8,10 @@ import com.testforge.testforge_backend.exception.ProjectInUseException;
 import com.testforge.testforge_backend.exception.ProjectNotFoundException;
 import com.testforge.testforge_backend.repository.ProjectRepository;
 import com.testforge.testforge_backend.repository.TestPlanRepository;
+import com.testforge.testforge_backend.repository.ModuleRepository;
+import com.testforge.testforge_backend.testsuite.repository.TestSuiteRepository;
+import com.testforge.testforge_backend.gitintegration.repository.GitIntegrationConfigurationRepository;
+import com.testforge.testforge_backend.gitintegration.service.GitCredentialVault;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,16 +24,34 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final TestPlanRepository testPlanRepository;
+    private final ModuleRepository moduleRepository;
+    private final TestSuiteRepository testSuiteRepository;
+    private final com.testforge.testforge_backend.testsuite.repository.SuiteRunRepository suiteRunRepository;
     private final BusinessIdGeneratorService businessIdGeneratorService;
+    private final GitIntegrationConfigurationRepository gitConfigurations;
+    private final GitCredentialVault gitCredentials;
+    private final com.testforge.testforge_backend.cleanup.service.AuthoringDeletionService deletionService;
 
     public ProjectService(
             ProjectRepository projectRepository,
             TestPlanRepository testPlanRepository,
-            BusinessIdGeneratorService businessIdGeneratorService
+            ModuleRepository moduleRepository,
+            TestSuiteRepository testSuiteRepository,
+            com.testforge.testforge_backend.testsuite.repository.SuiteRunRepository suiteRunRepository,
+            BusinessIdGeneratorService businessIdGeneratorService,
+            GitIntegrationConfigurationRepository gitConfigurations,
+            GitCredentialVault gitCredentials,
+            com.testforge.testforge_backend.cleanup.service.AuthoringDeletionService deletionService
     ) {
         this.projectRepository = projectRepository;
         this.testPlanRepository = testPlanRepository;
+        this.moduleRepository = moduleRepository;
+        this.testSuiteRepository = testSuiteRepository;
+        this.suiteRunRepository = suiteRunRepository;
         this.businessIdGeneratorService = businessIdGeneratorService;
+        this.gitConfigurations = gitConfigurations;
+        this.gitCredentials = gitCredentials;
+        this.deletionService = deletionService;
     }
 
     public Project create(
@@ -187,20 +209,9 @@ public class ProjectService {
         Project project =
                 getById(id);
 
-        if (
-                testPlanRepository
-                        .existsByProject(
-                                project
-                        )
-        ) {
-            throw new ProjectInUseException(
-                    "Project cannot be deleted while Test Plans still reference it."
-            );
-        }
-
-        projectRepository.delete(
-                project
-        );
+        String projectBusinessId = project.getProjectId();
+        deletionService.deleteProject(id);
+        gitCredentials.remove(projectBusinessId);
     }
 
     private String resolveProjectId(

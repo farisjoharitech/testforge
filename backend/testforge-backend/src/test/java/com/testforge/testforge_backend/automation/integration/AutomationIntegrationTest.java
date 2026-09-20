@@ -12,6 +12,7 @@ import com.testforge.testforge_backend.automation.model.UiElementRole;
 import com.testforge.testforge_backend.automation.service.AutomationService;
 import com.testforge.testforge_backend.automation.validation.AutomationValidationException;
 import com.testforge.testforge_backend.domain.Project;
+import com.testforge.testforge_backend.domain.Module;
 import com.testforge.testforge_backend.domain.Requirement;
 import com.testforge.testforge_backend.domain.TestCase;
 import com.testforge.testforge_backend.domain.TestPlan;
@@ -32,6 +33,7 @@ import com.testforge.testforge_backend.domain.enums.TestType;
 import com.testforge.testforge_backend.repository.AutomationScriptRepository;
 import com.testforge.testforge_backend.repository.AutomationStepRepository;
 import com.testforge.testforge_backend.repository.ProjectRepository;
+import com.testforge.testforge_backend.repository.ModuleRepository;
 import com.testforge.testforge_backend.repository.RequirementRepository;
 import com.testforge.testforge_backend.repository.TestCaseRepository;
 import com.testforge.testforge_backend.repository.TestPlanRepository;
@@ -64,6 +66,9 @@ class AutomationIntegrationTest {
 
     @Autowired
     private ProjectRepository projectRepository;
+
+    @Autowired
+    private ModuleRepository moduleRepository;
 
     @Autowired
     private RequirementRepository requirementRepository;
@@ -1083,9 +1088,16 @@ class AutomationIntegrationTest {
                 )
         );
 
-        requirement.setTestPlan(
-                testPlan
-        );
+        Module module = new Module();
+        module.setModuleId(uniqueId("MOD-AUTO"));
+        module.setProject(testPlan.getProject());
+        module.setTestPlan(testPlan);
+        module.setName("Automation Integration Module " + UUID.randomUUID());
+        module.setDescription("Automation integration test module");
+        LocalDateTime moduleNow = LocalDateTime.now();
+        module.setCreatedAt(moduleNow);
+        module.setUpdatedAt(moduleNow);
+        requirement.setModule(moduleRepository.save(module));
 
         requirement.setDescription(
                 "Automation integration test requirement"
@@ -1148,6 +1160,10 @@ class AutomationIntegrationTest {
 
         testScenario.setStatus(
                 TestScenarioStatus.DRAFT
+        );
+
+        testScenario.setAutomatable(
+                true
         );
 
         LocalDateTime now =
@@ -1220,9 +1236,6 @@ class AutomationIntegrationTest {
                 TestType.FUNCTIONAL
         );
 
-        testCase.setAutomatable(
-                true
-        );
 
         testCase.setAutomationType(
                 AutomationType.UI

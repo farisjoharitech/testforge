@@ -1,15 +1,19 @@
 package com.testforge.testforge_backend.service;
 
-import com.testforge.testforge_backend.cleanup.service.AuthoringCascadeDeleteService;
+import com.testforge.testforge_backend.repository.TestScenarioRepository;
+import com.testforge.testforge_backend.exception.ResourceInUseException;
 import com.testforge.testforge_backend.domain.Requirement;
 import com.testforge.testforge_backend.domain.TestPlan;
+import com.testforge.testforge_backend.domain.Module;
 import com.testforge.testforge_backend.dto.CreateRequirementRequest;
 import com.testforge.testforge_backend.dto.UpdateRequirementRequest;
 import com.testforge.testforge_backend.exception.DuplicateRequirementException;
 import com.testforge.testforge_backend.exception.RequirementNotFoundException;
 import com.testforge.testforge_backend.exception.TestPlanNotFoundException;
+import com.testforge.testforge_backend.exception.ModuleNotFoundException;
 import com.testforge.testforge_backend.repository.RequirementRepository;
 import com.testforge.testforge_backend.repository.TestPlanRepository;
+import com.testforge.testforge_backend.repository.ModuleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,14 +26,18 @@ public class RequirementService {
 
     private final RequirementRepository requirementRepository;
     private final TestPlanRepository testPlanRepository;
+    private final ModuleRepository moduleRepository;
     private final BusinessIdGeneratorService businessIdGeneratorService;
-    private final AuthoringCascadeDeleteService authoringCascadeDeleteService;
+    private final TestScenarioRepository children;
+    private final com.testforge.testforge_backend.cleanup.service.AuthoringDeletionService deletionService;
 
     public RequirementService(
             RequirementRepository requirementRepository,
             TestPlanRepository testPlanRepository,
+            ModuleRepository moduleRepository,
             BusinessIdGeneratorService businessIdGeneratorService,
-            AuthoringCascadeDeleteService authoringCascadeDeleteService) {
+            TestScenarioRepository children,
+            com.testforge.testforge_backend.cleanup.service.AuthoringDeletionService deletionService) {
 
         this.requirementRepository =
                 requirementRepository;
@@ -37,10 +45,13 @@ public class RequirementService {
         this.testPlanRepository =
                 testPlanRepository;
 
+        this.moduleRepository = moduleRepository;
+
         this.businessIdGeneratorService =
                 businessIdGeneratorService;
 
-        this.authoringCascadeDeleteService = authoringCascadeDeleteService;
+        this.children = children;
+        this.deletionService = deletionService;
     }
 
     public Requirement create(
@@ -81,9 +92,12 @@ public class RequirementService {
                 requirementId
         );
 
-        requirement.setTestPlan(
-                testPlan
-        );
+        Module module = moduleRepository.findByTestPlanOrderByIdAsc(testPlan)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new ModuleNotFoundException(
+                        "No Module exists for Project: " + testPlan.getProject().getProjectId()));
+        requirement.setModule(module);
 
         requirement.setDescription(
                 request.getDescription()
@@ -114,6 +128,36 @@ public class RequirementService {
         );
     }
 
+    public Requirement createForModule(
+            String moduleBusinessId,
+            CreateRequirementRequest request) {
+        Module module = moduleRepository.findByModuleId(moduleBusinessId)
+                .orElseThrow(() -> new ModuleNotFoundException(
+                        "Module not found with moduleId: " + moduleBusinessId));
+        String requirementId = resolveRequirementId(request.getRequirementId());
+        if (requirementRepository.existsByRequirementId(requirementId)) {
+            throw new DuplicateRequirementException("Requirement ID already exists: " + requirementId);
+        }
+        Requirement requirement = new Requirement();
+        requirement.setRequirementId(requirementId);
+        requirement.setModule(module);
+        requirement.setDescription(request.getDescription());
+        requirement.setPriority(request.getPriority());
+        requirement.setStatus(request.getStatus());
+        LocalDateTime now = LocalDateTime.now();
+        requirement.setCreatedAt(now);
+        requirement.setUpdatedAt(now);
+        return requirementRepository.save(requirement);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Requirement> getByModule(String moduleBusinessId) {
+        Module module = moduleRepository.findByModuleId(moduleBusinessId)
+                .orElseThrow(() -> new ModuleNotFoundException(
+                        "Module not found with moduleId: " + moduleBusinessId));
+        return requirementRepository.findByModuleOrderByIdAsc(module);
+    }
+
     @Transactional(readOnly = true)
     public List<Requirement> getByTestPlan(
             String testPlanBusinessId) {
@@ -131,7 +175,7 @@ public class RequirementService {
                         );
 
         return requirementRepository
-                .findByTestPlanOrderByIdAsc(
+                .findByModuleTestPlanOrderByIdAsc(
                         testPlan
                 );
     }
@@ -216,16 +260,7 @@ public class RequirementService {
     public void delete(
             Long id) {
 
-        if (!requirementRepository
-                .existsById(id)) {
-
-            throw new RequirementNotFoundException(
-                    "Requirement not found with id: "
-                            + id
-            );
-        }
-
-        authoringCascadeDeleteService.deleteRequirement(id);
+        deletionService.deleteRequirement(id);
     }
 
     private String resolveRequirementId(

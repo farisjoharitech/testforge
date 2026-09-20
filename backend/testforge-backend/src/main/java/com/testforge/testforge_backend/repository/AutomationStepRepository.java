@@ -58,7 +58,29 @@ public interface AutomationStepRepository
             Long testStepId
     );
 
-    long deleteByTestStepId(
-            Long testStepId
-    );
+    @Query("""
+            select new com.testforge.testforge_backend.automation.dto.AutomationOverviewItem(
+                scenario.scenarioId, scenario.description, c.testCaseId, c.name,
+                s.testStepId, a.stepOrder, a.actionType, scenario.automatable)
+            from AutomationStep a join a.testStep s join s.testCase c
+            join c.testScenario scenario join scenario.requirement r join r.module m
+            where m.project.projectId = :projectId
+            order by scenario.id, c.id, a.stepOrder
+            """)
+    List<com.testforge.testforge_backend.automation.dto.AutomationOverviewItem> overview(@Param("projectId") String projectId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("delete from AutomationStep a where a.automationScript.testCase.id = :id")
+    void deleteOwnedByTestCase(@Param("id") Long id);
+
+    @Query("select count(a) from AutomationStep a where a.testStep.testCase.id = :id and a.automationScript.testCase.id <> :id")
+    long countExternalMappings(@Param("id") Long id);
+
+    boolean existsByTestStepId(Long testStepId);
+
+    @Query("""
+            select count(s) from TestStep s where s.testCase.id = :testCaseId
+            and not exists (select a.id from AutomationStep a where a.testStep.id = s.id)
+            """)
+    long countUnmappedTestSteps(@Param("testCaseId") Long testCaseId);
 }

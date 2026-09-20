@@ -1,4 +1,13 @@
+import type { UpdateAutomationStepRequest } from './automation';
+
+export interface TestStepAutomationChange {
+  configuration?: UpdateAutomationStepRequest;
+  removeExisting?: boolean;
+  expectedAutomationStepId?: number;
+}
+
 export interface CreateTestStepRequest {
+  automation?: TestStepAutomationChange;
   action: string;
   target?: string;
   inputValue?: string;
@@ -6,6 +15,7 @@ export interface CreateTestStepRequest {
 }
 
 export interface UpdateTestStepRequest {
+  automation?: TestStepAutomationChange;
   stepOrder: number;
   action: string;
   target?: string;

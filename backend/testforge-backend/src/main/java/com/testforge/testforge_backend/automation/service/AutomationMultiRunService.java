@@ -13,6 +13,9 @@ import com.testforge.testforge_backend.automation.execution.AutomationRunType;
 import com.testforge.testforge_backend.repository.AutomationExecutionRepository;
 import com.testforge.testforge_backend.repository.AutomationScriptRepository;
 import com.testforge.testforge_backend.repository.TestCaseRepository;
+import com.testforge.testforge_backend.testsuite.dto.SuiteJUnitConfiguration;
+import com.testforge.testforge_backend.testsuite.entity.SuiteExecutionMode;
+import com.testforge.testforge_backend.testsuite.service.JUnitSuiteSourceTransformer;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,6 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 @Service
 public class AutomationMultiRunService {
@@ -34,6 +38,7 @@ public class AutomationMultiRunService {
     private final AutomationStructuredEventService structuredEventService;
     private final AutomationRunService automationRunService;
     private final AutomationRunEventStreamService runEventStreamService;
+    private final JUnitSuiteSourceTransformer junitTransformer;
 
     public AutomationMultiRunService(
             TestCaseRepository testCaseRepository,
@@ -45,7 +50,8 @@ public class AutomationMultiRunService {
             AutomationExecutionLogStreamService logStreamService,
             AutomationStructuredEventService structuredEventService,
             AutomationRunService automationRunService,
-            AutomationRunEventStreamService runEventStreamService
+            AutomationRunEventStreamService runEventStreamService,
+            JUnitSuiteSourceTransformer junitTransformer
     ) {
         this.testCaseRepository = testCaseRepository;
         this.automationScriptRepository = automationScriptRepository;
@@ -57,6 +63,7 @@ public class AutomationMultiRunService {
         this.structuredEventService = structuredEventService;
         this.automationRunService = automationRunService;
         this.runEventStreamService = runEventStreamService;
+        this.junitTransformer = junitTransformer;
     }
 
     public AutomationRunResponse executeTestCases(List<Long> testCaseIds) {
@@ -86,13 +93,17 @@ public class AutomationMultiRunService {
         );
     }
 
-    public AutomationRunResponse executeTestSetTestCases(List<Long> testCaseIds) {
-        return executeTestCases(
-                testCaseIds,
-                AutomationRunType.TEST_SET,
-                1,
-                "Test Set has no Test Cases"
-        );
+    public AutomationRunResponse executeTestSuiteTestCases(
+            List<Long> testCaseIds,
+            SuiteJUnitConfiguration configuration,
+            Consumer<AutomationRunResponse> completion
+    ) {
+        List<ExecutionJob> jobs = validateAndBuildJobs(testCaseIds, 1, "Test Suite has no Test Cases").stream()
+                .map(job -> new ExecutionJob(job.scriptId(), junitTransformer.apply(job.generatedScript(), configuration)))
+                .toList();
+        AutomationRunResponse run = persistenceService.startRun(AutomationRunType.TEST_SUITE, jobs.size());
+        CompletableFuture.runAsync(() -> execute(run.id(), jobs, configuration.executionMode(), completion));
+        return run;
     }
 
     private AutomationRunResponse executeTestCases(
@@ -100,6 +111,16 @@ public class AutomationMultiRunService {
             AutomationRunType runType,
             int minimumCount,
             String minimumCountMessage
+    ) {
+        return executeTestCases(testCaseIds, runType, minimumCount, minimumCountMessage, ignored -> { });
+    }
+
+    private AutomationRunResponse executeTestCases(
+            List<Long> testCaseIds,
+            AutomationRunType runType,
+            int minimumCount,
+            String minimumCountMessage,
+            Consumer<AutomationRunResponse> completion
     ) {
         List<ExecutionJob> jobs = validateAndBuildJobs(
                 testCaseIds,
@@ -113,7 +134,7 @@ public class AutomationMultiRunService {
         );
 
         CompletableFuture.runAsync(
-                () -> executeSequentially(run.id(), jobs)
+                () -> executeSequentially(run.id(), jobs, completion)
         );
 
         return run;
@@ -152,7 +173,7 @@ public class AutomationMultiRunService {
             AutomationScript script = automationScriptRepository
                     .findByTestCaseId(testCaseId)
                     .orElseThrow(() -> new AutomationNotFoundException(
-                            "Automation Script not found for Test Case: " + testCaseId
+                            missingAutomationMessage(testCaseId)
                     ));
 
             if (automationExecutionRepository.existsByAutomationScript_IdAndStatus(
@@ -181,9 +202,30 @@ public class AutomationMultiRunService {
         return List.copyOf(jobs);
     }
 
-    private void executeSequentially(Long runId, List<ExecutionJob> jobs) {
+    private String missingAutomationMessage(Long testCaseId) {
+        return testCaseRepository.findById(testCaseId)
+                .map(testCase -> "Test Case \"" + testCase.getName() + "\" (" + testCase.getTestCaseId()
+                        + ") has no automation script configured.")
+                .orElse("Test Case " + testCaseId + " has no automation script configured.");
+    }
+
+    private void executeSequentially(Long runId, List<ExecutionJob> jobs, Consumer<AutomationRunResponse> completion) {
+        execute(runId, jobs, SuiteExecutionMode.SEQUENTIAL, completion);
+    }
+
+    private void execute(Long runId,List<ExecutionJob> jobs,SuiteExecutionMode mode,Consumer<AutomationRunResponse> completion) {
         try {
-            for (ExecutionJob job : jobs) {
+            if(mode==SuiteExecutionMode.PARALLEL){CompletableFuture.allOf(jobs.stream().map(job->CompletableFuture.runAsync(()->executeJob(runId,job))).toArray(CompletableFuture[]::new)).join();}else for(ExecutionJob job:jobs)executeJob(runId,job);
+            publishCompletedRunIfFinished(runId);
+        } catch (RuntimeException exception) {
+            persistenceService.markRunInfrastructureError(runId);
+            publishCompletedRunIfFinished(runId);
+        } finally {
+            completion.accept(automationRunService.getById(runId));
+        }
+    }
+
+    private void executeJob(Long runId,ExecutionJob job) {
                 AutomationExecutionResponse runningExecution =
                         persistenceService.startExecutionInRun(
                                 runId,
@@ -228,13 +270,6 @@ public class AutomationMultiRunService {
                         runningExecution.id(),
                         finishedExecution.status().name()
                 );
-            }
-
-            publishCompletedRunIfFinished(runId);
-        } catch (RuntimeException exception) {
-            persistenceService.markRunInfrastructureError(runId);
-            publishCompletedRunIfFinished(runId);
-        }
     }
 
     private void publishCompletedRunIfFinished(Long runId) {

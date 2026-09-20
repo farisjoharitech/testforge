@@ -3,9 +3,9 @@ spring:
     name: testforge-backend
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5433/testforge}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/testforge}
     username: ${DB_USERNAME:testforge_user}
-    password: ${DB_PASSWORD}
+    password: ${DB_PASSWORD:testforge_dev}
 
   jpa:
     hibernate:

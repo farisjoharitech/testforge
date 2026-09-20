@@ -79,11 +79,11 @@ public class DashboardService {
 
         long automatableTestCases =
                 testCaseRepository
-                        .countByAutomatableTrue();
+                        .countByScenarioAutomatableTrue();
 
         long automatedTestCases =
                 testCaseRepository
-                        .countByAutomatableTrueAndAutomationStatus(
+                        .countByScenarioAutomatableTrueAndAutomationStatus(
                                 AutomationStatus.AUTOMATED
                         );
 
@@ -194,19 +194,19 @@ public class DashboardService {
 
         long ui =
                 testCaseRepository
-                        .countByAutomatableTrueAndAutomationType(
+                        .countByScenarioAutomatableTrueAndAutomationType(
                                 AutomationType.UI
                         );
 
         long api =
                 testCaseRepository
-                        .countByAutomatableTrueAndAutomationType(
+                        .countByScenarioAutomatableTrueAndAutomationType(
                                 AutomationType.API
                         );
 
         long uiApi =
                 testCaseRepository
-                        .countByAutomatableTrueAndAutomationType(
+                        .countByScenarioAutomatableTrueAndAutomationType(
                                 AutomationType.UI_API
                         );
 

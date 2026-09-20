@@ -45,10 +45,14 @@ class AutomationScenarioRunServiceTest {
     void shouldExecuteOnlyAutomatableScenarioTestCases() {
         TestScenario scenario = new TestScenario();
         scenario.setScenarioId("SC-AUTO-001");
+        scenario.setAutomatable(true);
 
         TestCase uiCase = testCase(11L, true, AutomationType.UI);
         TestCase apiCase = testCase(12L, true, AutomationType.API);
         TestCase manualCase = testCase(13L, false, AutomationType.MANUAL);
+        uiCase.setTestScenario(scenario);
+        apiCase.setTestScenario(scenario);
+        manualCase.setTestScenario(scenario);
 
         when(testScenarioRepository.findById(5L))
                 .thenReturn(Optional.of(scenario));
@@ -83,8 +87,10 @@ class AutomationScenarioRunServiceTest {
     void shouldRejectScenarioWithoutAutomatableTestCases() {
         TestScenario scenario = new TestScenario();
         scenario.setScenarioId("SC-MANUAL-001");
+        scenario.setAutomatable(false);
 
         TestCase manualCase = testCase(13L, false, AutomationType.MANUAL);
+        manualCase.setTestScenario(scenario);
 
         when(testScenarioRepository.findById(5L))
                 .thenReturn(Optional.of(scenario));
@@ -109,7 +115,6 @@ class AutomationScenarioRunServiceTest {
     ) {
         TestCase testCase = new TestCase();
         testCase.setId(id);
-        testCase.setAutomatable(automatable);
         testCase.setAutomationType(automationType);
         return testCase;
     }

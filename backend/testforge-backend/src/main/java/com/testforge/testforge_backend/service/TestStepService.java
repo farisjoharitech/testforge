@@ -35,11 +35,18 @@ public class TestStepService {
     private final AutomationStepRepository
             automationStepRepository;
 
+    private final TestStepAutomationService testStepAutomationService;
+    private final com.testforge.testforge_backend.cleanup.service.AuthoringDeletionService deletionService;
+
     public TestStepService(
             TestStepRepository testStepRepository,
             TestCaseRepository testCaseRepository,
             BusinessIdGeneratorService businessIdGeneratorService,
-            AutomationStepRepository automationStepRepository) {
+            AutomationStepRepository automationStepRepository,
+            TestStepAutomationService testStepAutomationService,
+            com.testforge.testforge_backend.cleanup.service.AuthoringDeletionService deletionService) {
+        this.testStepAutomationService = testStepAutomationService;
+        this.deletionService = deletionService;
 
         this.testStepRepository =
                 testStepRepository;
@@ -146,9 +153,9 @@ public class TestStepService {
                 now
         );
 
-        return testStepRepository.save(
-                testStep
-        );
+        TestStep saved = testStepRepository.save(testStep);
+        testStepAutomationService.apply(saved, request.getAutomation());
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -262,6 +269,7 @@ public class TestStepService {
          * Managed entity.
          * Hibernate dirty checking persists updates.
          */
+        testStepAutomationService.apply(testStep, request.getAutomation());
         return testStep;
     }
 
@@ -343,25 +351,6 @@ public class TestStepService {
     public void delete(
             Long id) {
 
-        TestStep testStep = testStepRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new TestStepNotFoundException(
-                                "Test Step not found with id: "
-                                        + id
-                        )
-                );
-
-        /*
-         * Authoring Test Steps are the source of truth.
-         * Any Automation Step mapped to this source step must disappear
-         * in the same transaction. The V18 FK also enforces this rule
-         * with ON DELETE CASCADE as a database-level safety net.
-         */
-        automationStepRepository
-                .deleteByTestStepId(testStep.getId());
-
-        testStepRepository
-                .delete(testStep);
+        deletionService.deleteTestStep(id);
     }
 }

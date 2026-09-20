@@ -17,10 +17,12 @@ import {
     DialogContent,
     DialogTitle,
     FormControl,
+    FormControlLabel,
     InputLabel,
     MenuItem,
     Select,
     Stack,
+    Switch,
     TextField,
 } from '@mui/material';
 
@@ -81,6 +83,11 @@ export default function CreateTestScenarioDialog({
         );
 
     const [
+        automatable,
+        setAutomatable,
+    ] = useState(false);
+
+    const [
         status,
         setStatus,
     ] =
@@ -112,6 +119,8 @@ export default function CreateTestScenarioDialog({
             setPriority(
                 'MEDIUM',
             );
+
+            setAutomatable(false);
 
             setStatus(
                 'DRAFT',
@@ -185,6 +194,8 @@ export default function CreateTestScenarioDialog({
                                 trimmedDescription,
 
                                 testType,
+
+                                automatable,
 
 
                                 priority,
@@ -410,6 +421,19 @@ export default function CreateTestScenarioDialog({
                                 </MenuItem>
                             </Select>
                         </FormControl>
+
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={automatable}
+                                    disabled={submitting}
+                                    onChange={event =>
+                                        setAutomatable(event.target.checked)
+                                    }
+                                />
+                            }
+                            label="Automation Eligible"
+                        />
 
                         <FormControl
                             fullWidth

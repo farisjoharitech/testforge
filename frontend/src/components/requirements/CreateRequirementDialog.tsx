@@ -40,7 +40,8 @@ import type {
 
 interface CreateRequirementDialogProps {
     open: boolean;
-    testPlanId: string;
+    testPlanId?: string;
+    moduleId?: string;
 
     onClose: () => void;
 
@@ -52,6 +53,7 @@ interface CreateRequirementDialogProps {
 export default function CreateRequirementDialog({
                                                     open,
                                                     testPlanId,
+                                                    moduleId,
                                                     onClose,
                                                     onCreated,
                                                 }: CreateRequirementDialogProps) {
@@ -149,9 +151,14 @@ export default function CreateRequirementDialog({
                 setSubmitting(true);
 
                 const createdRequirement =
-                    await requirementApi
-                        .createRequirement(
-                            testPlanId,
+                    await (moduleId
+                        ? requirementApi.createRequirementForModule(moduleId, {
+                            description: trimmedDescription,
+                            priority,
+                            status,
+                        })
+                        : requirementApi.createRequirement(
+                            testPlanId!,
                             {
                                 description:
                                 trimmedDescription,
@@ -161,7 +168,7 @@ export default function CreateRequirementDialog({
                                 status,
 
                             },
-                        );
+                        ));
 
                 resetForm();
 

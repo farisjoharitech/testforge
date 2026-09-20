@@ -1,15 +1,20 @@
 package com.testforge.testforge_backend.service;
 
-import com.testforge.testforge_backend.cleanup.service.AuthoringCascadeDeleteService;
+import com.testforge.testforge_backend.repository.TestCaseRepository;
+import com.testforge.testforge_backend.exception.ResourceInUseException;
 import com.testforge.testforge_backend.domain.Requirement;
 import com.testforge.testforge_backend.domain.TestScenario;
 import com.testforge.testforge_backend.dto.CreateTestScenarioRequest;
 import com.testforge.testforge_backend.dto.UpdateTestScenarioRequest;
 import com.testforge.testforge_backend.exception.DuplicateTestScenarioException;
+import com.testforge.testforge_backend.exception.InvalidTestCaseAutomationException;
 import com.testforge.testforge_backend.exception.RequirementNotFoundException;
 import com.testforge.testforge_backend.exception.TestScenarioNotFoundException;
 import com.testforge.testforge_backend.repository.RequirementRepository;
+import com.testforge.testforge_backend.repository.AutomationScriptRepository;
 import com.testforge.testforge_backend.repository.TestScenarioRepository;
+import com.testforge.testforge_backend.testsuite.repository.TestSuiteRepository;
+import com.testforge.testforge_backend.exception.ScenarioInUseException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,14 +34,22 @@ public class TestScenarioService {
     private final BusinessIdGeneratorService
             businessIdGeneratorService;
 
-    private final AuthoringCascadeDeleteService
-            authoringCascadeDeleteService;
+    private final TestCaseRepository
+            children;
+
+    private final AutomationScriptRepository
+            automationScriptRepository;
+    private final TestSuiteRepository testSuiteRepository;
+    private final com.testforge.testforge_backend.cleanup.service.AuthoringDeletionService deletionService;
 
     public TestScenarioService(
             TestScenarioRepository testScenarioRepository,
             RequirementRepository requirementRepository,
             BusinessIdGeneratorService businessIdGeneratorService,
-            AuthoringCascadeDeleteService authoringCascadeDeleteService) {
+            TestCaseRepository children,
+            AutomationScriptRepository automationScriptRepository,
+            TestSuiteRepository testSuiteRepository,
+            com.testforge.testforge_backend.cleanup.service.AuthoringDeletionService deletionService) {
 
         this.testScenarioRepository =
                 testScenarioRepository;
@@ -47,7 +60,10 @@ public class TestScenarioService {
         this.businessIdGeneratorService =
                 businessIdGeneratorService;
 
-        this.authoringCascadeDeleteService = authoringCascadeDeleteService;
+        this.children = children;
+        this.automationScriptRepository = automationScriptRepository;
+        this.testSuiteRepository = testSuiteRepository;
+        this.deletionService = deletionService;
     }
 
     public TestScenario create(
@@ -98,6 +114,10 @@ public class TestScenarioService {
 
         scenario.setTestType(
                 request.getTestType()
+        );
+
+        scenario.setAutomatable(
+                request.getAutomatable()
         );
 
 
@@ -191,12 +211,26 @@ public class TestScenarioService {
                                 )
                         );
 
+        if (
+                scenario.isAutomatable()
+                        && !request.getAutomatable()
+                        && automationScriptRepository.countByScenarioId(id) > 0
+        ) {
+            throw new InvalidTestCaseAutomationException(
+                    "Scenario cannot be changed to manual while automation configuration exists"
+            );
+        }
+
         scenario.setDescription(
                 request.getDescription()
         );
 
         scenario.setTestType(
                 request.getTestType()
+        );
+
+        scenario.setAutomatable(
+                request.getAutomatable()
         );
 
 
@@ -222,16 +256,7 @@ public class TestScenarioService {
     public void delete(
             Long id) {
 
-        if (!testScenarioRepository
-                .existsById(id)) {
-
-            throw new TestScenarioNotFoundException(
-                    "Test Scenario not found with id: "
-                            + id
-            );
-        }
-
-        authoringCascadeDeleteService.deleteScenario(id);
+        deletionService.deleteScenario(id);
     }
 
     private String resolveScenarioId(

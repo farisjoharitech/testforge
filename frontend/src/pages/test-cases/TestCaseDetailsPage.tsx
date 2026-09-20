@@ -1,12 +1,8 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Add,
-  Assessment,
-  AutoAwesome,
-  Code,
   Delete,
   Edit,
-  PlayArrow,
   Refresh,
 } from '@mui/icons-material';
 import {
@@ -20,23 +16,24 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useNavigate, useParams } from 'react-router-dom';
-import { ApiError } from '../../api/apiClient';
-import { deleteImpactApi } from '../../api/deleteImpactApi';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { ApiError, apiErrorMessage } from '../../api/apiClient';
 import { automationApi } from '../../api/automationApi';
 import { testCaseApi } from '../../api/testCaseApi';
+import { testScenarioApi } from '../../api/testScenarioApi';
 import { testStepApi } from '../../api/testStepApi';
-import type { AuthoringDeleteImpact } from '../../types/deleteImpact';
-import { buildDeleteImpactDescription } from '../../utils/deleteImpactText';
 import DeleteConfirmationDialog from '../../components/common/DeleteConfirmationDialog';
 import { PageHeader } from '../../components/common/PageHeader';
 import { WorkspaceCollection } from '../../components/common/WorkspaceCollection';
 import EditTestCaseDialog from '../../components/test-cases/EditTestCaseDialog';
 import CreateTestStepDialog from '../../components/test-steps/CreateTestStepDialog';
+import StepAutomationSummary from '../../components/test-steps/StepAutomationSummary';
 import EditTestStepDialog from '../../components/test-steps/EditTestStepDialog';
-import type { AutomationExecution, AutomationScript } from '../../types/automation';
+import type {
+  AutomationStep,
+} from '../../types/automation';
 import type { TestCase } from '../../types/testCase';
-import type { TestStep, TestStepDeleteImpact } from '../../types/testStep';
+import type { TestStep } from '../../types/testStep';
 
 function priorityColor(priority: string): 'default' | 'primary' | 'warning' | 'error' {
   if (priority === 'CRITICAL') return 'error';
@@ -67,12 +64,15 @@ function isNotFound(error: unknown): boolean {
 
 export default function TestCaseDetailsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const openedLink = useRef<string | null>(null);
   const { testCaseId } = useParams<{ testCaseId: string }>();
 
   const [testCase, setTestCase] = useState<TestCase | null>(null);
   const [testSteps, setTestSteps] = useState<TestStep[]>([]);
-  const [automationScript, setAutomationScript] = useState<AutomationScript | null>(null);
-  const [latestExecution, setLatestExecution] = useState<AutomationExecution | null>(null);
+  const [automationSteps, setAutomationSteps] = useState<AutomationStep[]>([]);
+  const [scenarioAutomatable, setScenarioAutomatable] = useState(false);
+  const [automationLoaded, setAutomationLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,13 +82,13 @@ export default function TestCaseDetailsPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const deletingCaseRef = useRef(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [deleteImpact, setDeleteImpact] = useState<AuthoringDeleteImpact | null>(null);
+  const [editingSection, setEditingSection] = useState<"automation" | undefined>();
   const [editingTestStep, setEditingTestStep] = useState<TestStep | null>(null);
   const [deletingTestStep, setDeletingTestStep] = useState<TestStep | null>(null);
   const [deletingStep, setDeletingStep] = useState(false);
   const [deleteStepError, setDeleteStepError] = useState<string | null>(null);
-  const [deleteStepImpact, setDeleteStepImpact] = useState<TestStepDeleteImpact | null>(null);
 
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
@@ -98,20 +98,10 @@ export default function TestCaseDetailsPage() {
   const loadAutomationWorkspace = useCallback(async (numericTestCaseId: number) => {
     try {
       const script = await automationApi.getScriptByTestCase(numericTestCaseId);
-      setAutomationScript(script);
-      try {
-        setLatestExecution(await automationApi.getLatestExecution(script.id));
-      } catch (executionError) {
-        if (isNotFound(executionError)) setLatestExecution(null);
-        else throw executionError;
-      }
-    } catch (scriptError) {
-      if (isNotFound(scriptError)) {
-        setAutomationScript(null);
-        setLatestExecution(null);
-      } else {
-        throw scriptError;
-      }
+      setAutomationSteps(await automationApi.getSteps(script.id));
+    } catch (err) {
+      if (isNotFound(err)) setAutomationSteps([]);
+      else throw err;
     }
   }, []);
 
@@ -124,20 +114,19 @@ export default function TestCaseDetailsPage() {
     try {
       refresh ? setRefreshing(true) : setLoading(true);
       setError(null);
+      setAutomationLoaded(false);
       const [caseResponse, stepResponse] = await Promise.all([
         testCaseApi.getTestCaseByBusinessId(testCaseId),
         testStepApi.getByTestCase(testCaseId),
       ]);
       setTestCase(caseResponse);
       setTestSteps([...stepResponse].sort((a, b) => a.stepOrder - b.stepOrder));
-      if (caseResponse.automatable && caseResponse.automationType !== 'MANUAL') {
-        await loadAutomationWorkspace(caseResponse.id);
-      } else {
-        setAutomationScript(null);
-        setLatestExecution(null);
-      }
+      const scenario = await testScenarioApi.getTestScenario(caseResponse.scenarioId);
+      setScenarioAutomatable(scenario.automatable);
+      await loadAutomationWorkspace(caseResponse.id);
+      setAutomationLoaded(true);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Unable to load Test Case workspace.');
+      setError(apiErrorMessage(err, 'Unable to load Test Case workspace.'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -147,10 +136,17 @@ export default function TestCaseDetailsPage() {
   useEffect(() => { void loadPage(); }, [loadPage]);
   useEffect(() => { setPage(1); }, [deferredSearch, pageSize]);
 
+  useEffect(() => {
+    const linkedStep = searchParams.get('automationStep');
+    if (!automationLoaded || !linkedStep || openedLink.current === linkedStep) return;
+    const step = testSteps.find(s => s.testStepId === linkedStep);
+    if (step) { openedLink.current = linkedStep; setEditingSection('automation'); setEditingTestStep(step); }
+  }, [automationLoaded, testSteps, searchParams]);
+
   const filteredSteps = useMemo(() => {
     const q = deferredSearch.trim().toLowerCase();
     if (!q) return testSteps;
-    return testSteps.filter((step) => [step.action, step.target, step.inputValue, step.expectedResult, String(step.stepOrder)]
+    return testSteps.filter((step) => [step.action, step.target, step.expectedResult, String(step.stepOrder)]
       .some((value) => value?.toLowerCase().includes(q)));
   }, [deferredSearch, testSteps]);
 
@@ -159,59 +155,28 @@ export default function TestCaseDetailsPage() {
     return filteredSteps.slice(start, start + pageSize);
   }, [filteredSteps, page, pageSize]);
 
-  const automationReady = Boolean(testCase?.automatable && testCase.automationType !== 'MANUAL' && testSteps.length > 0);
-
-  const workflowMessage = useMemo(() => {
-    if (!testCase) return '';
-    if (!testCase.automatable || testCase.automationType === 'MANUAL') return 'Manual Test Case. Enable automation only when this case is stable and worth automating.';
-    if (testSteps.length === 0) return 'Add at least one Test Step before building automation.';
-    if (!automationScript) return 'Ready for automation. Build the Playwright actions from the Test Steps.';
-    if (testCase.automationStatus === 'SCRIPT_GENERATED') return 'Generated script is ready to review or execute.';
-    if (testCase.automationStatus === 'RUNNING') return 'Automation is currently running.';
-    if (testCase.automationStatus === 'AUTOMATED') return 'Automation is available. Review the latest result or run it again.';
-    return 'Continue the automation workflow.';
-  }, [automationScript, testCase, testSteps.length]);
-
-  const openDeleteDialog = async () => {
-    if (!testCase) return;
-    setDeleteError(null);
-    setDeleteImpact(null);
-    setDeleteDialogOpen(true);
-    try {
-      setDeleteImpact(await deleteImpactApi.getTestCaseImpact(testCase.id));
-    } catch (err) {
-      setDeleteError(err instanceof ApiError ? err.message : 'Unable to load deletion impact. You may still cancel and retry.');
-    }
-  };
+  const openDeleteDialog = () => { setDeleteError(null); setDeleteDialogOpen(true); };
 
   const handleDeleteTestCase = async () => {
-    if (!testCase) return;
+    if (!testCase || deletingCaseRef.current) return;
+    deletingCaseRef.current = true;
     try {
       setDeleting(true);
       setDeleteError(null);
       await testCaseApi.deleteTestCase(testCase.id);
       navigate(`/scenarios/${encodeURIComponent(testCase.scenarioBusinessId)}`);
     } catch (err) {
-      setDeleteError(err instanceof ApiError ? err.message : 'Unable to delete the Test Case. Delete Test Steps or related automation first.');
+      setDeleteError(apiErrorMessage(err, 'Unable to delete the Test Case.'));
     } finally {
+      deletingCaseRef.current = false;
       setDeleting(false);
     }
   };
 
-  const openDeleteTestStep = async (step: TestStep) => {
-    setDeleteStepError(null);
-    setDeleteStepImpact(null);
-
-    try {
-      const impact = await testStepApi.getDeleteImpact(step.id);
-      setDeleteStepImpact(impact);
-    } catch {
-      // Deletion still remains available if the preview request fails.
-      // The backend delete itself is transactional and authoritative.
-    }
-
-    setDeletingTestStep(step);
+  const editStep = (step: TestStep, section?: "automation") => {
+    setEditingSection(section); setEditingTestStep(step);
   };
+  const openDeleteTestStep = (step: TestStep) => { setDeleteStepError(null); setDeletingTestStep(step); };
 
   const handleDeleteTestStep = async () => {
     if (!deletingTestStep) return;
@@ -220,16 +185,10 @@ export default function TestCaseDetailsPage() {
       setDeleteStepError(null);
       await testStepApi.deleteTestStep(deletingTestStep.id);
       setTestSteps((current) => current.filter((step) => step.id !== deletingTestStep.id));
-      const mappedCount = deleteStepImpact?.mappedAutomationStepCount ?? 0;
-      setSuccessMessage(
-        mappedCount > 0
-          ? `Test Step deleted. ${mappedCount} mapped Automation Step${mappedCount === 1 ? '' : 's'} also deleted. Regenerate the Automation Script before the next run.`
-          : 'Test Step deleted successfully.',
-      );
+      setSuccessMessage('Test Step deleted successfully.');
       setDeletingTestStep(null);
-      setDeleteStepImpact(null);
     } catch (err) {
-      setDeleteStepError(err instanceof ApiError ? err.message : 'Unable to delete Test Step.');
+      setDeleteStepError(apiErrorMessage(err, 'Unable to delete Test Step.'));
     } finally {
       setDeletingStep(false);
     }
@@ -277,47 +236,21 @@ export default function TestCaseDetailsPage() {
         </CardContent>
       </Card>
 
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
-        <CardContent sx={{ py: 1.75, '&:last-child': { pb: 1.75 } }}>
-          <Stack spacing={1.5}>
-            <Stack direction={{ xs: 'column', lg: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', lg: 'center' }} justifyContent="space-between">
-              <Box>
-                <Typography fontWeight={800}>Automation workflow</Typography>
-                <Typography variant="body2" color="text.secondary">{workflowMessage}</Typography>
-              </Box>
-              <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                <Button size="small" variant="outlined" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Create Test Step</Button>
-                <Button size="small" variant={automationScript ? 'outlined' : 'contained'} startIcon={<AutoAwesome />} disabled={!automationReady} onClick={() => navigate(`/automation/${encodeURIComponent(testCase.testCaseId)}`)}>Automation Builder</Button>
-                <Button size="small" variant="outlined" startIcon={<Code />} disabled={!automationScript} onClick={() => navigate(`/automation/${encodeURIComponent(testCase.testCaseId)}/script`)}>Generated Script</Button>
-                <Button size="small" variant="outlined" startIcon={<PlayArrow />} disabled={!automationScript} onClick={() => navigate(`/automation/${encodeURIComponent(testCase.testCaseId)}/execute`)}>Run Test Case</Button>
-                {latestExecution && <Button size="small" startIcon={<Assessment />} onClick={() => navigate(`/results/${latestExecution.id}`)}>Latest Result</Button>}
-              </Stack>
-            </Stack>
-            {latestExecution && (
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="caption" color="text.secondary">Latest run</Typography>
-                <Chip size="small" label={latestExecution.status} color={statusColor(latestExecution.status)} variant="outlined" />
-              </Stack>
-            )}
-          </Stack>
-        </CardContent>
-      </Card>
-
       <WorkspaceCollection
         title="Test Steps"
         totalCount={testSteps.length}
         filteredCount={filteredSteps.length}
         searchValue={search}
-        searchPlaceholder="Search steps by action, target, input or expected result..."
+        searchPlaceholder="Search steps by action, target or expected result..."
         onSearchChange={setSearch}
         page={page}
         pageSize={pageSize}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
-        actions={<Button variant="contained" size="small" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Create Test Step</Button>}
+        actions={<Button variant="contained" size="small" startIcon={<Add />} disabled={!automationLoaded || refreshing} onClick={() => setCreateDialogOpen(true)}>Create Test Step</Button>}
       >
         {testSteps.length === 0 ? (
-          <Card variant="outlined"><CardContent><Stack spacing={1.5} alignItems="center" sx={{ py: 5 }}><Typography fontWeight={700}>No Test Steps yet</Typography><Typography variant="body2" color="text.secondary">Define the execution flow before building automation.</Typography><Button variant="contained" startIcon={<Add />} onClick={() => setCreateDialogOpen(true)}>Add First Step</Button></Stack></CardContent></Card>
+          <Card variant="outlined"><CardContent><Stack spacing={1.5} alignItems="center" sx={{ py: 5 }}><Typography fontWeight={700}>No Test Steps yet</Typography><Typography variant="body2" color="text.secondary">Create a Test Step and optionally configure its automation in the same dialog.</Typography></Stack></CardContent></Card>
         ) : filteredSteps.length === 0 ? (
           <Alert severity="info">No Test Steps match your search.</Alert>
         ) : (
@@ -330,11 +263,22 @@ export default function TestCaseDetailsPage() {
                       <Chip size="small" label={step.stepOrder} color="primary" sx={{ minWidth: 38 }} />
                       <Box sx={{ minWidth: 0 }}>
                         <Typography fontWeight={700}>{step.action}</Typography>
+                        <Chip size="small" variant="outlined" sx={{ my: 0.5 }}
+                          disabled={!automationLoaded || refreshing}
+                          onClick={() => editStep(step, "automation")}
+                          title="View, edit or remove this Step's automation"
+                          label={!automationLoaded ? "Automation unavailable" : automationSteps.some(a => a.sourceTestStepId === step.id) ? "AUTOMATED - 1 action" : "MANUAL"}
+                          color={automationSteps.some(a => a.sourceTestStepId === step.id) ? "success" : "default"} />
+                        {automationSteps.filter(a => a.sourceTestStepId === step.id).map(a => <Box key={a.id} sx={{ my: 1 }}>
+                          <Chip size="small" label={a.actionType.includes('API_') ? 'API' : 'UI'} />
+                          <StepAutomationSummary step={a} />
+                          <Button size="small" onClick={() => editStep(step, 'automation')}>Edit / Remove Automation</Button>
+                        </Box>)}
                         {(step.target || step.inputValue || step.expectedResult) && (
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', overflowWrap: 'anywhere' }}>
                             {[
                               step.target ? `Target: ${step.target}` : null,
-                              step.inputValue ? `Input: ${step.inputValue}` : null,
+                              step.inputValue ? 'Input: ********' : null,
                               step.expectedResult ? `Expected: ${step.expectedResult}` : null,
                             ].filter(Boolean).join(' · ')}
                           </Typography>
@@ -342,8 +286,8 @@ export default function TestCaseDetailsPage() {
                       </Box>
                     </Stack>
                     <Stack direction="row" spacing={0.5}>
-                      <Button size="small" startIcon={<Edit />} onClick={() => setEditingTestStep(step)}>Edit</Button>
-                      <Button size="small" color="error" startIcon={<Delete />} onClick={() => void openDeleteTestStep(step)}>Delete</Button>
+                      <Button size="small" startIcon={<Edit />} disabled={!automationLoaded || refreshing} onClick={() => editStep(step)}>Edit</Button>
+                      <Button size="small" color="error" aria-label={`Delete Step ${step.stepOrder}`} startIcon={<Delete />} onClick={() => void openDeleteTestStep(step)}>Delete</Button>
                     </Stack>
                   </Stack>
                 </CardContent>
@@ -354,13 +298,15 @@ export default function TestCaseDetailsPage() {
       </WorkspaceCollection>
 
       <CreateTestStepDialog
-        open={createDialogOpen}
-        testCaseId={testCase.testCaseId}
+        open={createDialogOpen} testCaseId={testCase.testCaseId}
+        scenarioAutomatable={scenarioAutomatable} automationType={testCase.automationType}
+        suggestedAutomationOrder={Math.max(0, ...automationSteps.map(s => s.stepOrder)) + 1}
         onClose={() => setCreateDialogOpen(false)}
         onCreated={(step) => {
           setCreateDialogOpen(false);
-          setTestSteps((current) => [...current, step].sort((a, b) => a.stepOrder - b.stepOrder));
-          setSuccessMessage('Test Step created successfully.');
+          setTestSteps(current => [...current, step].sort((a, b) => a.stepOrder - b.stepOrder));
+          setSuccessMessage("Test Step saved successfully.");
+          void loadPage(true);
         }}
       />
       <EditTestCaseDialog
@@ -375,24 +321,26 @@ export default function TestCaseDetailsPage() {
         }}
       />
       <DeleteConfirmationDialog
-        open={deleteDialogOpen}
-        title="Delete Test Case?"
-        entityName={testCase.name}
-        description={buildDeleteImpactDescription(deleteImpact, 'A Test Case cannot be deleted while Test Steps or automation records still reference it.')}
+        open={deleteDialogOpen} title="Delete Test Case?" entityName={testCase.name}
+        resourceType="TEST_CASE" resourceId={testCase.id}
         deleting={deleting}
         error={deleteError}
-        onClose={() => { if (!deleting) { setDeleteDialogOpen(false); setDeleteError(null); setDeleteImpact(null); } }}
+        onClose={() => { if (!deleting) { setDeleteDialogOpen(false); setDeleteError(null); } }}
         onConfirm={() => void handleDeleteTestCase()}
       />
       {editingTestStep && (
-        <EditTestStepDialog
-          open
-          testStep={editingTestStep}
+        <EditTestStepDialog open testStep={editingTestStep} testCaseId={testCase.testCaseId}
+          initialSection={editingSection}
+          onAutomationRemoved={id => { setAutomationSteps(current => current.filter(a => a.id !== id)); setSuccessMessage("Automation removed. Test Step preserved."); }}
+          scenarioAutomatable={scenarioAutomatable} automationType={testCase.automationType}
+          automationStep={automationSteps.find(s => s.sourceTestStepId === editingTestStep.id)}
+          suggestedAutomationOrder={Math.max(0, ...automationSteps.map(s => s.stepOrder)) + 1}
           onClose={() => setEditingTestStep(null)}
           onUpdated={(updated) => {
-            setTestSteps((current) => current.map((step) => step.id === updated.id ? updated : step).sort((a, b) => a.stepOrder - b.stepOrder));
+            setTestSteps(current => current.map(step => step.id === updated.id ? updated : step).sort((a, b) => a.stepOrder - b.stepOrder));
             setEditingTestStep(null);
-            setSuccessMessage('Test Step updated successfully.');
+            setSuccessMessage("Test Step saved successfully.");
+            void loadPage(true);
           }}
         />
       )}
@@ -400,15 +348,11 @@ export default function TestCaseDetailsPage() {
         <DeleteConfirmationDialog
           open
           title="Delete Test Step?"
-          entityName={`Step ${deletingTestStep.stepOrder}`}
-          description={
-            deleteStepImpact && deleteStepImpact.mappedAutomationStepCount > 0
-              ? `This Test Step is mapped to ${deleteStepImpact.mappedAutomationStepCount} Automation Step${deleteStepImpact.mappedAutomationStepCount === 1 ? '' : 's'}. Deleting it will also permanently delete the mapped Automation Step${deleteStepImpact.mappedAutomationStepCount === 1 ? '' : 's'}.${deleteStepImpact.generatedScriptWillBecomeStale ? ' The generated script will become out of date and must be regenerated before execution.' : ''}`
-              : 'This Test Step will be permanently deleted. No mapped Automation Steps were found.'
-          }
+          entityName={deletingTestStep.action}
+          resourceType="TEST_STEP" resourceId={deletingTestStep.id}
           deleting={deletingStep}
           error={deleteStepError}
-          onClose={() => { if (!deletingStep) { setDeletingTestStep(null); setDeleteStepImpact(null); setDeleteStepError(null); } }}
+          onClose={() => { if (!deletingStep) { setDeletingTestStep(null); setDeleteStepError(null); } }}
           onConfirm={() => void handleDeleteTestStep()}
         />
       )}

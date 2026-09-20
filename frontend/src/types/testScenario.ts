@@ -24,6 +24,7 @@ export type TestType =
 export interface CreateTestScenarioRequest {
   description: string;
   testType: TestType;
+  automatable: boolean;
   priority: TestScenarioPriority;
   status: TestScenarioStatus;
 }
@@ -31,6 +32,7 @@ export interface CreateTestScenarioRequest {
 export interface UpdateTestScenarioRequest {
   description: string;
   testType: TestType;
+  automatable: boolean;
   priority: TestScenarioPriority;
   status: TestScenarioStatus;
 }
@@ -42,6 +44,7 @@ export interface TestScenario {
   requirementBusinessId: string;
   description: string;
   testType: TestType;
+  automatable: boolean;
   priority: TestScenarioPriority;
   status: TestScenarioStatus;
   createdAt: string;

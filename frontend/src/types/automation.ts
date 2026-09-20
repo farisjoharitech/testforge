@@ -247,3 +247,8 @@ export interface AutomationExecution {
 export interface CreateMultiTestCaseRunRequest {
   testCaseIds: number[];
 }
+
+export interface AutomationOverviewItem {
+ scenarioId: string; scenarioDescription: string; testCaseId: string; testCaseName: string;
+ testStepId: string; stepOrder: number; actionType: AutomationActionType; automatable: boolean;
+}

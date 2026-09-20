@@ -58,10 +58,7 @@ public class UpdateTestCaseRequest {
     )
     private TestType testType;
 
-    @NotNull(
-            message =
-                    "Automatable is required"
-    )
+    /* Legacy compatibility field. Scenario now owns eligibility. */
     private Boolean automatable;
 
     @NotNull(

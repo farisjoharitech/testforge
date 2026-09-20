@@ -67,6 +67,19 @@ public class RequirementController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/modules/{moduleId}/requirements")
+    public ResponseEntity<RequirementResponse> createForModule(
+            @PathVariable String moduleId,
+            @Valid @RequestBody CreateRequirementRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(toResponse(requirementService.createForModule(moduleId, request)));
+    }
+
+    @GetMapping("/modules/{moduleId}/requirements")
+    public List<RequirementResponse> getByModule(@PathVariable String moduleId) {
+        return requirementService.getByModule(moduleId).stream().map(this::toResponse).toList();
+    }
+
     @GetMapping("/requirements/{id}")
     public ResponseEntity<RequirementResponse>
     getById(
@@ -141,17 +154,15 @@ public class RequirementController {
                 requirement.getRequirementId()
         );
 
-        response.setTestPlanId(
-                requirement
-                        .getTestPlan()
-                        .getId()
-        );
+        if (requirement.getModule().getTestPlan() != null) {
+            response.setTestPlanId(requirement.getModule().getTestPlan().getId());
+            response.setTestPlanBusinessId(requirement.getModule().getTestPlan().getTestPlanId());
+        }
 
-        response.setTestPlanBusinessId(
-                requirement
-                        .getTestPlan()
-                        .getTestPlanId()
-        );
+        response.setModuleId(requirement.getModule().getId());
+        response.setModuleBusinessId(requirement.getModule().getModuleId());
+        response.setModuleName(requirement.getModule().getName());
+        response.setProjectBusinessId(requirement.getModule().getProject().getProjectId());
 
         response.setDescription(
                 requirement.getDescription()

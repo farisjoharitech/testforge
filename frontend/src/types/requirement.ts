@@ -26,8 +26,12 @@ export interface UpdateRequirementRequest {
 export interface Requirement {
   id: number;
   requirementId: string;
-  testPlanId: number;
-  testPlanBusinessId: string;
+  testPlanId?: number | null;
+  testPlanBusinessId?: string | null;
+  moduleId: number;
+  moduleBusinessId: string;
+  moduleName: string;
+  projectBusinessId: string;
   description: string;
   priority: RequirementPriority;
   status: RequirementStatus;

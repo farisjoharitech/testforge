@@ -6,6 +6,12 @@ import jakarta.validation.constraints.Size;
 
 public class CreateTestStepRequest {
 
+    @jakarta.validation.Valid
+    private TestStepAutomationChange automation;
+
+    public TestStepAutomationChange getAutomation() { return automation; }
+    public void setAutomation(TestStepAutomationChange automation) { this.automation = automation; }
+
     @Size(
             max = 50,
             message = "Test Step ID must not exceed 50 characters"

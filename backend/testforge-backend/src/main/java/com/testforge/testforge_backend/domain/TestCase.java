@@ -94,13 +94,7 @@ public class TestCase {
     )
     private TestType testType;
 
-    @Column(
-            name = "automatable",
-            nullable = false
-    )
-    private boolean automatable;
-
-    @Enumerated(
+@Enumerated(
             EnumType.STRING
     )
     @Column(
@@ -244,17 +238,11 @@ public class TestCase {
     }
 
     public boolean isAutomatable() {
-        return automatable;
+        return testScenario != null
+                && testScenario.isAutomatable();
     }
 
-    public void setAutomatable(
-            boolean automatable
-    ) {
-        this.automatable =
-                automatable;
-    }
-
-    public AutomationType getAutomationType() {
+public AutomationType getAutomationType() {
         return automationType;
     }
 

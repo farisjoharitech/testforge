@@ -20,6 +20,8 @@ public class TestScenarioResponse {
 
     private TestType testType;
 
+    private boolean automatable;
+
     private TestScenarioPriority priority;
 
     private TestScenarioStatus status;
@@ -85,6 +87,14 @@ public class TestScenarioResponse {
             TestType testType
     ) {
         this.testType = testType;
+    }
+
+    public boolean isAutomatable() {
+        return automatable;
+    }
+
+    public void setAutomatable(boolean automatable) {
+        this.automatable = automatable;
     }
 
 

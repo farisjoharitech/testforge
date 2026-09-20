@@ -11,6 +11,15 @@ import java.util.Optional;
 public interface TestScenarioRepository
         extends JpaRepository<TestScenario, Long> {
 
+    @org.springframework.data.jpa.repository.Query("""
+            select scenario from TestScenario scenario
+            join fetch scenario.requirement requirement
+            join fetch requirement.module module
+            where module.project.id = :projectId and scenario.automatable = true
+            order by scenario.id
+            """)
+    java.util.List<TestScenario> findAutomatableByProjectId(Long projectId);
+
     @EntityGraph(attributePaths = "requirement")
     Optional<TestScenario> findByScenarioId(
             String scenarioId

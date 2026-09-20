@@ -49,8 +49,6 @@ export interface CreateTestCaseRequest {
 
   testType: TestType;
 
-  automatable: boolean;
-
   automationType:
       AutomationType;
 
@@ -69,8 +67,6 @@ export interface UpdateTestCaseRequest {
   priority: TestCasePriority;
 
   testType: TestType;
-
-  automatable: boolean;
 
   automationType:
       AutomationType;

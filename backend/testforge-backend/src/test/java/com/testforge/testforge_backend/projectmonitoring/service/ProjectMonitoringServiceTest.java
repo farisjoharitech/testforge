@@ -4,6 +4,7 @@ import com.testforge.testforge_backend.automation.entity.AutomationExecution;
 import com.testforge.testforge_backend.automation.entity.AutomationScript;
 import com.testforge.testforge_backend.automation.execution.AutomationExecutionStatus;
 import com.testforge.testforge_backend.domain.Project;
+import com.testforge.testforge_backend.domain.Module;
 import com.testforge.testforge_backend.domain.Requirement;
 import com.testforge.testforge_backend.domain.TestCase;
 import com.testforge.testforge_backend.domain.TestPlan;
@@ -387,17 +388,19 @@ class ProjectMonitoringServiceTest {
             AutomationStatus automationStatus
     ) {
         Requirement requirement = new Requirement();
-        requirement.setTestPlan(testPlan);
+        Module module = new Module();
+        module.setTestPlan(testPlan);
+        requirement.setModule(module);
 
         TestScenario scenario = new TestScenario();
         scenario.setRequirement(requirement);
+        scenario.setAutomatable(automatable);
 
         TestCase testCase = new TestCase();
         testCase.setId(id);
         testCase.setTestCaseId(testCaseId);
         testCase.setName(name);
         testCase.setTestScenario(scenario);
-        testCase.setAutomatable(automatable);
         testCase.setAutomationType(automationType);
         testCase.setAutomationStatus(automationStatus);
 

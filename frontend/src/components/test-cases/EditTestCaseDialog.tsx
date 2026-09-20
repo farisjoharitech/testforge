@@ -16,10 +16,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   MenuItem,
   Stack,
-  Switch,
   TextField,
 } from '@mui/material';
 
@@ -130,11 +128,6 @@ export default function EditTestCaseDialog({
     );
 
   const [
-    automatable,
-    setAutomatable,
-  ] = useState(false);
-
-  const [
     automationType,
     setAutomationType,
   ] =
@@ -194,10 +187,6 @@ export default function EditTestCaseDialog({
         testCase.testType,
       );
 
-      setAutomatable(
-        testCase.automatable,
-      );
-
       setAutomationType(
         testCase.automationType,
       );
@@ -213,37 +202,6 @@ export default function EditTestCaseDialog({
       testCase,
     ],
   );
-
-  const handleAutomatableChange =
-    (
-      checked: boolean,
-    ) => {
-      setAutomatable(
-        checked,
-      );
-
-      if (checked) {
-        /*
-         * Preserve a valid
-         * automation type when
-         * possible.
-         */
-        if (
-          automationType
-          === 'MANUAL'
-        ) {
-          setAutomationType(
-            'UI',
-          );
-        }
-
-        return;
-      }
-
-      setAutomationType(
-        'MANUAL',
-      );
-    };
 
   const optionalValue =
     (
@@ -334,7 +292,7 @@ export default function EditTestCaseDialog({
       }
 
       if (
-        !automatable
+        !testCase.automatable
         && automationType
           !== 'MANUAL'
       ) {
@@ -346,7 +304,7 @@ export default function EditTestCaseDialog({
       }
 
       if (
-        automatable
+        testCase.automatable
         && automationType
           === 'MANUAL'
       ) {
@@ -385,8 +343,6 @@ export default function EditTestCaseDialog({
                 priority,
 
                 testType,
-
-                automatable,
 
                 automationType,
 
@@ -621,26 +577,6 @@ export default function EditTestCaseDialog({
               )}
             </TextField>
 
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={
-                    automatable
-                  }
-                  disabled={
-                    submitting
-                  }
-                  onChange={event =>
-                    handleAutomatableChange(
-                      event.target
-                        .checked,
-                    )
-                  }
-                />
-              }
-              label="Automation Eligible"
-            />
-
             <TextField
               select
               fullWidth
@@ -650,7 +586,7 @@ export default function EditTestCaseDialog({
               }
               disabled={
                 submitting
-                || !automatable
+                || !testCase.automatable
               }
               onChange={event =>
                 setAutomationType(
@@ -660,7 +596,7 @@ export default function EditTestCaseDialog({
                 )
               }
             >
-              {!automatable ? (
+              {!testCase.automatable ? (
                 <MenuItem
                   value="MANUAL"
                 >
@@ -705,7 +641,7 @@ export default function EditTestCaseDialog({
               severity="info"
               variant="outlined"
             >
-              Changing Automatable or
+              Scenario automation eligibility is read-only here. Changing
               Automation Type resets
               the automation lifecycle
               to{' '}
