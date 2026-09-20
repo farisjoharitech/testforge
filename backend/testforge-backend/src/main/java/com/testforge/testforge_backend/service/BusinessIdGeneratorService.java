@@ -28,6 +28,10 @@ public class BusinessIdGeneratorService {
         );
     }
 
+    public String generateModuleId() {
+        return generate("module_business_id_seq", "MOD");
+    }
+
     public String generateRequirementId() {
         return generate(
                 "requirement_business_id_seq",
@@ -53,13 +57,6 @@ public class BusinessIdGeneratorService {
         return generate(
                 "test_step_business_id_seq",
                 "STEP"
-        );
-    }
-
-    public String generateTestSetId() {
-        return generate(
-                "test_set_business_id_seq",
-                "TS"
         );
     }
 

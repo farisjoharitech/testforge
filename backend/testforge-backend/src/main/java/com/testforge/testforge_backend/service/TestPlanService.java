@@ -9,6 +9,8 @@ import com.testforge.testforge_backend.exception.DuplicateTestPlanException;
 import com.testforge.testforge_backend.exception.ProjectNotFoundException;
 import com.testforge.testforge_backend.exception.TestPlanNotFoundException;
 import com.testforge.testforge_backend.repository.ProjectRepository;
+import com.testforge.testforge_backend.repository.ModuleRepository;
+import com.testforge.testforge_backend.exception.TestPlanInUseException;
 import com.testforge.testforge_backend.repository.TestPlanRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,15 +25,21 @@ public class TestPlanService {
     private final TestPlanRepository testPlanRepository;
     private final ProjectRepository projectRepository;
     private final BusinessIdGeneratorService businessIdGeneratorService;
+    private final ModuleRepository moduleRepository;
+    private final com.testforge.testforge_backend.cleanup.service.AuthoringDeletionService deletionService;
 
     public TestPlanService(
             TestPlanRepository testPlanRepository,
             ProjectRepository projectRepository,
-            BusinessIdGeneratorService businessIdGeneratorService
+            ModuleRepository moduleRepository,
+            BusinessIdGeneratorService businessIdGeneratorService,
+            com.testforge.testforge_backend.cleanup.service.AuthoringDeletionService deletionService
     ) {
         this.testPlanRepository = testPlanRepository;
         this.projectRepository = projectRepository;
+        this.moduleRepository = moduleRepository;
         this.businessIdGeneratorService = businessIdGeneratorService;
+        this.deletionService = deletionService;
     }
 
     public TestPlan create(
@@ -186,12 +194,7 @@ public class TestPlanService {
     public void delete(
             Long id
     ) {
-        TestPlan testPlan =
-                getById(id);
-
-        testPlanRepository.delete(
-                testPlan
-        );
+        deletionService.deleteTestPlan(id);
     }
 
     private Project resolveProjectForCreate(

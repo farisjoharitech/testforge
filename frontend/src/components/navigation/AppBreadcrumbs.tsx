@@ -52,10 +52,6 @@ import {
   testScenarioApi,
 } from '../../api/testScenarioApi';
 
-import {
-  testSetApi,
-} from '../../api/testSetApi';
-
 interface BreadcrumbItem {
   label: string;
   to?: string;
@@ -224,19 +220,15 @@ function staticCrumbs(
     ];
   }
 
-  if (pathname === '/test-sets') {
-    return [{ label: 'Test Sets' }];
-  }
-
-  if (pathname === '/test-sets/new') {
-    return [
-      { label: 'Test Sets', to: '/test-sets' },
-      { label: 'New Test Set' },
-    ];
-  }
-
   if (pathname === '/automation') {
     return [{ label: 'Automation' }];
+  }
+
+  if (pathname === '/automation/management' || pathname === '/automation/configuration' || pathname === '/automation/api' || pathname === '/automation/ui') {
+    return [
+      { label: 'Automation', to: '/automation' },
+      { label: pathname.endsWith('/configuration') ? 'Configuration' : pathname.endsWith('/api') ? 'API Automation' : pathname.endsWith('/ui') ? 'UI Automation' : 'Management' },
+    ];
   }
 
   if (pathname === '/automation/multi-run') {
@@ -335,32 +327,6 @@ function staticCrumbs(
     return [
       { label: 'Test Plans', to: '/test-plans' },
       { label: decodeURIComponent(testCase[1]) },
-    ];
-  }
-
-  const testSetEdit = pathname.match(
-    /^\/test-sets\/(\d+)\/edit$/,
-  );
-
-  if (testSetEdit) {
-    return [
-      { label: 'Test Sets', to: '/test-sets' },
-      {
-        label: `Test Set ${testSetEdit[1]}`,
-        to: `/test-sets/${testSetEdit[1]}`,
-      },
-      { label: 'Edit' },
-    ];
-  }
-
-  const testSet = pathname.match(
-    /^\/test-sets\/(\d+)$/,
-  );
-
-  if (testSet) {
-    return [
-      { label: 'Test Sets', to: '/test-sets' },
-      { label: `Test Set ${testSet[1]}` },
     ];
   }
 
@@ -585,6 +551,8 @@ async function resolveCrumbs(
     automationMatch
     && automationMatch[1] !== 'multi-run'
     && automationMatch[1] !== 'runs'
+    && automationMatch[1] !== 'management'
+    && automationMatch[1] !== 'configuration'
   ) {
     const testCaseId = decodeURIComponent(automationMatch[1]);
     const context = await loadTestCaseHierarchy(testCaseId);
@@ -627,48 +595,6 @@ async function resolveCrumbs(
       ...hierarchyCrumbs(context),
       { label: 'Results', to: '/results' },
       { label: result.executionId },
-    ];
-  }
-
-  const testSetEditMatch = pathname.match(
-    /^\/test-sets\/(\d+)\/edit$/,
-  );
-
-  if (testSetEditMatch) {
-    const testSet = await testSetApi.getById(
-      Number(testSetEditMatch[1]),
-    );
-
-    return [
-      { label: 'Test Sets', to: '/test-sets' },
-      {
-        label: testSet.name,
-        to: `/test-sets/${testSet.id}`,
-      },
-      { label: 'Edit' },
-    ];
-  }
-
-  const testSetMatch = pathname.match(
-    /^\/test-sets\/(\d+)$/,
-  );
-
-  if (testSetMatch) {
-    const testSet = await testSetApi.getById(
-      Number(testSetMatch[1]),
-    );
-
-    const context = await loadPlanHierarchy(
-      testSet.testPlanBusinessId,
-    );
-
-    return [
-      { label: 'Test Sets', to: '/test-sets' },
-      {
-        label: context.testPlanName,
-        to: `/test-plans/${enc(context.testPlanBusinessId)}`,
-      },
-      { label: testSet.name },
     ];
   }
 

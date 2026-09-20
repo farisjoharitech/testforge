@@ -110,7 +110,7 @@ function runTypeLabel(run: AutomationRun): string {
     case 'TEST_PLAN':
       return 'Test Plan Run';
     case 'TEST_SET':
-      return 'Test Set Run';
+      return 'Legacy Test Set Run';
     case 'SINGLE_TEST_CASE':
     default:
       return 'Automation Run';

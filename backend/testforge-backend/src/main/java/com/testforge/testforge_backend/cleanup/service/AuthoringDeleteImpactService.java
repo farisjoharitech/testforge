@@ -14,7 +14,7 @@ import com.testforge.testforge_backend.repository.RequirementRepository;
 import com.testforge.testforge_backend.repository.TestCaseRepository;
 import com.testforge.testforge_backend.repository.TestScenarioRepository;
 import com.testforge.testforge_backend.repository.TestStepRepository;
-import com.testforge.testforge_backend.testset.repository.TestSetRepository;
+import com.testforge.testforge_backend.testsuite.repository.TestSuiteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +29,8 @@ public class AuthoringDeleteImpactService {
     private final AutomationScriptRepository automationScriptRepository;
     private final AutomationStepRepository automationStepRepository;
     private final AutomationExecutionRepository automationExecutionRepository;
-    private final TestSetRepository testSetRepository;
+    private final TestSuiteRepository testSuiteRepository;
+    private final TestCaseDeletionPolicy caseDeletionPolicy;
 
     public AuthoringDeleteImpactService(
             RequirementRepository requirementRepository,
@@ -39,7 +40,8 @@ public class AuthoringDeleteImpactService {
             AutomationScriptRepository automationScriptRepository,
             AutomationStepRepository automationStepRepository,
             AutomationExecutionRepository automationExecutionRepository,
-            TestSetRepository testSetRepository) {
+            TestSuiteRepository testSuiteRepository, TestCaseDeletionPolicy caseDeletionPolicy) {
+        this.caseDeletionPolicy = caseDeletionPolicy;
         this.requirementRepository = requirementRepository;
         this.testScenarioRepository = testScenarioRepository;
         this.testCaseRepository = testCaseRepository;
@@ -47,7 +49,7 @@ public class AuthoringDeleteImpactService {
         this.automationScriptRepository = automationScriptRepository;
         this.automationStepRepository = automationStepRepository;
         this.automationExecutionRepository = automationExecutionRepository;
-        this.testSetRepository = testSetRepository;
+        this.testSuiteRepository = testSuiteRepository;
     }
 
     public AuthoringDeleteImpactResponse getRequirementImpact(Long id) {
@@ -60,7 +62,7 @@ public class AuthoringDeleteImpactService {
                 testStepRepository.countByRequirementId(id),
                 automationScriptRepository.countByRequirementId(id),
                 automationStepRepository.countByRequirementId(id),
-                testSetRepository.countMembershipsByRequirementId(id),
+                testSuiteRepository.countMembershipsByRequirementId(id),
                 automationExecutionRepository.countByRequirementId(id),
                 true
         );
@@ -76,7 +78,7 @@ public class AuthoringDeleteImpactService {
                 testStepRepository.countByScenarioId(id),
                 automationScriptRepository.countByScenarioId(id),
                 automationStepRepository.countByScenarioId(id),
-                testSetRepository.countMembershipsByScenarioId(id),
+                testSuiteRepository.countMembershipsByScenarioId(id),
                 automationExecutionRepository.countByScenarioId(id),
                 true
         );
@@ -92,9 +94,9 @@ public class AuthoringDeleteImpactService {
                 testStepRepository.countByTestCase_Id(id),
                 automationScriptRepository.countByTestCaseId(id),
                 automationStepRepository.countByTestCaseId(id),
-                testSetRepository.countMembershipsByTestCaseId(id),
-                automationExecutionRepository.countByTestCase_Id(id),
-                true
+                testSuiteRepository.countMembershipsByTestCaseId(id),
+                automationExecutionRepository.countCompletedForTestCase(id),
+                true, caseDeletionPolicy.blockers(id)
         );
     }
 }

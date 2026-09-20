@@ -1,7 +1,13 @@
 package com.testforge.testforge_backend.exception;
 
-import com.testforge.testforge_backend.testset.exception.InvalidTestSetException;
-import com.testforge.testforge_backend.testset.exception.TestSetNotFoundException;
+import com.testforge.testforge_backend.testsuite.exception.InvalidTestSuiteException;
+import com.testforge.testforge_backend.testsuite.exception.TestSuiteNotFoundException;
+import com.testforge.testforge_backend.automation.exception.AutomationNotFoundException;
+import com.testforge.testforge_backend.automation.exception.AutomationConflictException;
+import com.testforge.testforge_backend.automation.validation.AutomationValidationException;
+import com.testforge.testforge_backend.gitintegration.exception.GitIntegrationConflictException;
+import com.testforge.testforge_backend.gitintegration.exception.GitIntegrationException;
+import com.testforge.testforge_backend.testdesignexport.TestDesignExportException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -17,6 +23,51 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(TestDesignExportException.class)
+    public ResponseEntity<ApiError> handleTestDesignExport(TestDesignExportException exception, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, exception.getMessage(), request, null);
+    }
+
+    @ExceptionHandler(GitIntegrationException.class)
+    public ResponseEntity<ApiError> handleGitIntegration(GitIntegrationException exception, HttpServletRequest request) {
+        return buildError(HttpStatus.BAD_REQUEST, exception.getMessage(), request, null);
+    }
+
+    @ExceptionHandler(GitIntegrationConflictException.class)
+    public ResponseEntity<ApiError> handleGitConflict(GitIntegrationConflictException exception, HttpServletRequest request) {
+        return buildError(HttpStatus.CONFLICT, exception.getMessage(), request, null);
+    }
+
+    // Last-resort protection for concurrent writes; normal dependency conflicts are checked by services.
+    @ExceptionHandler({org.springframework.dao.DataIntegrityViolationException.class,
+            org.springframework.dao.PessimisticLockingFailureException.class,
+            jakarta.persistence.PessimisticLockException.class, jakarta.persistence.LockTimeoutException.class})
+    public ResponseEntity<ApiError> handleConcurrentDependency(RuntimeException exception, HttpServletRequest request) {
+        return buildError(HttpStatus.CONFLICT,
+                "Dependencies changed or are currently in use. Refresh the dependency preview and try again.", request, null);
+    }
+
+    @ExceptionHandler(AutomationNotFoundException.class)
+    public ResponseEntity<ApiError> handleAutomationNotFound(AutomationNotFoundException exception, HttpServletRequest request) {
+        return buildError(HttpStatus.NOT_FOUND, exception.getMessage(), request, null);
+    }
+
+    @ExceptionHandler({AutomationConflictException.class, AutomationValidationException.class})
+    public ResponseEntity<ApiError> handleAutomationDomainError(RuntimeException exception, HttpServletRequest request) {
+        HttpStatus status = exception instanceof AutomationConflictException ? HttpStatus.CONFLICT : HttpStatus.BAD_REQUEST;
+        return buildError(status, exception.getMessage(), request, null);
+    }
+
+    @ExceptionHandler(ModuleNotFoundException.class)
+    public ResponseEntity<ApiError> handleModuleNotFound(ModuleNotFoundException exception, HttpServletRequest request) {
+        return buildError(HttpStatus.NOT_FOUND, exception.getMessage(), request, null);
+    }
+
+    @ExceptionHandler({ResourceInUseException.class, DuplicateModuleException.class, ModuleInUseException.class, TestPlanInUseException.class, ScenarioInUseException.class})
+    public ResponseEntity<ApiError> handleModuleConflict(RuntimeException exception, HttpServletRequest request) {
+        return buildError(HttpStatus.CONFLICT, exception.getMessage(), request, null);
+    }
 
 
     @ExceptionHandler(
@@ -132,11 +183,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(
-            TestSetNotFoundException.class
+            TestSuiteNotFoundException.class
     )
     public ResponseEntity<ApiError>
-    handleTestSetNotFound(
-            TestSetNotFoundException exception,
+    handleTestSuiteNotFound(
+            TestSuiteNotFoundException exception,
             HttpServletRequest request) {
 
         return buildError(
@@ -148,11 +199,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(
-            InvalidTestSetException.class
+            InvalidTestSuiteException.class
     )
     public ResponseEntity<ApiError>
-    handleInvalidTestSet(
-            InvalidTestSetException exception,
+    handleInvalidTestSuite(
+            InvalidTestSuiteException exception,
             HttpServletRequest request) {
 
         return buildError(

@@ -8,7 +8,6 @@ import com.testforge.testforge_backend.automation.service.AutomationRunService;
 import com.testforge.testforge_backend.automation.service.AutomationRunEventStreamService;
 import com.testforge.testforge_backend.automation.service.AutomationScenarioRunService;
 import com.testforge.testforge_backend.automation.service.AutomationTestPlanRunService;
-import com.testforge.testforge_backend.automation.service.AutomationTestSetRunService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,7 +28,6 @@ public class AutomationRunController {
     private final AutomationMultiRunService automationMultiRunService;
     private final AutomationScenarioRunService automationScenarioRunService;
     private final AutomationTestPlanRunService automationTestPlanRunService;
-    private final AutomationTestSetRunService automationTestSetRunService;
     private final AutomationRunEventStreamService automationRunEventStreamService;
 
     public AutomationRunController(
@@ -37,14 +35,12 @@ public class AutomationRunController {
             AutomationMultiRunService automationMultiRunService,
             AutomationScenarioRunService automationScenarioRunService,
             AutomationTestPlanRunService automationTestPlanRunService,
-            AutomationTestSetRunService automationTestSetRunService,
             AutomationRunEventStreamService automationRunEventStreamService
     ) {
         this.automationRunService = automationRunService;
         this.automationMultiRunService = automationMultiRunService;
         this.automationScenarioRunService = automationScenarioRunService;
         this.automationTestPlanRunService = automationTestPlanRunService;
-        this.automationTestSetRunService = automationTestSetRunService;
         this.automationRunEventStreamService = automationRunEventStreamService;
     }
 
@@ -72,15 +68,6 @@ public class AutomationRunController {
     ) {
         return ResponseEntity.accepted().body(
                 automationTestPlanRunService.executeTestPlan(testPlanId)
-        );
-    }
-
-    @PostMapping("/test-set/{testSetId}")
-    public ResponseEntity<AutomationRunResponse> executeTestSet(
-            @PathVariable Long testSetId
-    ) {
-        return ResponseEntity.accepted().body(
-                automationTestSetRunService.executeTestSet(testSetId)
         );
     }
 

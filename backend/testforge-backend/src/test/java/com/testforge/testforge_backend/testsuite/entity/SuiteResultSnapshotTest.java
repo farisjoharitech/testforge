@@ -1,0 +1,5 @@
+package com.testforge.testforge_backend.testsuite.entity;
+import org.junit.jupiter.api.Test; import java.time.LocalDateTime; import static org.junit.jupiter.api.Assertions.*;
+class SuiteResultSnapshotTest {
+ @Test void preservesSnapshotValuesAndMixedStepResults(){SuiteTestCaseResult result=new SuiteTestCaseResult(3L,"TC-OLD","Original name");result.addStep(new SuiteTestStepResult(4L,"STEP-1","open page","loaded",1));result.addStep(new SuiteTestStepResult(5L,"STEP-2","assert text","shown",2));LocalDateTime now=LocalDateTime.now();result.finish(8L,SuiteResultStatus.FAILED,now,now,2L,"assertion failed",2,"failure.png","run/8","trace.zip");assertEquals("Original name",result.getNameSnapshot());assertEquals("Automation step 2 failed",result.getAssertionFailureDetails());assertEquals(SuiteResultStatus.PASSED,result.getStepResults().get(0).getStatus());assertEquals(SuiteResultStatus.FAILED,result.getStepResults().get(1).getStatus());assertEquals("assertion failed",result.getStepResults().get(1).getFailureDetails());assertEquals("STEP-2",result.getStepResults().get(1).getTestStepBusinessIdSnapshot());}
+}

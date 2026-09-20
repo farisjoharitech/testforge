@@ -17,16 +17,16 @@ export function buildDeleteImpactDescription(
     part(impact.testStepCount, 'Test Step'),
     part(impact.automationScriptCount, 'Automation Script'),
     part(impact.automationStepCount, 'Automation Step'),
-    part(impact.testSetMembershipCount, 'Test Set membership', 'Test Set memberships'),
+    part(impact.testSuiteMembershipCount, 'Test Suite membership', 'Test Suite memberships'),
   ].filter(Boolean);
 
   const currentText = affected.length > 0
-    ? `Current authoring impact: ${affected.join(', ')}.`
-    : 'No descendant authoring records were found.';
+    ? `Deletion is blocked by: ${affected.join(', ')}.`
+    : 'No descendant test design or automation records were found.';
 
   const historyText = impact.historicalExecutionCount > 0
-    ? ` Historical execution history: ${impact.historicalExecutionCount} execution${impact.historicalExecutionCount === 1 ? '' : 's'} recorded. These historical executions are preserved by this cleanup preview and are not counted as records to delete.`
+    ? ` Historical execution history: ${impact.historicalExecutionCount} execution${impact.historicalExecutionCount === 1 ? '' : 's'} recorded. Completed historical snapshots are preserved.`
     : ' No historical executions were found.';
 
-  return `${currentText}${historyText} Review the impact before confirming. This task adds the preview only; existing backend deletion rules still apply.`;
+  return `${currentText}${historyText} Test design, automation, and collection dependencies must be removed separately before deletion.`;
 }

@@ -7,7 +7,8 @@ export interface AuthoringDeleteImpact {
   testStepCount: number;
   automationScriptCount: number;
   automationStepCount: number;
-  testSetMembershipCount: number;
+  testSuiteMembershipCount: number;
   historicalExecutionCount: number;
   historicalExecutionsPreserved: boolean;
+  blockingDependencies: string[];
 }

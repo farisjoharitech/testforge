@@ -10,5 +10,9 @@ public enum AutomationRunType {
 
     TEST_PLAN,
 
-    TEST_SET
+    /** Retained only so historical runs created by the retired TestSet model remain readable. */
+    @Deprecated
+    TEST_SET,
+
+    TEST_SUITE
 }

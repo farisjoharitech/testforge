@@ -12,7 +12,7 @@ import com.testforge.testforge_backend.repository.RequirementRepository;
 import com.testforge.testforge_backend.repository.TestCaseRepository;
 import com.testforge.testforge_backend.repository.TestScenarioRepository;
 import com.testforge.testforge_backend.repository.TestStepRepository;
-import com.testforge.testforge_backend.testset.repository.TestSetRepository;
+import com.testforge.testforge_backend.testsuite.repository.TestSuiteRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,7 +35,8 @@ class AuthoringDeleteImpactServiceTest {
     @Mock AutomationScriptRepository automationScriptRepository;
     @Mock AutomationStepRepository automationStepRepository;
     @Mock AutomationExecutionRepository automationExecutionRepository;
-    @Mock TestSetRepository testSetRepository;
+    @Mock TestSuiteRepository testSuiteRepository;
+    @Mock com.testforge.testforge_backend.cleanup.service.TestCaseDeletionPolicy policy;
 
     private AuthoringDeleteImpactService service;
 
@@ -49,7 +50,7 @@ class AuthoringDeleteImpactServiceTest {
                 automationScriptRepository,
                 automationStepRepository,
                 automationExecutionRepository,
-                testSetRepository
+                testSuiteRepository, policy
         );
     }
 
@@ -64,7 +65,7 @@ class AuthoringDeleteImpactServiceTest {
         when(testStepRepository.countByRequirementId(10L)).thenReturn(18L);
         when(automationScriptRepository.countByRequirementId(10L)).thenReturn(4L);
         when(automationStepRepository.countByRequirementId(10L)).thenReturn(12L);
-        when(testSetRepository.countMembershipsByRequirementId(10L)).thenReturn(3L);
+        when(testSuiteRepository.countMembershipsByRequirementId(10L)).thenReturn(3L);
         when(automationExecutionRepository.countByRequirementId(10L)).thenReturn(21L);
 
         AuthoringDeleteImpactResponse result = service.getRequirementImpact(10L);
@@ -88,7 +89,7 @@ class AuthoringDeleteImpactServiceTest {
         when(testStepRepository.countByScenarioId(20L)).thenReturn(9L);
         when(automationScriptRepository.countByScenarioId(20L)).thenReturn(2L);
         when(automationStepRepository.countByScenarioId(20L)).thenReturn(7L);
-        when(testSetRepository.countMembershipsByScenarioId(20L)).thenReturn(2L);
+        when(testSuiteRepository.countMembershipsByScenarioId(20L)).thenReturn(2L);
         when(automationExecutionRepository.countByScenarioId(20L)).thenReturn(8L);
 
         AuthoringDeleteImpactResponse result = service.getScenarioImpact(20L);
@@ -108,8 +109,9 @@ class AuthoringDeleteImpactServiceTest {
         when(testStepRepository.countByTestCase_Id(30L)).thenReturn(4L);
         when(automationScriptRepository.countByTestCaseId(30L)).thenReturn(1L);
         when(automationStepRepository.countByTestCaseId(30L)).thenReturn(3L);
-        when(testSetRepository.countMembershipsByTestCaseId(30L)).thenReturn(2L);
-        when(automationExecutionRepository.countByTestCase_Id(30L)).thenReturn(11L);
+        when(testSuiteRepository.countMembershipsByTestCaseId(30L)).thenReturn(2L);
+        when(automationExecutionRepository.countCompletedForTestCase(30L)).thenReturn(11L);
+        when(policy.blockers(30L)).thenReturn(java.util.List.of());
 
         AuthoringDeleteImpactResponse result = service.getTestCaseImpact(30L);
 
@@ -117,8 +119,9 @@ class AuthoringDeleteImpactServiceTest {
         assertEquals(4L, result.testStepCount());
         assertEquals(1L, result.automationScriptCount());
         assertEquals(3L, result.automationStepCount());
-        assertEquals(2L, result.testSetMembershipCount());
+        assertEquals(2L, result.testSuiteMembershipCount());
         assertEquals(11L, result.historicalExecutionCount());
         assertTrue(result.historicalExecutionsPreserved());
+        assertTrue(result.blockingDependencies().isEmpty());
     }
 }

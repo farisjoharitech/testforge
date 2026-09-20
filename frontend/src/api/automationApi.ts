@@ -8,6 +8,7 @@ import {
 
 import type {
   AutomationExecution,
+  AutomationOverviewItem,
   AutomationRun,
   CreateMultiTestCaseRunRequest,
   AutomationScript,
@@ -19,6 +20,9 @@ import type {
 } from '../types/automation';
 
 export const automationApi = {
+  overview(projectId: string): Promise<AutomationOverviewItem[]> {
+    return apiClient.get(`/api/projects/${encodeURIComponent(projectId)}/automation-overview`);
+  },
   createScript(
     testCaseId: number,
     request: CreateAutomationScriptRequest,
@@ -193,18 +197,6 @@ export const automationApi = {
       Record<string, never>
     >(
       `/api/automation-runs/test-plan/${testPlanId}`,
-      {},
-    );
-  },
-
-  executeTestSet(
-    testSetId: number,
-  ): Promise<AutomationRun> {
-    return apiClient.post<
-      AutomationRun,
-      Record<string, never>
-    >(
-      `/api/automation-runs/test-set/${testSetId}`,
       {},
     );
   },

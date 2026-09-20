@@ -179,7 +179,7 @@ export default function DashboardPage() {
         <Card variant="outlined" sx={{ flex: 1 }}>
           <CardContent>
             <Stack spacing={2}>
-              <Box><Typography variant="h6" fontWeight={800}>Recent Automation Runs</Typography><Typography variant="body2" color="text.secondary">Latest parent runs across single, multi, Scenario, Test Plan, and Test Set execution.</Typography></Box>
+              <Box><Typography variant="h6" fontWeight={800}>Recent Automation Runs</Typography><Typography variant="body2" color="text.secondary">Latest parent runs across single, multi, Scenario, Test Plan, and Test Suite execution.</Typography></Box>
               {!portfolio?.recentRuns.length ? <Alert severity="info">No Automation Runs have been created yet.</Alert> : (
                 <Stack spacing={1.25}>{portfolio.recentRuns.map((run: RecentAutomationRun) => (
                   <Box key={run.id} sx={{ p: 1.5, border: 1, borderColor: 'divider', borderRadius: 2 }}>
